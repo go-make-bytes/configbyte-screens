@@ -1,0 +1,59 @@
+{
+  "name": "configbyte-screens",
+  "version": "0.1.0",
+  "description": "The shared screens of a deployment's admin app: sign-in, the frame, and carrying a workspace's configuration out as one file and back in. They talk only to the configuration coordinator.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/go-make-bytes/configbyte-screens.git"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "gate": "npm run typecheck && npm run test && npm run build",
+    "typecheck": "vue-tsc -b",
+    "test": "vitest run",
+    "build": "vite build"
+  },
+  "peerDependencies": {
+    "pinia": "^2.3.0",
+    "vue": "^3.5.13",
+    "vue-i18n": "^11.1.0",
+    "vue-router": "^4.5.0"
+  },
+  "dependencies": {
+    "uibyte": "github:gmb-lib/uibyte#v0.8.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^22.10.5",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.7.0",
+    "jsdom": "^25.0.1",
+    "pinia": "^2.3.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^3.2.4",
+    "vue": "^3.5.13",
+    "vue-i18n": "^11.1.0",
+    "vue-router": "^4.5.0",
+    "vue-tsc": "^3.3.8"
+  }
+}

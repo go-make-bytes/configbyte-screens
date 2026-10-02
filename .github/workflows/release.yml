@@ -1,0 +1,85 @@
+# Publish a Node library on a GitHub release. These libraries are consumed as
+# tagged git dependencies rather than from a registry, so a tag IS the release
+# and there is nothing to upload. What this does instead is prove the tag is
+# usable — gate on the same checks as CI, then install it the way a consumer
+# will and check it arrived intact.
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      # The version in package.json is what every consumer's `npm ls` reports.
+      # A tag cut while the file still says something else ships bytes that are
+      # right under a version that is wrong, and nothing downstream notices.
+      - name: The tag and package.json must agree
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          EXPECTED="${TAG_NAME#v}"
+          ACTUAL="$(node -p "require('./package.json').version")"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::tag $TAG_NAME expects version $EXPECTED but package.json says $ACTUAL"
+            exit 1
+          fi
+          echo "version $ACTUAL matches tag $TAG_NAME"
+
+      # Installed the way a consumer installs it — from the tag, over HTTPS,
+      # with no credentials — so a private repo or a broken `files` list fails
+      # here instead of in somebody else's build.
+      - name: Install the tag as a consumer would
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          PKG_NAME="$(node -p "require('./package.json').name")"
+          WORKDIR="$(mktemp -d)"; cd "$WORKDIR"
+          npm init -y >/dev/null
+          GIT_SSH_COMMAND=false npm install "github:${{ github.repository }}#${TAG_NAME}" --ignore-scripts
+          INSTALLED="$(node -p "require('./node_modules/${PKG_NAME}/package.json').version")"
+          if [ "$INSTALLED" != "${TAG_NAME#v}" ]; then
+            echo "::error::installed $PKG_NAME@$INSTALLED from $TAG_NAME"
+            exit 1
+          fi
+          echo "installed $PKG_NAME@$INSTALLED from $TAG_NAME"
+
+      - name: Publish summary
+        if: success()
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          PKG_NAME="$(node -p "require('./package.json').name")"
+          {
+            echo "## Package publication"
+            echo ""
+            echo "- **Package:** \`$PKG_NAME\`"
+            echo "- **Version:** \`$TAG_NAME\`"
+            echo ""
+            echo "Install with:"
+            echo ""
+            echo '```sh'
+            echo "npm install github:${{ github.repository }}#$TAG_NAME"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

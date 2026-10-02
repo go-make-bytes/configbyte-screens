@@ -1,0 +1,178 @@
+{
+  "configbyte": {
+    "frame": {
+      "admin": "admin",
+      "tab": "{name} — admin",
+      "method": "signed in with {method}",
+      "logout": "Sign out",
+      "exportImport": "Export / Import",
+      "signIn": {
+        "title": "Configure your workspace",
+        "lead": "This is the admin app. Everyday work stays in {product} at its usual address.",
+        "account": "Sign in with your account",
+        "card": {
+          "signIn": "Sign in with an ID card",
+          "waiting": "Waiting for the card…",
+          "hint": "The ID card is read by the card software on this computer, and it will ask for your PIN. The other sign-in opens the provider's own page instead.",
+          "failed": "That did not complete. Check the card is in the reader and try again.",
+          "missing": {
+            "title": "The card software is not running",
+            "lead": "Signing in with a card needs the ID-software and its browser extension on this computer. Install it, then try again — nothing here has to be redone.",
+            "action": "Get the ID software"
+          }
+        },
+        "loginFailed": {
+          "cancelled": "The sign-in was cancelled. Nothing happened — you can try again.",
+          "provider_error": "The identity provider could not complete the sign-in. Try again; if it keeps failing, it is on their side rather than yours.",
+          "missing_code": "The sign-in came back incomplete. Start it again from here.",
+          "expired": "That sign-in took too long and has expired. Start a fresh one.",
+          "bad_state": "That sign-in could not be matched to the one that started. Start a fresh one.",
+          "login_failed": "The sign-in could not be completed. Try again.",
+          "unknown": "The sign-in did not complete. Try again."
+        }
+      },
+      "nothing": {
+        "eyebrow": "workspace",
+        "title": "Nothing here for you to configure",
+        "lead": "You are signed in, but no part of this workspace's configuration is yours. An administrator can give you access. Your everyday work is in {product}."
+      },
+      "down": {
+        "eyebrow": "admin app",
+        "title": "The admin service is not answering",
+        "lead": "Nothing was changed. Try again in a minute. If it keeps happening, tell whoever runs this deployment: its start check may have stopped it, and its log says why.",
+        "again": "Try again"
+      },
+      "page": {
+        "eyebrow": "workspace",
+        "lead": "The configuration of this workspace, carried out as one file and back in."
+      },
+      "shell": {
+        "skipToContent": "Skip to content",
+        "openMenu": "Open menu",
+        "menu": "Menu",
+        "close": "Close",
+        "primaryNav": "Main navigation",
+        "workspace": "Workspace"
+      }
+    },
+    "transfer": {
+      "export": {
+        "title": "Export",
+        "lead": "Your whole configuration as one file — to keep, to hand to another workspace, or to edit and bring back.",
+        "action": "Download configuration",
+        "working": "Preparing the file…",
+        "sections": "{n} section | {n} sections",
+        "failed": "The configuration could not be downloaded: {reason}"
+      },
+      "import": {
+        "title": "Import",
+        "lead": "Drop a configuration file. Nothing is written until you have seen exactly what it would do — and then either all of it lands, or none of it.",
+        "drop": "Drop a file here, or click to choose one",
+        "dropHint": "configuration-….json",
+        "rejected": {
+          "type": "That is not a configuration file — choose the .json file an export downloaded.",
+          "count": "Drop one file at a time."
+        }
+      },
+      "file": {
+        "exported": "exported {day}",
+        "workspace": "from workspace {id}",
+        "edited": "edited since export"
+      },
+      "preview": {
+        "title": "What this document would do",
+        "working": "Reading the document…"
+      },
+      "columns": {
+        "part": "part",
+        "key": "key",
+        "status": "what happens",
+        "detail": "why / what moves"
+      },
+      "item": {
+        "added": "added",
+        "changed": "changed",
+        "unchanged": "unchanged",
+        "refused": "refused"
+      },
+      "badge": {
+        "clean": "clean",
+        "lands": "clean — lands only with the rest",
+        "refused": "refused",
+        "failed": "failed",
+        "skipped": "skipped",
+        "applied": "applied",
+        "withheld": "withheld",
+        "rolledBack": "rolled back",
+        "notRestored": "not restored"
+      },
+      "note": {
+        "failed": "did not answer, so its part of the document could not be judged",
+        "skipped": "No service in this workspace owns this section, so it is not applied here — the rest of the document can be."
+      },
+      "summary": {
+        "changes": "{n} change | {n} changes",
+        "unchanged": "{n} unchanged"
+      },
+      "tally": {
+        "added": "{n} added",
+        "changed": "{n} changed",
+        "unchanged": "{n} unchanged",
+        "refused": "{n} refused"
+      },
+      "stop": {
+        "refused": "{n} item was refused, so this document cannot be applied — none of it. Change it in the file (the reason says what) and drop the file again. | {n} items were refused, so this document cannot be applied — none of it. Change them in the file (each reason says what) and drop the file again.",
+        "failed": "A service did not answer, so this document could not be judged. Nothing was written. Preview again in a moment.",
+        "bad": "This file cannot be read as a configuration document. Nothing was written. Drop a file exported from this screen.",
+        "other": "The document could not be previewed: {reason}"
+      },
+      "act": {
+        "apply": "Apply this document",
+        "applying": "Applying…",
+        "cancel": "Cancel",
+        "again": "Preview again",
+        "another": "Import another file",
+        "downloadNow": "Download the configuration as it is now"
+      },
+      "outcome": {
+        "applied": {
+          "head": "Applied.",
+          "rest": "The whole document is in force."
+        },
+        "moved": {
+          "head": "The configuration changed after your preview.",
+          "rest": "Nothing was written. Preview again to see what this document would do now — the new preview shows anyone else's change it would overwrite."
+        },
+        "refused": {
+          "head": "Refused at Apply.",
+          "rest": "Something the configuration itself does not cover changed after your preview. Nothing was written — the refused item below says what."
+        },
+        "failed": {
+          "head": "Nothing was written.",
+          "rest": "A service could not write its section, so the rest of the document was withheld."
+        },
+        "rolledBack": {
+          "head": "Nothing of this document is in force.",
+          "rest": "A service could not write its section after another had written its own, so that one was restored to what it held before."
+        },
+        "partial": {
+          "head": "Only part of this document is in force.",
+          "rest": "A service could not write its section, and restoring the section written before it failed too. Preview again: the new preview shows exactly what is still to land, and applying it completes the document."
+        },
+        "other": {
+          "head": "The document could not be applied."
+        }
+      },
+      "line": {
+        "applied": "{n} change landed, recorded in the history under your name | {n} changes landed, recorded in the history under your name",
+        "appliedNothing": "nothing in it changes this section",
+        "withheld": "clean, not applied because another section did not land",
+        "refused": "nothing of this section was written",
+        "failed": "could not be written",
+        "rolledBack": "written, then restored to what it held before this import",
+        "notRestored": "holds this document's section — the restore after the failure did not succeed",
+        "skipped": "not applied here — no service in this workspace owns it"
+      }
+    }
+  }
+}

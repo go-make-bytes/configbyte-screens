@@ -1,0 +1,22 @@
+# Every text file in this repository is checked out with LF endings.
+#
+# Why this file exists, measured 2026-08-27: `src/theme/theme.css` is generated from the token
+# definitions, and `src/theme/theme.test.ts` compares the shipped bytes against what the
+# derivation produces right now — deliberately, so the stylesheet cannot silently drift from the
+# rule that made it. Git stores that file with LF, but Git for Windows installs with
+# `core.autocrlf=true` by DEFAULT, so a fresh clone on Windows lands it with CRLF while the
+# generator still emits LF. The comparison then fails on every line, and `npm run test` is red on
+# a contributor's very first run — with a diff that looks like a token change and is not one.
+# Linux CI never sees it, which is exactly what makes it expensive to diagnose.
+#
+# `text=auto` keeps git's own binary detection (the woff2 fonts below are pinned anyway);
+# `eol=lf` is what makes the working copy match the bytes the tests and the generator agree on.
+# This is preventive: it does not rewrite an existing working tree — run
+# `git add --renormalize .` once if a checkout already holds CRLF.
+* text=auto eol=lf
+
+# The bundled variable fonts are binary; never touch their bytes.
+*.woff2 binary
+
+# And this file pins itself, so it cannot be the one text file the rule above fails to cover.
+.gitattributes text eol=lf

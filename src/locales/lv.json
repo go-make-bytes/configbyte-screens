@@ -1,0 +1,178 @@
+{
+  "configbyte": {
+    "frame": {
+      "admin": "administrēšana",
+      "tab": "{name} — administrēšana",
+      "method": "pieslēdzies ar {method}",
+      "logout": "Iziet",
+      "exportImport": "Eksports / Imports",
+      "signIn": {
+        "title": "Konfigurējiet savu darbvietu",
+        "lead": "Šī ir administrēšanas lietotne. Ikdienas darbs paliek {product} ierastajā adresē.",
+        "account": "Pieslēgties ar savu kontu",
+        "card": {
+          "signIn": "Pieslēgties ar eID karti",
+          "waiting": "Gaida karti…",
+          "hint": "Karti nolasa šī datora ID programmatūra, un tā prasīs PIN. Otra pieslēgšanās tā vietā atver pakalpojuma sniedzēja lapu.",
+          "failed": "Neizdevās pabeigt. Pārbaudi, vai karte ir lasītājā, un mēģini vēlreiz.",
+          "missing": {
+            "title": "ID programmatūra nedarbojas",
+            "lead": "Pieslēgšanai ar karti nepieciešama ID programmatūra un tās pārlūka paplašinājums šajā datorā. Uzinstalē to un mēģini vēlreiz — neko no jauna sākt nevajag.",
+            "action": "Iegūt ID programmatūru"
+          }
+        },
+        "loginFailed": {
+          "cancelled": "Pieslēgšanās tika atcelta. Nekas nenotika — varat mēģināt vēlreiz.",
+          "provider_error": "Identitātes pakalpojums nevarēja pabeigt pieslēgšanos. Mēģiniet vēlreiz; ja neizdodas atkārtoti, vaina ir viņu pusē.",
+          "missing_code": "Pieslēgšanās atgriezās nepabeigta. Sāciet to no jauna šeit.",
+          "expired": "Šī pieslēgšanās ilga par ilgu un ir beigusies. Sāciet jaunu.",
+          "bad_state": "Šo pieslēgšanos neizdevās sasaistīt ar to, kas tika sākta. Sāciet jaunu.",
+          "login_failed": "Pieslēgšanos neizdevās pabeigt. Mēģiniet vēlreiz.",
+          "unknown": "Pieslēgšanās netika pabeigta. Mēģiniet vēlreiz."
+        }
+      },
+      "nothing": {
+        "eyebrow": "darbvieta",
+        "title": "Šeit jums nav ko konfigurēt",
+        "lead": "Jūs esat pieslēdzies, taču neviena šīs darbvietas konfigurācijas daļa nav jūsu ziņā. Piekļuvi var piešķirt administrators. Ikdienas darbs ir {product}."
+      },
+      "down": {
+        "eyebrow": "administrēšanas lietotne",
+        "title": "Administrēšanas serviss neatbild",
+        "lead": "Nekas netika mainīts. Mēģiniet vēlreiz pēc minūtes. Ja tas atkārtojas, pasakiet to tam, kas uztur šo izvietojumu: to varēja apturēt starta pārbaude, un tās žurnālā ir rakstīts, kāpēc.",
+        "again": "Mēģināt vēlreiz"
+      },
+      "page": {
+        "eyebrow": "darbvieta",
+        "lead": "Šīs darbvietas konfigurācija vienā failā: eksportēt un importēt atpakaļ."
+      },
+      "shell": {
+        "skipToContent": "Pāriet uz saturu",
+        "openMenu": "Atvērt izvēlni",
+        "menu": "Izvēlne",
+        "close": "Aizvērt",
+        "primaryNav": "Galvenā navigācija",
+        "workspace": "Darbvieta"
+      }
+    },
+    "transfer": {
+      "export": {
+        "title": "Eksports",
+        "lead": "Visa jūsu konfigurācija vienā failā — lai to paturētu, nodotu citai darbvietai vai labotu un atnestu atpakaļ.",
+        "action": "Lejupielādēt konfigurāciju",
+        "working": "Gatavo failu…",
+        "sections": "{n} sadaļa | {n} sadaļas",
+        "failed": "Konfigurāciju neizdevās lejupielādēt: {reason}"
+      },
+      "import": {
+        "title": "Imports",
+        "lead": "Nometiet konfigurācijas failu. Nekas netiek ierakstīts, kamēr neesat redzējis tieši to, ko tas izdarītu, — un tad tiek piemērots viss vai nekas.",
+        "drop": "Nometiet failu šeit vai noklikšķiniet, lai to izvēlētos",
+        "dropHint": "configuration-….json",
+        "rejected": {
+          "type": "Tas nav konfigurācijas fails — izvēlieties .json failu, ko lejupielādēja eksports.",
+          "count": "Nometiet vienu failu vienlaikus."
+        }
+      },
+      "file": {
+        "exported": "eksportēts {day}",
+        "workspace": "no darbvietas {id}",
+        "edited": "labots pēc eksporta"
+      },
+      "preview": {
+        "title": "Ko šis dokuments izdarītu",
+        "working": "Lasa dokumentu…"
+      },
+      "columns": {
+        "part": "daļa",
+        "key": "atslēga",
+        "status": "kas notiek",
+        "detail": "kāpēc / kas mainās"
+      },
+      "item": {
+        "added": "pievienots",
+        "changed": "mainīts",
+        "unchanged": "nemainīts",
+        "refused": "atteikts"
+      },
+      "badge": {
+        "clean": "tīrs",
+        "lands": "tīrs — tiek piemērots tikai kopā ar pārējo",
+        "refused": "atteikts",
+        "failed": "neizdevās",
+        "skipped": "izlaists",
+        "applied": "piemērots",
+        "withheld": "aizturēts",
+        "rolledBack": "atsaukts",
+        "notRestored": "nav atjaunots"
+      },
+      "note": {
+        "failed": "neatbildēja, tāpēc šo dokumenta daļu nevarēja izvērtēt",
+        "skipped": "Šajā darbvietā šo sadaļu nepārvalda neviens serviss, tāpēc šeit tā netiek piemērota — pārējo dokumentu piemērot var."
+      },
+      "summary": {
+        "changes": "{n} izmaiņa | {n} izmaiņas",
+        "unchanged": "{n} nemainīts | {n} nemainīti"
+      },
+      "tally": {
+        "added": "{n} pievienots | {n} pievienoti",
+        "changed": "{n} mainīts | {n} mainīti",
+        "unchanged": "{n} nemainīts | {n} nemainīti",
+        "refused": "{n} atteikts | {n} atteikti"
+      },
+      "stop": {
+        "refused": "{n} vienums tika atteikts, tāpēc šo dokumentu nevar piemērot — nevienu tā daļu. Izlabojiet to failā (iemesls pasaka, ko) un nometiet failu vēlreiz. | {n} vienumi tika atteikti, tāpēc šo dokumentu nevar piemērot — nevienu tā daļu. Izlabojiet tos failā (katrs iemesls pasaka, ko) un nometiet failu vēlreiz.",
+        "failed": "Kāds serviss neatbildēja, tāpēc šo dokumentu nevarēja izvērtēt. Nekas netika ierakstīts. Pēc brīža priekšskatiet vēlreiz.",
+        "bad": "Šo failu nevar nolasīt kā konfigurācijas dokumentu. Nekas netika ierakstīts. Nometiet failu, kas eksportēts šajā ekrānā.",
+        "other": "Dokumentu neizdevās priekšskatīt: {reason}"
+      },
+      "act": {
+        "apply": "Piemērot šo dokumentu",
+        "applying": "Piemēro…",
+        "cancel": "Atcelt",
+        "again": "Priekšskatīt vēlreiz",
+        "another": "Importēt citu failu",
+        "downloadNow": "Lejupielādēt konfigurāciju, kāda tā ir tagad"
+      },
+      "outcome": {
+        "applied": {
+          "head": "Piemērots.",
+          "rest": "Viss dokuments ir spēkā."
+        },
+        "moved": {
+          "head": "Konfigurācija mainījās pēc jūsu priekšskatījuma.",
+          "rest": "Nekas netika ierakstīts. Priekšskatiet vēlreiz, lai redzētu, ko šis dokuments izdarītu tagad, — jaunajā priekšskatījumā redzamas arī citu izmaiņas, ko tas pārrakstītu."
+        },
+        "refused": {
+          "head": "Atteikts piemērojot.",
+          "rest": "Pēc jūsu priekšskatījuma mainījās kaut kas, ko pati konfigurācija neaptver. Nekas netika ierakstīts — atteiktais vienums zemāk pasaka, kas."
+        },
+        "failed": {
+          "head": "Nekas netika ierakstīts.",
+          "rest": "Kāds serviss nevarēja ierakstīt savu sadaļu, tāpēc pārējais dokuments tika aizturēts."
+        },
+        "rolledBack": {
+          "head": "Nekas no šī dokumenta nav spēkā.",
+          "rest": "Kāds serviss nevarēja ierakstīt savu sadaļu pēc tam, kad cits jau bija ierakstījis savējo, tāpēc tā tika atjaunota tāda, kāda bija iepriekš."
+        },
+        "partial": {
+          "head": "Spēkā ir tikai daļa šī dokumenta.",
+          "rest": "Kāds serviss nevarēja ierakstīt savu sadaļu, un neizdevās arī pirms tam ierakstītās sadaļas atjaunošana. Priekšskatiet vēlreiz: jaunais priekšskatījums parāda tieši to, kas vēl jāpiemēro, un tā piemērošana pabeidz dokumentu."
+        },
+        "other": {
+          "head": "Dokumentu neizdevās piemērot."
+        }
+      },
+      "line": {
+        "applied": "{n} izmaiņa piemērota un ierakstīta vēsturē ar jūsu vārdu | {n} izmaiņas piemērotas un ierakstītas vēsturē ar jūsu vārdu",
+        "appliedNothing": "šajā sadaļā nekas nemainās",
+        "withheld": "tīrs, bet netika piemērots, jo cita sadaļa netika piemērota",
+        "refused": "nekas no šīs sadaļas netika ierakstīts",
+        "failed": "neizdevās ierakstīt",
+        "rolledBack": "ierakstīts un pēc tam atjaunots tāds, kāds bija pirms šī importa",
+        "notRestored": "satur šī dokumenta sadaļu — atjaunošana pēc kļūmes neizdevās",
+        "skipped": "šeit netiek piemērots — šajā darbvietā to nepārvalda neviens serviss"
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+# CI for a Node/TypeScript library: install from the lockfile, then run the same
+# gate a developer runs locally — typecheck, tests, build. Publishing happens on
+# a GitHub release (release.yml), not here, so there is no publish job.
+#
+# The repo must expose `typecheck`, `test` and `build` scripts. They are run as
+# separate steps rather than one `gate` script so a red run names which stage
+# failed without opening the log.
+name: ci
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc      # single source of truth
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      # A packed tarball is what a consumer actually installs, so the file list
+      # is worth seeing on every run: a stray test fixture or a missing entry
+      # point shows up here rather than in a consumer's build.
+      - name: Show what a consumer would install
+        run: npm pack --dry-run
