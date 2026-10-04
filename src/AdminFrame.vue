@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// The admin app's frame: who is signed in, the entries this deployment has, and
-// the two states that have no screen of their own — someone who configures
-// nothing here, and a coordinator that is not answering.
+// The admin app's frame: who is signed in, the entries this deployment has in
+// their groups, and the states that have no screen of their own — the app closed
+// to this person, someone who configures nothing here, and a coordinator that is
+// not answering.
 //
 // An entry shows when two things are true: its screen was built into this app,
 // and the coordinator found its section's owner at start. What the frame offers
@@ -9,12 +10,13 @@
 import { computed, onMounted, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
-import { AppShell, Button, type NavItem, type ShellLabels } from 'uibyte'
+import { AppShell, Button, type NavGroup, type NavItem, type ShellLabels } from 'uibyte'
 
 import AdminBrand from './components/AdminBrand.vue'
+import ClosedPage from './components/ClosedPage.vue'
 import SignInPage from './components/SignInPage.vue'
 import { useAdminOptions } from './options'
-import { EXPORT_IMPORT } from './routes'
+import { EXPORT_IMPORT, HISTORY, PEOPLE_ACCESS } from './routes'
 import { useAdminSession } from './stores/session'
 
 const { t, locale, availableLocales } = useI18n()
@@ -23,6 +25,7 @@ const session = useAdminSession()
 const f = (key: string) => `configbyte.frame.${key}`
 
 onMounted(() => {
+  session.readMarker(new URLSearchParams(window.location.search).get('error') ?? '')
   void session.resolve()
 })
 
@@ -44,15 +47,41 @@ const configures = computed(() =>
   session.holdsAny(session.order.flatMap((name) => options.sections[name]?.configures ?? [])),
 )
 
-const items = computed<NavItem[]>(() => {
+/** Whether the membership register's owner answered, so People & access has something to read. */
+const registerRuns = computed(() => !!options.register && session.order.includes(options.register))
+
+/**
+ * The sidebar, in groups. The shared screens open the first group, followed by
+ * any host screen that names no group of its own; the host's groups follow in
+ * the order their first entry arrives.
+ */
+const groups = computed<NavGroup[]>(() => {
   if (!configures.value) return []
 
-  return [
+  const shared: NavItem[] = [
     { key: 'export-import', label: t(f('exportImport')), icon: 'doc', linkProps: { to: { name: EXPORT_IMPORT } } },
-    ...(options.entries ?? [])
-      .filter((e) => session.order.includes(e.section))
-      .map((e): NavItem => ({ key: e.key, label: t(e.label), icon: 'gear', linkProps: { to: { name: e.route } } })),
+    { key: 'history', label: t(f('history')), icon: 'clock', linkProps: { to: { name: HISTORY } } },
   ]
+  if (registerRuns.value) {
+    shared.push({ key: 'people-access', label: t(f('peopleAccess')), icon: 'people', linkProps: { to: { name: PEOPLE_ACCESS } } })
+  }
+  const out: NavGroup[] = [{ key: 'configbyte-workspace', label: t(f('shell.workspace')), items: shared }]
+
+  for (const e of options.entries ?? []) {
+    if (!session.order.includes(e.section)) continue
+    const locked = e.locked?.() ?? false
+    const item: NavItem = {
+      key: e.key,
+      label: t(e.label),
+      icon: e.icon ?? 'gear',
+      ...(locked ? { locked: true, tag: t(f('notIncluded')) } : { linkProps: { to: { name: e.route } } }),
+    }
+    const home = e.group ? out.find((g) => g.key === e.group) : out[0]
+    if (home) home.items.push(item)
+    else out.push({ key: e.group!, label: t(e.group!), items: [item] })
+  }
+
+  return out
 })
 
 const labels = computed<ShellLabels>(() => ({
@@ -61,16 +90,21 @@ const labels = computed<ShellLabels>(() => ({
   menu: t(f('shell.menu')),
   close: t(f('shell.close')),
   primaryNav: t(f('shell.primaryNav')),
+  locked: t(f('shell.locked')),
 }))
 </script>
 
 <template>
   <template v-if="session.resolved">
-    <SignInPage v-if="!session.me && !session.unreachable">
+    <ClosedPage v-if="session.closed" :reason="session.closed">
+      <template #mark="{ size }"><slot name="mark" :size="size" /></template>
+    </ClosedPage>
+
+    <SignInPage v-else-if="!session.me && !session.unreachable">
       <template #mark="{ size }"><slot name="mark" :size="size" /></template>
     </SignInPage>
 
-    <AppShell v-else :items="items" :labels="labels" :link-component="RouterLink">
+    <AppShell v-else :groups="groups" :labels="labels" :link-component="RouterLink">
       <template #brand>
         <AdminBrand :name="brandName">
           <template #default="{ size }"><slot name="mark" :size="size" /></template>

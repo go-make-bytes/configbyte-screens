@@ -1,7 +1,9 @@
 # configbyte-screens
 
-The shared screens of a deployment's **admin app**: the sign-in page, the frame, and **Export / Import**, which
-carries a workspace's configuration out as one file and back in. They are Vue 3 screens that a product's own
+The shared screens of a deployment's **admin app**: the sign-in page, the frame, **Export / Import**, which
+carries a workspace's configuration out as one file and back in, **History**, every change a person made to the
+workspace's setup across its services, and **People & access**, who is in the workspace and what each person holds,
+with its roles and its user types. They are Vue 3 screens that a product's own
 single-page application builds into a second app of its own, served at its own address and talking to one backend
 only: the configuration coordinator, [configbyte](https://github.com/go-make-bytes/configbyte).
 
@@ -13,20 +15,57 @@ are called, the lines its Export card lists, and its own admin screens; these sc
 | State | When | What is shown |
 |---|---|---|
 | Signed out | the coordinator answers `401` to `GET /me` | the sign-in page: an ID card, or the provider's own sign-in page |
-| Signed in | the person holds a scope the host marks as configuring a section this deployment runs | the frame: the deployment's name, the entries, and the screen opened |
+| Signed in | the person holds a scope the host marks as configuring a section this deployment runs: a setup box, or the administrator's | the frame: the deployment's name, the entries in their groups, and the screen opened |
 | Nothing to configure | signed in, and no such scope is held | a plain sentence saying so, and signing out |
 | Not answering | `GET /me` gets no answer, or `502`, `503` or `504` | a sentence saying nothing was changed, and *Try again* |
+| Not open from here | the coordinator answers `403 err:configbyte:networkNotAllowed`, or a sign-in comes back with `?error=network` | a sentence saying the address answers only inside the networks the organisation set; no sign-in is offered |
+| Sign-in not strong enough | a sign-in comes back with `?error=assurance`, or the card's completes with `403 err:session:assuranceTooLow` | a sentence saying so, the ID card, and *Back* to the sign-in |
 
 **An entry shows when two things are true:** its screen was built into this admin app, and the coordinator found
-its section's owner when it started (`GET /sections`). Export / Import is always the first entry. What the frame
-offers is display only: every call is judged by the service it reaches.
+its section's owner when it started (`GET /sections`). What the frame offers is display only: every call is judged by
+the service it reaches.
+
+**The sidebar is grouped.** The shared screens open the first group: Export / Import, History, and People & access
+when the membership register's owner answered. A host screen sits in the group it names, or after the shared screens
+when it names none; the host's groups follow in the order their first screen arrives. A screen whose subject the
+workspace lacks can be shown locked, marked *not included*, and does not open.
+
+## The screens
+
+**History** is one list, newest first, of every change a person made to the workspace's setup, whichever way it was
+made: a screen, an import, this app. Each service keeps its own history; the screen reads the membership register's
+and each stream the host names, a page at a time, each with its own place, and keeps no copy. Pages are laid side by
+side only as far as every stream has been read, since a stream with older lines unread may still hold a line newer
+than another stream's oldest; *Show older* reads the next page of each stream that has more. The register's lines,
+and the lines every owner writes for an export and an import of its part (with the part's and the file's hash), are
+worded by the screens; the host words its own services' lines, and a line nobody words shows its kind. People are
+named from the register's list. A filter per stream the host names, one for the register, and a person filter over
+what has been read; a service that does not answer is named in a sentence above the list.
+
+**People & access** reads and writes the membership register, in three tabs:
+
+- **Users**: the people by what they hold, the ones who signed in and were given nothing yet, and one person open
+  beside the list, with their user type, their roles across the workspace, the Administrator checkbox and taking away
+  all access (after a confirm). The day each last signed in. Machines that act in the workspace are listed apart and
+  are not changed here; people who lost access show on request.
+- **Roles**: one role at a time, its boxes in the groups the host names and the rest under their service's own name,
+  each in the words the service declares. Setting the workspace up is never offered: it comes only with the
+  Administrator checkbox. A restricted field brings a box of its own, listed by the host; what ticking it hands out is
+  said before Save. Save writes the role's whole set: the boxes shown as ticked, and every box the role holds that the
+  screen does not show, except a field's box from an earlier restriction, which grants nothing any more (dropped only
+  when the restricted fields could be read).
+- **User types**: each with what it holds, from the boxes granted across the whole workspace only, and how many hold
+  it; and what someone arriving through the corporate login gets.
+
+Every act saves at once and says what it did. A refusal is worded by the act that was made and the status that came
+back, never by the register's own text.
 
 ## Using it
 
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.1.0",
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.2.0",
 "uibyte": "github:gmb-lib/uibyte#v0.8.0"
 ```
 
@@ -107,7 +146,11 @@ Every text is a **message key in the host's own translator**, so it reads in the
 | `sections` | per section name: its `title`, its `parts` in the host's order with their words, and the scopes that mark a person who may `configure` it |
 | `carries` | the Export card's lines, in order, each naming the section it describes; a line shows only when the deployment runs that section |
 | `never` | the Export card's last line: what the file never carries |
-| `entries` | the host's own admin screens: a label, the route it opens, and the section whose owner serves it |
+| `entries` | the host's own admin screens: a label, the route it opens, the section whose owner serves it, and optionally the `group` it sits in, its `icon`, and `locked` for a subject the workspace lacks |
+| `register` | the section of the membership register; People & access and its History filter show only when the coordinator found it |
+| `roles` | how the Roles screen shows boxes: its `groups` (each a word and the starts of the permission names it gathers), the restricted `fields` the host reads from their owners, and the `guard` sentence for a ticked field's box |
+| `history` | History's `filters` and `sources` (a section, the query that keeps its lines, its filter and its service's short word), and `describe`, the sentence for a line of the host's own services |
+| `words` | replacements for any of the screens' own words, per language, for the sentences better said in the host's own terms |
 | `onApplied` | called after an import that may have changed something (`applied`, `partial`, `rolledBack`), so the host re-reads what it shows |
 
 A section the host does not describe keeps the name it arrived with, and so does a part.
@@ -115,8 +158,8 @@ A section the host does not describe keeps the name it arrived with, and so does
 ### Words
 
 The screens carry their own words in **English and Latvian**, merged into the host's translator under `configbyte.*`
-when the plugin is installed. The frame switches to the language the deployment names (`presentation.locale` in
-`GET /me`) when it carries that language.
+when the plugin is installed, then the host's `words` over them. The frame switches to the language the deployment
+names (`presentation.locale` in `GET /me`) when it carries that language.
 
 ### The ID card
 
@@ -126,7 +169,7 @@ host serves that file; it is never fetched from elsewhere.
 ## What it calls
 
 Everything goes to the coordinator, same-origin, under `/api/configbyte/v1`, with its session cookie. Every
-`POST` echoes the anti-forgery token from the `configbyte_csrf` cookie in `X-CSRF-Token`.
+`POST`, `PUT` and `DELETE` echoes the anti-forgery token from the `configbyte_csrf` cookie in `X-CSRF-Token`.
 
 | Method | Path | For |
 |---|---|---|
@@ -137,6 +180,7 @@ Everything goes to the coordinator, same-origin, under `/api/configbyte/v1`, wit
 | `POST` | `/logout` | ends the session; answers where to go next |
 | `GET` | `/config/export` | the whole configuration as one file |
 | `POST` | `/config/import?dryRun=true` · `/config/import` | what a file would do, then applying exactly that |
+| any | `/sections/{section}/{path}` | relayed to that section's owner: People & access calls the register's `tenants/{id}/access`, `…/roles`, `…/user-types`, `…/corporate-login-default`, `…/administrators/{user}`, `…/chart/positions`, `users/{user}` and `config`; History calls `history` on the register and on each stream's owner |
 
 An Apply sends the file's own text with the versions its preview answered added as its last member, so what lands is
 exactly what the person read, or nothing.

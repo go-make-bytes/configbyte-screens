@@ -47,6 +47,8 @@ export async function refusalOf(resp: Response): Promise<ApiError> {
 
 async function handle<T>(resp: Response): Promise<T> {
   if (!resp.ok) throw await refusalOf(resp)
+  // An act that answers nothing has nothing to read.
+  if (resp.status === 204) return undefined as T
 
   return (await resp.json()) as T
 }
@@ -55,15 +57,39 @@ export async function get<T>(path: string): Promise<T> {
   return handle<T>(await fetch(path, { credentials: 'same-origin' }))
 }
 
+/**
+ * The address of a call to a section's owner, relayed by the coordinator under
+ * the section's name. The path is passed as given; an id in it is escaped by
+ * the caller with `segment`.
+ */
+export function relay(section: string, path: string): string {
+  return `${API_ROOT}/sections/${encodeURIComponent(section)}/${path}`
+}
+
+/** One segment of a relayed path: an id, escaped so it stays one segment. */
+export function segment(value: string): string {
+  return encodeURIComponent(value)
+}
+
+function send(method: string, body?: unknown): RequestInit {
+  return {
+    method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', [CSRF_HEADER]: csrfToken() },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  }
+}
+
 export async function post<T>(path: string, body?: unknown): Promise<T> {
-  return handle<T>(
-    await fetch(path, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', [CSRF_HEADER]: csrfToken() },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    }),
-  )
+  return handle<T>(await fetch(path, send('POST', body)))
+}
+
+export async function put<T>(path: string, body?: unknown): Promise<T> {
+  return handle<T>(await fetch(path, send('PUT', body)))
+}
+
+export async function del<T>(path: string): Promise<T> {
+  return handle<T>(await fetch(path, send('DELETE')))
 }
 
 /**

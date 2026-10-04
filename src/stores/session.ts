@@ -40,6 +40,27 @@ interface Logout {
 }
 
 /**
+ * Why the admin app is closed to this person before anyone is signed in: the
+ * request came from outside the networks the deployment allows, or the sign-in
+ * was weaker than the deployment asks for.
+ */
+export type Closed = '' | 'network' | 'assurance'
+
+/** The coordinator's code for a request from outside the allowed networks. */
+const NETWORK_NOT_ALLOWED = 'err:configbyte:networkNotAllowed'
+/** The coordinator's code for a sign-in below the deployment's minimum. */
+const ASSURANCE_TOO_LOW = 'err:session:assuranceTooLow'
+
+/** The closed state a refusal names, if it names one. */
+function closedBy(e: unknown): Closed {
+  if (!(e instanceof ApiError) || e.status !== 403) return ''
+  if (e.code === NETWORK_NOT_ALLOWED) return 'network'
+  if (e.code === ASSURANCE_TOO_LOW) return 'assurance'
+
+  return ''
+}
+
+/**
  * Whether a failure means the coordinator itself did not answer: the request never
  * arrived, or the web server in front of it answered for it. Anything else is the
  * coordinator speaking, and is read as what it says.
@@ -59,6 +80,8 @@ export const useAdminSession = defineStore('configbyte-session', {
     resolved: false,
     /** The coordinator did not answer at all. */
     unreachable: false,
+    /** Why the app is closed to this person, if it is. */
+    closed: '' as Closed,
   }),
   getters: {
     /** Whether the person holds any of the scopes, under any section. */
@@ -83,7 +106,9 @@ export const useAdminSession = defineStore('configbyte-session', {
       } catch (e) {
         this.me = null
         this.order = []
-        if (unanswered(e)) this.unreachable = true
+        const closed = closedBy(e)
+        if (closed) this.closed = closed
+        else if (unanswered(e)) this.unreachable = true
         else if (!(e instanceof ApiError) || e.status !== 401) throw e
       } finally {
         this.resolved = true
@@ -107,8 +132,32 @@ export const useAdminSession = defineStore('configbyte-session', {
       const challenge = await post<CardChallenge>(`${API_ROOT}/login/webeid/start`)
       const authToken = await signChallenge(challenge.nonce, lang)
 
-      await post(`${API_ROOT}/login/webeid/complete`, { state: challenge.state, authToken })
+      try {
+        await post(`${API_ROOT}/login/webeid/complete`, { state: challenge.state, authToken })
+      } catch (e) {
+        // Turned away for its strength or its network: no session was made, and
+        // the page that says why replaces the sign-in.
+        const closed = closedBy(e)
+        if (!closed) throw e
+        this.closed = closed
+
+        return
+      }
       await this.resolve()
+    },
+
+    /**
+     * Read the marker a sign-in that was turned away came back with: the browser
+     * navigated to the authority and back, so the reason arrives on the address.
+     */
+    readMarker(marker: string) {
+      if (marker === 'network' || marker === 'assurance') this.closed = marker
+    },
+
+    /** Leave the closed page for the sign-in, dropping the marker that brought it. */
+    reopen() {
+      this.closed = ''
+      window.history.replaceState(window.history.state, '', window.location.pathname)
     },
 
     async logout() {

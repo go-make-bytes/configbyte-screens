@@ -52,7 +52,22 @@
         "menu": "Menu",
         "close": "Close",
         "primaryNav": "Main navigation",
-        "workspace": "Workspace"
+        "workspace": "Workspace",
+        "locked": "not available"
+      },
+      "history": "History",
+      "peopleAccess": "People & access",
+      "notIncluded": "not included",
+      "closed": {
+        "back": "Back",
+        "network": {
+          "title": "The admin app is not open from here",
+          "lead": "This address answers only inside the networks your organisation set for it. Your everyday work is in {product} at its usual address."
+        },
+        "assurance": {
+          "title": "This sign-in is not strong enough here",
+          "lead": "The admin app asks for a stronger sign-in than the one you used. Sign in with an ID card, or with a sign-in your organisation counts as strong."
+        }
       }
     },
     "transfer": {
@@ -172,6 +187,218 @@
         "rolledBack": "written, then restored to what it held before this import",
         "notRestored": "holds this document's section — the restore after the failure did not succeed",
         "skipped": "not applied here — no service in this workspace owns it"
+      }
+    },
+    "people": {
+      "title": "People & access",
+      "lead": "Who is in this workspace, and what each person holds across it.",
+      "loading": "Reading who is in the workspace…",
+      "failed": "The people of this workspace could not be read: {reason}",
+      "tabs": {
+        "users": "Users",
+        "roles": "Roles",
+        "types": "User types"
+      },
+      "users": {
+        "arrivals": {
+          "heading": "Signed in, given nothing yet ({n})",
+          "lead": "They can sign in and see nothing until you give them a role or a user type that holds something."
+        },
+        "views": {
+          "people": "People",
+          "access": "By access"
+        },
+        "showGone": "Show people who lost access",
+        "columns": {
+          "name": "Name",
+          "userType": "User type",
+          "roles": "Roles across the workspace",
+          "administrator": "Administrator",
+          "last": "Last signed in"
+        },
+        "marks": {
+          "invited": "has not signed in yet",
+          "revoked": "no access any more"
+        },
+        "state": {
+          "arrival": "signed in, given nothing yet",
+          "active": "signed in"
+        },
+        "last": {
+          "today": "today",
+          "yesterday": "yesterday",
+          "days": "{n} day ago | {n} days ago"
+        },
+        "machines": "Services acting in this workspace ({n}): {names}. They act as themselves and are set up by whoever runs the deployment.",
+        "access": {
+          "role": "role · {n}",
+          "type": "user type · {n}",
+          "typeHoldsNothing": "holds nothing"
+        },
+        "panel": {
+          "last": "last signed in {when}",
+          "gone": "Their history stays. Giving access back is a new invitation.",
+          "userType": "User type",
+          "userTypeNote": "Every person has one. It holds workspace-wide boxes only.",
+          "chartType": "Their position in the chart of authority gives «{type}», which is the one in force while they sit there.",
+          "roles": "Roles across the workspace",
+          "none": "None.",
+          "give": "Give a role…",
+          "take": "Take «{role}» away",
+          "rolesNote": "A role given here holds across the whole workspace.",
+          "administratorNote": "Holds every box of everything this workspace has, without a role, and sets up the workspace. Only an administrator makes an administrator.",
+          "takeAll": "Take away all access",
+          "takeAllLead": "{name} can no longer sign in to this workspace, and loses every role here. What they did stays in the history.",
+          "takeAllDo": "Take it away",
+          "cancel": "Cancel"
+        }
+      },
+      "roles": {
+        "new": "+ New role",
+        "name": "Role name",
+        "shipped": "Shipped with every workspace; its ticks can be changed.",
+        "made": "Made in this workspace.",
+        "administrators": "Administrators hold every box, these included, without a role. They are set in People & access › Users.",
+        "noSetup": "Setting up the workspace is never a role's: it comes only with the Administrator checkbox.",
+        "noVocabulary": "The boxes the services declare could not be read, so a role's boxes cannot be changed here just now.",
+        "fieldsUnread": "The restricted fields could not be read: their boxes are not shown, and saving keeps them as they are.",
+        "ticked": "{n} of {of} ticked",
+        "retired": "no longer given",
+        "fieldBox": "See «{field}»",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete this role"
+      },
+      "types": {
+        "lead": "The one thing every person holds, named after the job. A user type carries workspace-wide boxes only.",
+        "columns": {
+          "type": "User type",
+          "holds": "What it holds",
+          "people": "People",
+          "acts": "Acts"
+        },
+        "marks": {
+          "default": "new people get this",
+          "corporate": "the corporate login gives this"
+        },
+        "nothing": "nothing",
+        "edit": "Edit",
+        "delete": "Delete",
+        "corporate": {
+          "label": "People who arrive through your corporate login get:",
+          "default": "{type} (what new people get)",
+          "note": "Applied once, at their first sign-in. Changing it later changes nobody who is already here."
+        },
+        "form": {
+          "add": "Add a user type",
+          "edit": "Edit «{type}»",
+          "name": "Name",
+          "for": "What it is for",
+          "holds": "What it holds",
+          "save": "Save",
+          "cancel": "Cancel"
+        }
+      },
+      "said": {
+        "userType": "{name}'s user type is now «{type}».",
+        "roleGiven": "{name} now holds «{role}».",
+        "roleTaken": "«{role}» was taken from {name}.",
+        "administrator": "{name} is now an administrator.",
+        "administratorOff": "{name} is no longer an administrator.",
+        "takenAll": "{name} has no access any more.",
+        "roleSaved": "The role was saved.",
+        "roleDeleted": "The role was deleted.",
+        "typeSaved": "The user type was saved.",
+        "typeDeleted": "The user type was deleted.",
+        "corporateLogin": "Saved: people arriving through the corporate login get this from now on."
+      },
+      "refused": {
+        "lastAdministrator": "{name} is this workspace's last administrator. Make someone else an administrator first.",
+        "notAdministrator": "You are no longer an administrator of this workspace, so nothing was changed. Sign in again to see what is yours.",
+        "roleHeld": "«{role}» is held by {n} person. Take it from them first. | «{role}» is held by {n} people. Take it from them first.",
+        "rolePlaced": "«{role}» is still placed by a service on things it keeps. Move those places to another role first.",
+        "roleNameTaken": "Another role is already called «{name}».",
+        "typeHeld": "«{type}» is held by {n} person. Give them another user type first. | «{type}» is held by {n} people. Give them another user type first.",
+        "typeIsDefault": "New people get «{type}». Choose another first.",
+        "typeIsCorporate": "People arriving through your corporate login get «{type}». Choose another first.",
+        "typeInChart": "A position in the chart of authority gives «{type}». Change that position first.",
+        "typeNameTaken": "Another user type is already called «{name}».",
+        "setupBox": "That box sets up the workspace, and only the Administrator checkbox holds it.",
+        "unanswered": "The admin service did not answer, so nothing was changed. Try again.",
+        "other": "That was not done: {reason}"
+      }
+    },
+    "history": {
+      "title": "History",
+      "lead": "Every change a person made to this workspace's setup, whichever way it was made.",
+      "filters": {
+        "people": "People & access",
+        "who": "Who",
+        "everyone": "Everyone"
+      },
+      "chips": {
+        "people": "people"
+      },
+      "loading": "Reading the history…",
+      "empty": "Nothing has changed yet.",
+      "emptyFiltered": "No change matches these filters.",
+      "showing": "Showing the newest {n}.",
+      "older": "Show older",
+      "notAnswering": "{service} is not answering, so its changes are missing from this list.",
+      "unread": "{service}'s changes could not be read ({reason}), so they are missing from this list.",
+      "lines": {
+        "exported": "exported the configuration",
+        "imported": "imported a configuration file: {changed} changed, {unchanged} unchanged",
+        "importedNothing": "imported a configuration file: nothing changed",
+        "part": "this part {part}",
+        "fileAndPart": "file {file} · this part {part}",
+        "tenantCreated": "opened the workspace «{name}»",
+        "tenantRenamed": "renamed the workspace «{from}» to «{to}»",
+        "userInvited": "invited {person}",
+        "claimAttached": "accepted the invitation",
+        "directoryAdmitted": "joined through the corporate login",
+        "userRevoked": "took all access from {person}",
+        "administratorOn": "made {person} an administrator",
+        "administratorOff": "made {person} no longer an administrator",
+        "serviceRoleGranted": "gave {person} {role} in {service}",
+        "serviceRoleRevoked": "took {role} in {service} from {person}",
+        "administratorByOperator": "was made an administrator by whoever runs the deployment",
+        "administratorOffByOperator": "stopped being an administrator, by whoever runs the deployment",
+        "administratorSeeded": "was made the workspace's first administrator",
+        "roleDefined": "added the role «{role}»",
+        "roleSeeded": "set up the role «{role}» the workspace starts with",
+        "roleRenamed": "renamed the role «{from}» to «{to}»",
+        "roleDescribed": "changed what the role «{role}» is for",
+        "roleDeleted": "deleted the role «{role}»",
+        "roleGranted": "gave {person} the role «{role}»",
+        "roleRevoked": "took «{role}» from {person}",
+        "roleTicksAdded": "changed the ticks of «{role}»: added {added}",
+        "roleTicksRemoved": "changed the ticks of «{role}»: took away {removed}",
+        "roleTicksBoth": "changed the ticks of «{role}»: added {added}; took away {removed}",
+        "typeDefined": "added the user type «{type}»",
+        "typeChanged": "changed the user type «{type}»",
+        "typeDeleted": "deleted the user type «{type}»",
+        "typeDeletedUnnamed": "deleted a user type",
+        "typeAssigned": "set {person}'s user type to «{type}»",
+        "typeByDefault": "was given the user type «{type}», as everyone new is",
+        "typeByCorporateLogin": "was given the user type «{type}» by the corporate login",
+        "typeIsDefault": "made «{type}» the user type new people get",
+        "corporateLoginSet": "made the corporate login give «{type}»",
+        "corporateLoginCleared": "made the corporate login give what new people get",
+        "positionAdded": "added the position «{position}» to the chart",
+        "positionRenamed": "renamed the position «{from}» to «{position}»",
+        "positionMoved": "moved the position «{position}»",
+        "positionRemoved": "removed the position «{position}»",
+        "positionRemovedUnnamed": "removed a position from the chart",
+        "positionSees": "changed what the position «{position}» sees",
+        "positionGivesType": "made the position «{position}» give the user type «{type}»",
+        "positionGivesNoType": "made the position «{position}» give no user type",
+        "personPlaced": "placed {person} in «{position}»",
+        "personUnplaced": "took {person} out of «{position}»",
+        "directoryAttached": "attached the corporate login {issuer}",
+        "directoryDetached": "detached the corporate login {issuer}",
+        "entitled": "gave the workspace «{what}»",
+        "entitlementRevoked": "took «{what}» away from the workspace"
       }
     }
   }
