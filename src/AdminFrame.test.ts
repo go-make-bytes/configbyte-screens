@@ -22,11 +22,11 @@ interface Call {
 }
 
 const hostWords = {
-  en: { host: { product: 'acme', never: 'Not in it, ever: orders.', orders: 'Order register', rota: 'Staff rotas', shelves: 'Shelves', carries: { kinds: 'Order kinds' } } },
-  lv: { host: { product: 'acme', never: 'Tajā nekad nav pasūtījumu.', orders: 'Pasūtījumu reģistrs', rota: 'Maiņas', shelves: 'Plaukti', carries: { kinds: 'Pasūtījumu veidi' } } },
+  en: { host: { product: 'acme', never: 'Not in it, ever: orders.', orders: 'Order register', rota: 'Staff rotas', shelves: 'Shelves', org: 'Org chart', storage: 'Storage', carries: { kinds: 'Order kinds' } } },
+  lv: { host: { product: 'acme', never: 'Tajā nekad nav pasūtījumu.', orders: 'Pasūtījumu reģistrs', rota: 'Maiņas', shelves: 'Plaukti', org: 'Shēma', storage: 'Glabāšana', carries: { kinds: 'Pasūtījumu veidi' } } },
 }
 
-const options: AdminOptions = {
+const baseOptions: AdminOptions = {
   product: 'host.product',
   never: 'host.never',
   sections: {
@@ -39,6 +39,7 @@ const options: AdminOptions = {
     { key: 'shelves', label: 'host.shelves', route: 'shelves', section: 'stock' },
   ],
 }
+let options: AdminOptions = baseOptions
 
 const me = (sections: Record<string, string[]>, locale = 'en') => ({
   subject: 'sub:01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -115,6 +116,7 @@ const sidebar = (wrapper: ReturnType<typeof mount>) => [...new Set(wrapper.findA
 beforeEach(() => {
   document.cookie = 'configbyte_csrf=tok-1'
   window.history.replaceState({}, '', '/')
+  options = baseOptions
 })
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -184,7 +186,65 @@ describe('the admin app, signed in', () => {
       '/api/configbyte/v1/sections': { status: 200, body: sectionsOf('orders') },
     })
     const { wrapper } = await render()
-    expect(sidebar(wrapper)).toEqual(['Export / Import', 'Staff rotas'])
+    expect(sidebar(wrapper)).toEqual(['Export / Import', 'History', 'Staff rotas'])
+  })
+
+  // The shared screens open the first group; a host screen naming a group of its own
+  // gets that group, in the order its first entry arrives.
+  it('draws the sidebar in groups, People & access only where the membership register answered', async () => {
+    options = {
+      ...baseOptions,
+      register: 'members',
+      sections: { ...baseOptions.sections, members: { configures: ['membership:admin'] } },
+      entries: [
+        { key: 'org', label: 'host.org', route: 'rota', section: 'members' },
+        { key: 'rota', label: 'host.rota', route: 'rota', section: 'orders', group: 'host.orders' },
+        { key: 'shelves', label: 'host.shelves', route: 'shelves', section: 'stock', group: 'host.storage' },
+      ],
+    }
+    stubCoordinator({
+      '/api/configbyte/v1/me': { status: 200, body: me({ orders: [], stock: [], members: ['membership:admin'] }) },
+      '/api/configbyte/v1/sections': { status: 200, body: sectionsOf('orders', 'stock', 'members') },
+    })
+    const { wrapper } = await render()
+    // Holding the administrator's box alone opens the frame.
+    expect(wrapper.find('[data-state="nothing"]').exists()).toBe(false)
+    expect(sidebar(wrapper)).toEqual(['Export / Import', 'History', 'People & access', 'Org chart', 'Staff rotas', 'Shelves'])
+    const text = wrapper.text()
+    expect(text.indexOf('Workspace')).toBeLessThan(text.indexOf('Order register'))
+    expect(text.indexOf('Order register')).toBeLessThan(text.indexOf('Storage'))
+  })
+
+  it('leaves People & access out when the coordinator did not find the register', async () => {
+    options = { ...baseOptions, register: 'members' }
+    stubCoordinator({
+      '/api/configbyte/v1/me': { status: 200, body: me({ orders: ['orders/setup:import'] }) },
+      '/api/configbyte/v1/sections': { status: 200, body: sectionsOf('orders') },
+    })
+    const { wrapper } = await render()
+    expect(sidebar(wrapper)).not.toContain('People & access')
+  })
+
+  it('shows an entry the workspace lacks as not included, and does not let it open', async () => {
+    options = { ...baseOptions, entries: [{ key: 'rota', label: 'host.rota', route: 'rota', section: 'orders', locked: () => true }] }
+    stubCoordinator({
+      '/api/configbyte/v1/me': { status: 200, body: me({ orders: ['orders/setup:import'] }) },
+      '/api/configbyte/v1/sections': { status: 200, body: sectionsOf('orders') },
+    })
+    const { wrapper } = await render()
+    expect(wrapper.text()).toContain('not included')
+    expect(wrapper.findAll('a').filter((a) => a.attributes('href') === '/rota')).toEqual([])
+  })
+
+  it('says a sentence in the words the host gives in its place', async () => {
+    options = { ...baseOptions, words: { en: { frame: { nothing: { title: 'Nothing to set up for you' } } } } }
+    stubCoordinator({
+      '/api/configbyte/v1/me': { status: 200, body: me({ orders: ['orders:read'] }) },
+      '/api/configbyte/v1/sections': { status: 200, body: sectionsOf('orders') },
+    })
+    const { wrapper } = await render()
+    expect(wrapper.text()).toContain('Nothing to set up for you')
+    expect(wrapper.text()).not.toContain('Nothing here for you to configure')
   })
 
   it('tells a colleague who configures nothing here so, rather than showing an empty app', async () => {
@@ -263,5 +323,51 @@ describe('the admin app, when the coordinator is not answering', () => {
     stubCoordinator({ '/api/configbyte/v1/me': { status: 401, body: {} } })
     const { wrapper } = await render()
     expect(wrapper.find('[data-state="unreachable"]').exists()).toBe(false)
+  })
+})
+
+describe('the admin app, closed to this person', () => {
+  it('says the app is not open from here when the request comes from outside the allowed networks, and offers no sign-in', async () => {
+    stubCoordinator({ '/api/configbyte/v1/me': { status: 403, body: { code: 'err:configbyte:networkNotAllowed' } } })
+    const { wrapper } = await render()
+    expect(wrapper.find('[data-closed="network"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('The admin app is not open from here')
+    expect(wrapper.text()).toContain('Your everyday work is in acme at its usual address.')
+    expect(wrapper.findAll('button')).toEqual([])
+    expect(calls.map((c) => c.url)).toEqual(['/api/configbyte/v1/me'])
+  })
+
+  it('says the same when a sign-in comes back marked as from outside the networks', async () => {
+    window.history.replaceState({}, '', '/?error=network')
+    stubCoordinator({ '/api/configbyte/v1/me': { status: 401, body: {} } })
+    const { wrapper } = await render()
+    expect(wrapper.find('[data-closed="network"]').exists()).toBe(true)
+  })
+
+  it('says a sign-in was not strong enough, offers the card, and goes back to the sign-in without the marker', async () => {
+    window.history.replaceState({}, '', '/?error=assurance')
+    stubCoordinator({ '/api/configbyte/v1/me': { status: 401, body: {} } })
+    const { wrapper } = await render()
+    expect(wrapper.text()).toContain('This sign-in is not strong enough here')
+    expect(wrapper.findAll('button').map((b) => b.text())).toEqual(['Sign in with an ID card', 'Back'])
+    await wrapper.findAll('button').find((b) => b.text() === 'Back')!.trigger('click')
+    await settle(wrapper)
+    expect(wrapper.text()).toContain('Configure your workspace')
+    expect(window.location.search).toBe('')
+  })
+
+  it('turns to the same page when the card lane refuses the sign-in for its strength', async () => {
+    Object.assign(window, { webeid: { authenticate: vi.fn(async () => ({ signature: 'sig' })) } })
+    stubCoordinator({
+      '/api/configbyte/v1/me': { status: 401, body: {} },
+      '/api/configbyte/v1/login/webeid/start': { status: 200, body: { nonce: 'n-1', state: 's-1' } },
+      '/api/configbyte/v1/login/webeid/complete': { status: 403, body: { code: 'err:session:assuranceTooLow' } },
+    })
+    const { wrapper } = await render()
+    await wrapper.findAll('button').find((b) => b.text() === 'Sign in with an ID card')!.trigger('click')
+    await settle(wrapper)
+    expect(wrapper.find('[data-closed="assurance"]').exists()).toBe(true)
+    expect(calls.filter((c) => c.url.endsWith('/me'))).toHaveLength(1)
+    delete (window as { webeid?: unknown }).webeid
   })
 })

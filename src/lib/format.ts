@@ -24,3 +24,18 @@ export function fileSize(bytes: number): string {
 
   return `${Math.round(bytes / 100_000) / 10} MB`
 }
+
+/**
+ * How many days ago a day was, against today on the viewer's own clock: 0 for
+ * today, 1 for yesterday. Both are calendar days, so the hour never matters. A
+ * day that cannot be read answers null.
+ */
+export function daysAgo(day: string, now: Date = new Date()): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day)
+  if (!m) return null
+  const then = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const today = localDay(now.toISOString()).split('-').map(Number)
+  const nowDay = Date.UTC(today[0]!, today[1]! - 1, today[2]!)
+
+  return Math.round((nowDay - then) / 86_400_000)
+}
