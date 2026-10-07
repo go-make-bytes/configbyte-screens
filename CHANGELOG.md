@@ -3,6 +3,14 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.3.0
+
+### Changed
+
+- **Built on `uibyte` `v0.9.0`** (was `v0.8.0`). A host pins the same `uibyte` tag as these screens, so one copy is
+  installed: move both pins together, then read the result back with `npm ls uibyte`. The new kit adds a sixth status
+  role, `closed`, and no longer means *done* by `ontrack`; nothing these screens draw changes look.
+
 ## v0.2.0
 
 The admin app gains History and People & access, its sidebar is grouped, and it says plainly when it is closed to
