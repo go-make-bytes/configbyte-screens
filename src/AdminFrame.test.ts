@@ -11,6 +11,7 @@ import AdminFrame from './AdminFrame.vue'
 import type { AdminOptions } from './options'
 import { configbyteScreens } from './plugin'
 import { adminRoutes } from './routes'
+import { useAdminSession } from './stores/session'
 
 type Reply = { status: number; body: unknown; headers?: Record<string, string> } | 'unanswered'
 
@@ -463,6 +464,133 @@ describe('the admin app, signed in', () => {
   })
 })
 
+// A sign-in that ends while someone works is one page saying so, never a failure on every screen that was
+// reading; any other failure stays where it happened.
+describe('the admin app, when the sign-in ends', () => {
+  const history = `${API}/sections/members/history`
+  const ended = 'Your sign-in has ended. Sign in again.'
+  const cardLane = {
+    [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } } as Reply,
+    [`${API}/login/webeid/complete`]: { status: 200, body: {} } as Reply,
+  }
+
+  /** An administrator of a deployment with the membership register, whose History reads its lines. */
+  function signedIn(answers: Record<string, Reply | Reply[]> = {}) {
+    options = { ...baseOptions, register: 'members' }
+    stubCoordinator({
+      [`${API}/me`]: { status: 200, body: me({ orders: ['orders/setup:import'], members: ['membership:admin'] }) },
+      [`${API}/sections`]: { status: 200, body: sectionsOf('orders', 'members') },
+      ...answers,
+    })
+  }
+
+  async function open(path: string) {
+    const rendered = await render()
+    await rendered.router.push(path)
+    await settle(rendered.wrapper)
+
+    return rendered
+  }
+
+  it('turns the whole screen into the sign-in page, saying so once, when a screen reads "not signed in"', async () => {
+    signedIn({ [history]: notSignedIn })
+    const { wrapper } = await open('/history')
+
+    expect(wrapper.get('h1').text()).toBe('Sign in to the admin app')
+    expect(wrapper.findAll('[role="status"]').map((s) => s.text())).toEqual([ended])
+    expect(wayButtons(wrapper)).toEqual(['eID', 'Microsoft Entra'])
+    expect(sidebar(wrapper)).toEqual([])
+    expect(wrapper.text()).not.toContain('Anna Example')
+  })
+
+  it('says the same when the configuration download reads "not signed in"', async () => {
+    signedIn({ [`${API}/config/export`]: notSignedIn })
+    const { wrapper } = await render()
+
+    await clickButton(wrapper, 'Download configuration')
+
+    expect(wrapper.get('[role="status"]').text()).toBe(ended)
+    expect(wrapper.text()).not.toContain('could not be downloaded')
+  })
+
+  it('says it in Latvian where this browser chose Latvian', async () => {
+    window.localStorage.setItem('sign-in.language', 'lv')
+    signedIn({ [history]: notSignedIn })
+    const { wrapper } = await open('/history')
+
+    expect(wrapper.get('[role="status"]').text()).toBe('Jūsu pieslēgšanās ir beigusies. Pieslēdzieties vēlreiz.')
+  })
+
+  it.each([
+    ['refused as not allowed', { status: 403, body: { code: 'err:request:forbidden' } } as Reply, 'could not be read (err:request:forbidden)'],
+    ['failing', { status: 500, body: {} } as Reply, 'could not be read'],
+    ['not answered', 'unanswered' as Reply, 'is not answering'],
+  ])('keeps a read %s on its own screen, inside the frame', async (_case, reply, said) => {
+    signedIn({ [history]: reply })
+    const { wrapper } = await open('/history')
+
+    expect(wrapper.text()).toContain(said)
+    expect(wrapper.text()).toContain('Anna Example')
+    expect(wrapper.find('[data-page="sign-in"]').exists()).toBe(false)
+  })
+
+  // The host's own screens make their own calls, and end the same session when one is answered that way.
+  it("ends the same way when the host's own read says so", async () => {
+    signedIn()
+    const { wrapper } = await render()
+
+    useAdminSession().signInEnded()
+    await settle(wrapper)
+
+    expect(wrapper.get('[role="status"]').text()).toBe(ended)
+  })
+
+  it('says nothing of an ended sign-in to someone who was not signed in', async () => {
+    stubCoordinator({ [`${API}/me`]: notSignedIn })
+    const { wrapper } = await render()
+
+    expect(wrapper.get('h1').text()).toBe('Sign in to the admin app')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+  })
+
+  // Someone signed in works on without the ways; the page that follows cannot.
+  it('reads the ways again for the page when they had not arrived', async () => {
+    signedIn({ [`${API}/login/ways`]: [{ status: 500, body: {} }, ways()], [history]: notSignedIn })
+    const { wrapper } = await open('/history')
+
+    expect(wayButtons(wrapper)).toEqual(['eID', 'Microsoft Entra'])
+    expect(wrapper.get('[role="status"]').text()).toBe(ended)
+    expect(wrapper.find('[data-state="unreachable"]').exists()).toBe(false)
+  })
+
+  // The address never changed, so a sign-in on the page comes back to the screen that was open.
+  it('signs in again with the card and comes back to the screen it left', async () => {
+    signedIn({ [history]: [notSignedIn, { status: 200, body: { events: [] } }], ...cardLane })
+    const { wrapper, router } = await open('/history')
+
+    await click(wrapper, '[data-way="webEid"]')
+
+    expect(wrapper.text()).toContain('Anna Example')
+    expect(router.currentRoute.value.name).toBe('configbyte-history')
+    expect(wrapper.text()).not.toContain('could not be read')
+  })
+
+  // The session it was about is gone; saying it failed after the next sign-in would be false.
+  it('drops a sign-out that did not complete, once the sign-in has ended', async () => {
+    signedIn({ [`${API}/logout`]: { status: 500, body: {} }, [history]: [notSignedIn, { status: 200, body: { events: [] } }], ...cardLane })
+    const { wrapper, router } = await render()
+    await clickButton(wrapper, 'Sign out')
+    expect(wrapper.text()).toContain('Signing out did not complete. Try again.')
+
+    await router.push('/history')
+    await settle(wrapper)
+    await click(wrapper, '[data-way="webEid"]')
+
+    expect(wrapper.text()).toContain('Anna Example')
+    expect(wrapper.text()).not.toContain('Signing out did not complete. Try again.')
+  })
+})
+
 describe('the admin app, when the coordinator is not answering', () => {
   it.each([
     ['the request never arrives', 'unanswered' as Reply],
@@ -495,6 +623,21 @@ describe('the admin app, when the coordinator is not answering', () => {
     await clickButton(wrapper, 'Try again')
     expect(wayButtons(wrapper)).toEqual(['eID', 'Microsoft Entra'])
     expect(wrapper.text()).not.toContain('No way to sign in is set up here')
+  })
+
+  // The ways matter only to someone signing in; someone signed in loses only the way's name beside their own.
+  it('lets someone signed in work on when only the ways did not arrive', async () => {
+    stubCoordinator({
+      [`${API}/me`]: { status: 200, body: me({ orders: ['orders/setup:import'] }) },
+      [`${API}/sections`]: { status: 200, body: sectionsOf('orders') },
+      [`${API}/login/ways`]: { status: 500, body: {} },
+    })
+    const { wrapper } = await render()
+
+    expect(wrapper.find('[data-state="unreachable"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Your whole configuration as one file')
+    expect(wrapper.text()).toContain('Anna Example')
+    expect(wrapper.text()).not.toContain('signed in with')
   })
 
   it('reads a refusal from the coordinator as the coordinator speaking, not as silence', async () => {

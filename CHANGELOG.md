@@ -3,6 +3,26 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.4.0
+
+A sign-in that ends while someone works is one page, in place of a failure on every screen that was reading.
+
+### Added
+
+- **When a read is answered `401` while someone is signed in, the whole frame becomes the sign-in page**, saying
+  *Your sign-in has ended. Sign in again.*, once, however many reads were out. Every read of these screens counts,
+  the configuration download included. A `403` and every other failure stay where they happened; a change answered
+  `401` is said in its own form, where what was typed still is. Signing in again with the card comes back to the
+  screen that was open.
+- **`useAdminSession().signInEnded()`**, for a host whose own screens make their own calls: call it when one of their
+  reads is answered `401`, and the same page follows. It does nothing while nobody is signed in.
+
+### Fixed
+
+- **Someone signed in is no longer told *The admin app is not answering* when only the ways to sign in could not be
+  read.** They work on, missing only the way's name beside their own; to someone not signed in it is still said, since
+  without the ways there is no way in.
+
 ## v0.3.0
 
 One sign-in page for every app of a deployment: the ways it offers, by their own names, in the person's language.

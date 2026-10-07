@@ -23,7 +23,8 @@ are called, the lines its Export card lists, and its own admin screens; these sc
 | Nothing to configure | signed in, and no such scope is held | a plain sentence saying so, a link to everyday work, and signing out |
 | Signed out, just now | after *Sign out*, back on the sign-in page | that the person is signed out of this app, and that a company sign-in stays signed in on the computer |
 | Sign-out failed | `POST /logout` gets no answer or a refusal | a sentence saying so; the person stays signed in |
-| Not answering | `GET /me` or `GET /login/ways` gets no answer, `502`, `503` or `504`, or any failure from `GET /me` other than not being signed in | a sentence saying nothing was changed, and *Try again*, which asks both again |
+| Sign-in ended | signed in, and a read is answered `401` (a screen's, the download, or the host's own, which tells the session) | the sign-in page in place of the whole frame, saying *Your sign-in has ended. Sign in again.*, once, however many reads were out; signing in with the card comes back to the screen that was open |
+| Not answering | `GET /me` gets no answer, `502`, `503` or `504`, or any failure other than not being signed in; or nobody is signed in and `GET /login/ways` fails the same way | a sentence saying nothing was changed, and *Try again*, which asks both again. Someone signed in works on without the ways, missing only the way's name beside their own |
 | Not open from here | the coordinator answers `403 err:configbyte:networkNotAllowed`, or a sign-in comes back with `?error=network` | in the sign-in page's place: a sentence saying the address answers only inside the networks the organisation set, the language menu, no sign-in, and a link to everyday work when the refusal carries its address (`Link: <…>; rel="related"`) |
 | Sign-in not strong enough | a sign-in comes back with `?error=assurance`, or the card's completes with `403 err:session:assuranceTooLow` | in the sign-in page's place: a sentence saying so, every way the deployment offers, and *Back* to the sign-in |
 
@@ -75,7 +76,7 @@ back, never by the register's own text.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.3.0",
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.4.0",
 "uibyte": "github:gmb-lib/uibyte#v0.9.0"
 ```
 
@@ -147,6 +148,11 @@ import { AdminFrame } from 'configbyte-screens'
   </AdminFrame>
 </template>
 ```
+
+**A host's own screens** that make their own calls (rather than through these screens) end the same session when one of
+their reads is answered `401`: `useAdminSession().signInEnded()`. It does nothing while nobody is signed in. Only a
+read: a change refused that way is said in its own form, where what was typed still is. A `403` and every other failure
+stay where they happened.
 
 ### What the host hands over
 
