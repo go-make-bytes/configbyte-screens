@@ -3,6 +3,45 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.3.0
+
+One sign-in page for every app of a deployment: the ways it offers, by their own names, in the person's language.
+
+### Added
+
+- **`SignInPage`, exported**, so the host's everyday app signs in on the same page as the admin app. It draws and
+  calls nothing: the host gives its name, heading, lead, the ways and the languages, and runs the way chosen. With it
+  come the helpers that read a `?error=` marker, settle the language before sign-in and carry the signed-out
+  sentence across a sign-out, and the ID card's.
+- **The ways to sign in come from the deployment** (`GET /login/ways`, which the coordinator must answer): one button
+  per way, each carrying the way's own name exactly, in the deployment's order, and a sentence saying what each
+  does. A deployment that offers none is told so.
+- **A language menu before sign-in.** The page speaks the language chosen on it in this browser, else the browser's
+  own, else the deployment's; a choice is kept in this browser.
+- **A link to everyday work**, where the deployment names its address: on the sign-in page, on *Nothing here for
+  you to configure*, and on the page for an address outside the allowed networks, which takes it from the refusal
+  itself (`Link: <…>; rel="related"`) since nothing else answers from there. Only a web address is ever linked.
+- **Not a member, said**: a person the sign-in authority knows but who is not a member of the workspace is told to
+  ask its administrator for an invitation, whether they came back from the authority or used the card.
+- **Signing out says what it did**, including that a company sign-in stays signed in on the computer; a sign-out that
+  does not complete is said, and the person stays signed in.
+- **The line for an ended sign-in**, *Your sign-in has ended. Sign in again.*, ready for the host to show.
+
+### Changed
+
+- **The sign-in page's heading is *Sign in to the admin app***, and the two pages that close the app (outside the
+  allowed networks, a sign-in not strong enough) are drawn in its place, with the language menu. The second offers
+  every way the deployment has, not the ID card alone, and *Back*.
+- **Who signed in is said with the way's own name** (*signed in with eID*), never the method's code.
+- **A failure to say who is signed in is *not answering***, never the sign-in page as if nobody were; *Try again*
+  asks for the ways again too. The title is now *The admin app is not answering*.
+- **A browser that cannot load the card library** is told the card software is not there, rather than that the
+  admin app is not answering.
+- Latvian in one voice: formal throughout, *pieslēgšanās* for signing in.
+- **Built on `uibyte` `v0.9.0`** (was `v0.8.0`). A host pins the same `uibyte` tag as these screens, so one copy is
+  installed: move both pins together, then read the result back with `npm ls uibyte`. The new kit adds a sixth status
+  role, `closed`, and no longer means *done* by `ontrack`; nothing these screens draw changes look.
+
 ## v0.2.0
 
 The admin app gains History and People & access, its sidebar is grouped, and it says plainly when it is closed to

@@ -1,125 +1,171 @@
 <script setup lang="ts">
-// Shown when nobody is signed in to the admin app. These screens never handle a
-// credential: each method asks the coordinator to begin, and what comes back is a
-// cookie of its own, separate from the everyday app's session.
+// The one sign-in page, for every app of a deployment.
 //
-// Two methods, and they work differently on purpose. The redirect hands the
-// browser to the authority and comes back to a registered address. The ID card
-// never leaves this page: the card signs a challenge here, through the person's
-// own card software.
-import { computed, ref } from 'vue'
+// It draws and asks; it never calls a service. The host passes what is its own —
+// its name, the page's heading and lead, a link to the everyday app, the
+// languages it carries — and the ways the deployment offers, read from its edge.
+// The page draws one button per way, by the way's exact name, in the order given:
+// which ways there are, and what each is called, is configuration, so no name is
+// written here.
+//
+// Everything a person can meet before using the app is said here, in the page's
+// own words in each language: a sign-in cancelled or refused, not being a member
+// (and what to do about it), the card software missing, having signed out, and a
+// sign-in that has ended. Choosing a way is reported to the host, which runs it.
+//
+// A page that closes the app to a person is drawn in the same place: the host
+// gives its heading and lead, and either offers no way in or adds its own, such
+// as the way back.
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Button } from 'uibyte'
+import { BrandMark, Button, LanguageMenu, type LanguageOption } from 'uibyte'
 
-import { ApiError } from '../lib/api'
-import { CARD_SOFTWARE_URL, isCardSoftwareMissing } from '../lib/webeid'
-import { useAdminOptions } from '../options'
-import { useAdminSession } from '../stores/session'
-import AdminBrand from './AdminBrand.vue'
+import { CARD_SOFTWARE_URL } from '../lib/webeid'
+import type { SignInMessage, SignInWay } from '../lib/signin'
 
-const { t, te, locale } = useI18n()
-const options = useAdminOptions()
-const session = useAdminSession()
-const w = (key: string) => `configbyte.frame.signIn.${key}`
+const props = withDefaults(
+  defineProps<{
+    /** The product's name, beside its mark. */
+    product: string
+    /** A short tag after the name, e.g. which app this is. */
+    tag?: string
+    title: string
+    lead: string
+    /** A way to the everyday app, when there is one to go to. */
+    link?: { label: string; href: string }
+    /** The ways the deployment offers, in the order to draw them. */
+    ways: SignInWay[]
+    /** The languages the app carries, each named in itself. */
+    languages: LanguageOption[]
+    /** The language the page is in. */
+    language: string
+    /** What to say above the buttons. */
+    message?: SignInMessage
+    /** The app's name as the signed-out line reads it, e.g. "the admin app". */
+    signedOutOf?: string
+    /** The key of the way being waited on — the card, while the card software asks for the PIN. */
+    waitingFor?: string
+    /** The card software is not running on this computer. */
+    softwareMissing?: boolean
+    /**
+     * Whether the page offers a way in. A page that closes the app to this person
+     * offers none and says nothing about ways; the host's lead says why.
+     */
+    offers?: boolean
+    /** Say, under the buttons, what choosing each way does. */
+    explain?: boolean
+  }>(),
+  {
+    tag: undefined,
+    link: undefined,
+    message: '',
+    signedOutOf: '',
+    waitingFor: '',
+    softwareMissing: false,
+    offers: true,
+    explain: true,
+  },
+)
 
-const failed = ref('')
-/** What the server said, shown beneath the sentence, never in its place. */
-const failedReason = ref('')
-const softwareMissing = ref(false)
-const waitingForCard = ref(false)
+const emit = defineEmits<{ start: [way: SignInWay]; 'update:language': [code: string] }>()
 
-/**
- * A sign-in that did not finish comes back as a marker on the address, because the
- * browser navigated away and has to land somewhere. An unknown marker still says
- * something rather than nothing.
- */
-const marker = computed(() => new URLSearchParams(window.location.search).get('error') ?? '')
+const { t } = useI18n()
+const s = (key: string, values?: Record<string, unknown>) => t(`configbyte.signIn.${key}`, values ?? {})
 
-const markerMessage = computed(() => {
-  if (!marker.value) return ''
-  const key = w(`loginFailed.${marker.value}`)
+const busy = computed(() => props.waitingFor !== '')
 
-  return te(key) ? t(key) : t(w('loginFailed.unknown'))
+/** What the page says, and how it says it: a refusal at once, the rest politely. */
+const said = computed(() => {
+  const m = props.message || (props.offers && props.ways.length === 0 ? 'noWays' : '')
+  if (!m) return null
+  const tone = m === 'signedOut' ? 'done' : m === 'ended' || m === 'noWays' ? 'neutral' : 'refused'
+
+  return { key: m, tone, text: s(`message.${m}`, { app: props.signedOutOf }) }
 })
 
-function clear() {
-  failed.value = ''
-  failedReason.value = ''
-  softwareMissing.value = false
-}
+/** One sentence per way, saying what choosing it does. */
+const hint = computed(() => props.ways.map((w) => s(`hint.${w.flow}`, { name: w.name })).join(' '))
 
-async function signIn() {
-  clear()
-  try {
-    await session.login()
-  } catch (e) {
-    failed.value = e instanceof Error ? e.message : String(e)
-  }
-}
-
-async function signInWithCard() {
-  clear()
-  waitingForCard.value = true
-  try {
-    await session.loginWithCard(locale.value)
-  } catch (e) {
-    // "The software is not installed" is a different thing to be told than "that
-    // did not work": one is something to go and do.
-    if (isCardSoftwareMissing(e)) {
-      softwareMissing.value = true
-    } else {
-      failed.value = t(w('card.failed'))
-      failedReason.value = e instanceof ApiError ? e.message : ''
-    }
-  } finally {
-    waitingForCard.value = false
-  }
+const tones: Record<string, string> = {
+  refused: 'border-l-status-late bg-status-late-bg text-status-late-fg',
+  done: 'border-l-status-ontrack bg-status-ontrack-bg text-status-ontrack-fg',
+  neutral: 'border-l-ink bg-band text-ink',
 }
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-8">
-    <AdminBrand :name="t(options.product)" tone="ink">
-      <template #default="{ size }"><slot name="mark" :size="size" /></template>
-    </AdminBrand>
-    <h1 class="mt-6 text-3xl font-bold tracking-tight">{{ t(w('title')) }}</h1>
-    <p class="mt-3 text-muted-strong">{{ t(w('lead'), { product: t(options.product) }) }}</p>
-
-    <!-- A sign-in that came back unfinished says so before the buttons, because it
-         is the answer to what the person just did. -->
-    <p
-      v-if="markerMessage"
-      role="alert"
-      class="mt-5 rounded-card border border-status-late-border bg-status-late-bg px-4 py-3 text-[13px] text-status-late-fg"
-    >
-      {{ markerMessage }}
-    </p>
-
-    <div class="mt-6 flex flex-wrap items-start gap-3">
-      <Button :disabled="waitingForCard" @click="signInWithCard">
-        {{ waitingForCard ? t(w('card.waiting')) : t(w('card.signIn')) }}
-      </Button>
-      <Button variant="outline" :disabled="waitingForCard" @click="signIn">
-        {{ t(w('account')) }}
-      </Button>
+  <main class="min-h-screen" data-page="sign-in">
+    <div v-if="languages.length > 1" class="flex justify-end px-[18px] py-3.5">
+      <LanguageMenu
+        :languages="languages"
+        :model-value="language"
+        :label="s('language')"
+        @update:model-value="(code: string) => emit('update:language', code)"
+      />
     </div>
 
-    <!-- The card is read by software on this machine, so say what to expect. -->
-    <p class="mt-4 text-[12.5px] text-faint">{{ t(w('card.hint')) }}</p>
+    <div class="mx-auto mb-10 mt-[60px] max-w-[460px] px-5">
+      <div class="mb-[22px] flex items-center gap-2.5">
+        <BrandMark tone="ink" :size="30" :name="product">
+          <template #default="{ size }"><slot name="mark" :size="size" /></template>
+        </BrandMark>
+        <span
+          v-if="tag"
+          class="rounded-[5px] bg-console px-[7px] py-0.5 font-mono text-[10.5px] uppercase tracking-[0.1em] text-console-accent"
+        >
+          {{ tag }}
+        </span>
+      </div>
 
-    <!-- Missing software is not an error to apologise for; it is a step. -->
-    <section v-if="softwareMissing" role="alert" class="mt-5 rounded-card border border-line bg-band px-4 py-4">
-      <h2 class="text-[14px] font-semibold">{{ t(w('card.missing.title')) }}</h2>
-      <p class="mt-2 text-[13px] text-muted-strong">{{ t(w('card.missing.lead')) }}</p>
-      <a :href="CARD_SOFTWARE_URL" target="_blank" rel="noreferrer noopener" class="mt-3 inline-block text-[13px] font-semibold underline">
-        {{ t(w('card.missing.action')) }}
-      </a>
-    </section>
+      <h1 class="text-[25px] font-bold tracking-[-0.015em]">{{ title }}</h1>
+      <p class="mt-2 text-[14px] text-muted-strong">
+        {{ lead }}
+        <a v-if="link" :href="link.href" class="whitespace-nowrap text-status-ontrack-fg hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus">
+          {{ link.label }}
+        </a>
+      </p>
 
-    <div v-if="failed" role="alert" class="mt-4">
-      <p class="font-mono text-[12px] text-status-late-fg">{{ failed }}</p>
-      <!-- The reason as it was given to us, never paraphrased. -->
-      <p v-if="failedReason" class="mt-1 font-mono text-[12px] text-muted-strong">{{ failedReason }}</p>
+      <p
+        v-if="said"
+        :role="said.tone === 'refused' ? 'alert' : 'status'"
+        :data-said="said.key"
+        class="mt-[18px] rounded-[8px] border-l-[3px] px-3 py-2.5 text-[13.5px]"
+        :class="tones[said.tone]"
+      >
+        {{ said.text }}
+      </p>
+
+      <!-- Missing software is not an error to apologise for; it is a step to take. -->
+      <div
+        v-if="softwareMissing"
+        role="alert"
+        data-said="softwareMissing"
+        class="mt-[18px] rounded-[8px] border-l-[3px] border-l-status-blocked bg-status-blocked-bg px-3 py-2.5 text-[13.5px] text-status-blocked-fg"
+      >
+        <b class="mb-0.5 block">{{ s('missing.title') }}</b>
+        {{ s('missing.lead') }}
+        <a :href="CARD_SOFTWARE_URL" target="_blank" rel="noreferrer noopener" class="underline">{{ s('missing.action') }}</a>
+      </div>
+
+      <div v-if="(offers && ways.length) || $slots.actions" class="mt-[22px] flex flex-col gap-2.5">
+        <template v-if="offers">
+          <Button
+            v-for="(way, i) in ways"
+            :key="way.key"
+            :variant="i === 0 ? 'default' : 'outline'"
+            class="w-full"
+            :disabled="busy"
+            :data-way="way.key"
+            @click="emit('start', way)"
+          >
+            {{ waitingFor === way.key ? s('waiting') : way.name }}
+          </Button>
+        </template>
+        <!-- Anything else the host offers here, e.g. the way back from a closed page. -->
+        <slot name="actions" />
+      </div>
+
+      <p v-if="offers && explain && ways.length" class="mt-3.5 text-[12.5px] text-muted">{{ hint }}</p>
     </div>
   </main>
 </template>

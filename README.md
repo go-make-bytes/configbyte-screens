@@ -14,12 +14,22 @@ are called, the lines its Export card lists, and its own admin screens; these sc
 
 | State | When | What is shown |
 |---|---|---|
-| Signed out | the coordinator answers `401` to `GET /me` | the sign-in page: an ID card, or the provider's own sign-in page |
-| Signed in | the person holds a scope the host marks as configuring a section this deployment runs: a setup box, or the administrator's | the frame: the deployment's name, the entries in their groups, and the screen opened |
-| Nothing to configure | signed in, and no such scope is held | a plain sentence saying so, and signing out |
-| Not answering | `GET /me` gets no answer, or `502`, `503` or `504` | a sentence saying nothing was changed, and *Try again* |
-| Not open from here | the coordinator answers `403 err:configbyte:networkNotAllowed`, or a sign-in comes back with `?error=network` | a sentence saying the address answers only inside the networks the organisation set; no sign-in is offered |
-| Sign-in not strong enough | a sign-in comes back with `?error=assurance`, or the card's completes with `403 err:session:assuranceTooLow` | a sentence saying so, the ID card, and *Back* to the sign-in |
+| Signed out | the coordinator answers `401` to `GET /me` | the sign-in page: one button per way the deployment offers (`GET /login/ways`), each by its own name, a sentence saying what each does, the language menu, and a link to everyday work when the deployment names its address |
+| Waiting for the card | an ID-card way was chosen | that way's button says so, and every way is held until the card answers |
+| No card software | the card software or its browser extension is not on this computer | what to install, with a link, above the buttons |
+| Came back unfinished | a sign-in returns with `?error=` and a marker | why, in plain words: cancelled, not a member of this workspace (and to ask its administrator for an invitation), took too long, could not be matched, the identity provider failed, or could not be completed |
+| Not a member | the card's sign-in completes with `403 err:membership:notMember` | the same sentence as a sign-in that came back not a member |
+| Signed in | the person holds a scope the host marks as configuring a section this deployment runs: a setup box, or the administrator's | the frame: the deployment's name, the entries in their groups, the screen opened, and who is signed in with the way's own name |
+| Nothing to configure | signed in, and no such scope is held | a plain sentence saying so, a link to everyday work, and signing out |
+| Signed out, just now | after *Sign out*, back on the sign-in page | that the person is signed out of this app, and that a company sign-in stays signed in on the computer |
+| Sign-out failed | `POST /logout` gets no answer or a refusal | a sentence saying so; the person stays signed in |
+| Not answering | `GET /me` or `GET /login/ways` gets no answer, `502`, `503` or `504`, or any failure from `GET /me` other than not being signed in | a sentence saying nothing was changed, and *Try again*, which asks both again |
+| Not open from here | the coordinator answers `403 err:configbyte:networkNotAllowed`, or a sign-in comes back with `?error=network` | in the sign-in page's place: a sentence saying the address answers only inside the networks the organisation set, the language menu, no sign-in, and a link to everyday work when the refusal carries its address (`Link: <…>; rel="related"`) |
+| Sign-in not strong enough | a sign-in comes back with `?error=assurance`, or the card's completes with `403 err:session:assuranceTooLow` | in the sign-in page's place: a sentence saying so, every way the deployment offers, and *Back* to the sign-in |
+
+**The language before anyone is signed in** is the one chosen on the page in this browser, kept there; else the
+first of the browser's own languages the app carries; else the deployment's (`language` in `GET /login/ways`). Once
+someone is signed in, the deployment's language from `GET /me` decides.
 
 **An entry shows when two things are true:** its screen was built into this admin app, and the coordinator found
 its section's owner when it started (`GET /sections`). What the frame offers is display only: every call is judged by
@@ -65,9 +75,11 @@ back, never by the register's own text.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.2.0",
-"uibyte": "github:gmb-lib/uibyte#v0.8.0"
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.3.0",
+"uibyte": "github:gmb-lib/uibyte#v0.9.0"
 ```
+
+Move both pins together, then read the result back with `npm ls uibyte`: one copy.
 
 The package ships source, like `uibyte`, so the host's build compiles it. Keep Vite's dependency optimiser away from
 both, and point Tailwind at both:
@@ -164,7 +176,47 @@ names (`presentation.locale` in `GET /me`) when it carries that language.
 ### The ID card
 
 Signing in with a card loads the card software's browser library from the host's own origin, at `/web-eid.js`. The
-host serves that file; it is never fetched from elsewhere.
+host serves that file; it is never fetched from elsewhere. A browser that cannot load it is told the card software
+is not there.
+
+### The sign-in page in another app
+
+The admin app's sign-in page is also the one page for the host's own everyday app, so a deployment has one sign-in
+look. `SignInPage` draws and asks; it calls nothing. The host gives its name, the heading and lead, the ways it read
+from its own backend, the languages it carries, and what to say, and runs the way a person chooses:
+
+```vue
+<SignInPage
+  :product="t('app.product')"
+  :title="t('app.signIn.title')"
+  :lead="t('app.signIn.lead')"
+  :ways="ways"
+  :languages="[{ code: 'en', name: 'English' }, { code: 'lv', name: 'Latviešu' }]"
+  :language="locale"
+  :message="message"
+  :waiting-for="waitingFor"
+  :software-missing="softwareMissing"
+  @update:language="choose"
+  @start="signIn"
+>
+  <template #mark="{ size }"><svg :width="size" :height="size">…</svg></template>
+</SignInPage>
+```
+
+| Prop | Meaning |
+|---|---|
+| `product`, `tag` | the name beside the mark, and an optional tag after it |
+| `title`, `lead`, `link` | the heading, the sentence under it, and an optional `{ label, href }` link at its end |
+| `ways` | `{ key, flow: 'card' \| 'redirect', name }` per way, drawn in order, each button carrying `name` exactly |
+| `languages`, `language` | the language menu's choices, each in its own name, and the one in use |
+| `message` | what to say above the buttons: `cancelled`, `notMember`, `providerError`, `incomplete`, `expired`, `unmatched`, `failed`, `unknown`, `cardFailed`, `signedOut` (with `signed-out-of` naming the app), `ended` |
+| `waiting-for`, `software-missing` | the way waited on, and whether the card software is missing |
+| `offers`, `explain` | whether a way in is offered at all, and whether the sentence under the buttons says what each does |
+
+What goes with it: `messageOfMarker` turns a `?error=` marker into the message; `languageBeforeSignIn`,
+`keepLanguage` and `keptLanguage` settle the language before sign-in as above; `noteSignedOut` and `takeSignedOut`
+carry the signed-out sentence across a sign-out that ends at the authority; `wayName` finds a way's name by its key;
+`signChallenge`, `isCardSoftwareMissing`, `CardError` and `CARD_SOFTWARE_URL` are the ID card.
 
 ## What it calls
 
@@ -173,6 +225,7 @@ Everything goes to the coordinator, same-origin, under `/api/configbyte/v1`, wit
 
 | Method | Path | For |
 |---|---|---|
+| `GET` | `/login/ways` | before anyone is signed in: the ways to sign in, the everyday app's address, the deployment's language |
 | `GET` | `/me` | who is signed in, the deployment's name and language, the person's scopes per section |
 | `GET` | `/sections` | the deployment's sections, in the order an import writes them |
 | `POST` | `/login/start` | the redirect sign-in; answers where to send the browser |

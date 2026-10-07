@@ -1,35 +1,45 @@
 {
   "configbyte": {
+    "signIn": {
+      "self": "Latviešu",
+      "language": "Valoda",
+      "waiting": "Gaida karti…",
+      "hint": {
+        "card": "{name} ir jūsu ID karte, ko nolasa šī datora ID programmatūra; tā prasīs PIN.",
+        "redirect": "{name} atver jūsu uzņēmuma pieslēgšanās lapu."
+      },
+      "message": {
+        "cancelled": "Pieslēgšanās tika atcelta. Nekas nenotika — varat mēģināt vēlreiz.",
+        "notMember": "Šis konts nav šīs darbvietas dalībnieks. Lūdziet tās administratoram jūs uzaicināt un tad pieslēdzieties vēlreiz.",
+        "providerError": "Identitātes pakalpojums nevarēja pabeigt pieslēgšanos. Mēģiniet vēlreiz; ja neizdodas atkārtoti, vaina ir viņu pusē.",
+        "incomplete": "Pieslēgšanās atgriezās nepabeigta. Sāciet to no jauna šeit.",
+        "expired": "Šī pieslēgšanās ilga par ilgu un ir beigusies. Sāciet jaunu.",
+        "unmatched": "Šo pieslēgšanos neizdevās sasaistīt ar to, kas tika sākta. Sāciet jaunu.",
+        "failed": "Pieslēgšanos neizdevās pabeigt. Mēģiniet vēlreiz.",
+        "unknown": "Pieslēgšanās netika pabeigta. Mēģiniet vēlreiz.",
+        "cardFailed": "Neizdevās pabeigt. Pārbaudiet, vai karte ir lasītājā, un mēģiniet vēlreiz.",
+        "signedOut": "Izeja no {app} pabeigta. Ja izmantojāt sava uzņēmuma pieslēgšanos, tā šajā datorā paliek spēkā — koplietotā datorā izejiet arī no tās.",
+        "ended": "Jūsu pieslēgšanās ir beigusies. Pieslēdzieties vēlreiz.",
+        "noWays": "Šeit nav iestatīta neviena pieslēgšanās iespēja. Pasakiet to tam, kas uztur šo izvietojumu."
+      },
+      "missing": {
+        "title": "ID programmatūra nedarbojas",
+        "lead": "Pieslēgšanai ar karti nepieciešama ID programmatūra un tās pārlūka paplašinājums šajā datorā. Uzinstalējiet to un mēģiniet vēlreiz — neko no jauna sākt nevajag.",
+        "action": "Iegūt ID programmatūru"
+      }
+    },
     "frame": {
       "admin": "administrēšana",
       "tab": "{name} — administrēšana",
-      "method": "pieslēdzies ar {method}",
+      "method": "pieslēgts ar {method}",
       "logout": "Iziet",
       "exportImport": "Eksports / Imports",
       "signIn": {
-        "title": "Konfigurējiet savu darbvietu",
-        "lead": "Šī ir administrēšanas lietotne. Ikdienas darbs paliek {product} ierastajā adresē.",
-        "account": "Pieslēgties ar savu kontu",
-        "card": {
-          "signIn": "Pieslēgties ar eID karti",
-          "waiting": "Gaida karti…",
-          "hint": "Karti nolasa šī datora ID programmatūra, un tā prasīs PIN. Otra pieslēgšanās tā vietā atver pakalpojuma sniedzēja lapu.",
-          "failed": "Neizdevās pabeigt. Pārbaudi, vai karte ir lasītājā, un mēģini vēlreiz.",
-          "missing": {
-            "title": "ID programmatūra nedarbojas",
-            "lead": "Pieslēgšanai ar karti nepieciešama ID programmatūra un tās pārlūka paplašinājums šajā datorā. Uzinstalē to un mēģini vēlreiz — neko no jauna sākt nevajag.",
-            "action": "Iegūt ID programmatūru"
-          }
-        },
-        "loginFailed": {
-          "cancelled": "Pieslēgšanās tika atcelta. Nekas nenotika — varat mēģināt vēlreiz.",
-          "provider_error": "Identitātes pakalpojums nevarēja pabeigt pieslēgšanos. Mēģiniet vēlreiz; ja neizdodas atkārtoti, vaina ir viņu pusē.",
-          "missing_code": "Pieslēgšanās atgriezās nepabeigta. Sāciet to no jauna šeit.",
-          "expired": "Šī pieslēgšanās ilga par ilgu un ir beigusies. Sāciet jaunu.",
-          "bad_state": "Šo pieslēgšanos neizdevās sasaistīt ar to, kas tika sākta. Sāciet jaunu.",
-          "login_failed": "Pieslēgšanos neizdevās pabeigt. Mēģiniet vēlreiz.",
-          "unknown": "Pieslēgšanās netika pabeigta. Mēģiniet vēlreiz."
-        }
+        "tag": "administrēšana",
+        "title": "Pieslēgšanās administrēšanas lietotnei",
+        "lead": "Šī ir administrēšanas lietotne, kurā iestata darbvietu. Ikdienas darbs paliek {product} ierastajā adresē.",
+        "open": "Atvērt {product} →",
+        "signedOutOf": "administrēšanas lietotnes"
       },
       "nothing": {
         "eyebrow": "darbvieta",
@@ -38,8 +48,8 @@
       },
       "down": {
         "eyebrow": "administrēšanas lietotne",
-        "title": "Administrēšanas serviss neatbild",
-        "lead": "Nekas netika mainīts. Mēģiniet vēlreiz pēc minūtes. Ja tas atkārtojas, pasakiet to tam, kas uztur šo izvietojumu: to varēja apturēt starta pārbaude, un tās žurnālā ir rakstīts, kāpēc.",
+        "title": "Administrēšanas lietotne neatbild",
+        "lead": "Nekas netika mainīts. Mēģiniet vēlreiz pēc minūtes. Ja tas atkārtojas, pasakiet to tam, kas uztur šo izvietojumu.",
         "again": "Mēģināt vēlreiz"
       },
       "page": {
@@ -65,10 +75,12 @@
           "lead": "Šī adrese atbild tikai tīklos, ko tai noteikusi jūsu organizācija. Ikdienas darbs ir {product} ierastajā adresē."
         },
         "assurance": {
-          "title": "Šī pieteikšanās šeit nav pietiekami droša",
-          "lead": "Administrēšanas lietotne prasa drošāku pieteikšanos nekā izmantotā. Piesakieties ar ID karti vai citu veidu, ko jūsu organizācija uzskata par drošu."
+          "title": "Šī pieslēgšanās šeit nav pietiekami droša",
+          "lead": "Administrēšanas lietotne prasa drošāku pieslēgšanos nekā izmantotā. Pieslēdzieties ar ID karti vai citu veidu, ko jūsu organizācija uzskata par drošu."
         }
-      }
+      },
+      "signedIn": "pieslēgts",
+      "logoutFailed": "Iziet neizdevās. Mēģiniet vēlreiz."
     },
     "transfer": {
       "export": {

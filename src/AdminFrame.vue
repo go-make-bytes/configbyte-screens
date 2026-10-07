@@ -10,11 +10,11 @@
 import { computed, onMounted, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
-import { AppShell, Button, type NavGroup, type NavItem, type ShellLabels } from 'uibyte'
+import { AppShell, Button, buttonVariants, type NavGroup, type NavItem, type ShellLabels } from 'uibyte'
 
 import AdminBrand from './components/AdminBrand.vue'
-import ClosedPage from './components/ClosedPage.vue'
-import SignInPage from './components/SignInPage.vue'
+import AdminSignIn from './components/AdminSignIn.vue'
+import { takeSignedOut, wayName } from './lib/signin'
 import { useAdminOptions } from './options'
 import { EXPORT_IMPORT, HISTORY, PEOPLE_ACCESS } from './routes'
 import { useAdminSession } from './stores/session'
@@ -26,7 +26,15 @@ const f = (key: string) => `configbyte.frame.${key}`
 
 onMounted(() => {
   session.readMarker(new URLSearchParams(window.location.search).get('error') ?? '')
-  void session.resolve()
+  if (takeSignedOut()) session.message = 'signedOut'
+  void session.ask()
+})
+
+/** How the person signed in, by the way's own name — never the method's code. */
+const signedInWith = computed(() => {
+  const name = session.me ? wayName(session.ways, session.me.loginMethod) : undefined
+
+  return name ? t(f('method'), { method: name }) : t(f('signedIn'))
 })
 
 /** The deployment's own name once someone is signed in; the product's before. */
@@ -96,13 +104,10 @@ const labels = computed<ShellLabels>(() => ({
 
 <template>
   <template v-if="session.resolved">
-    <ClosedPage v-if="session.closed" :reason="session.closed">
+    <!-- Signing in, and the pages that close the app before anyone is signed in. -->
+    <AdminSignIn v-if="!session.unreachable && (session.closed || !session.me)">
       <template #mark="{ size }"><slot name="mark" :size="size" /></template>
-    </ClosedPage>
-
-    <SignInPage v-else-if="!session.me && !session.unreachable">
-      <template #mark="{ size }"><slot name="mark" :size="size" /></template>
-    </SignInPage>
+    </AdminSignIn>
 
     <AppShell v-else :groups="groups" :labels="labels" :link-component="RouterLink">
       <template #brand>
@@ -126,12 +131,13 @@ const labels = computed<ShellLabels>(() => ({
           <span class="min-w-0">
             <span class="block truncate text-[13.5px] font-semibold text-console-text">{{ session.me.name }}</span>
             <span class="block font-mono text-[10.5px] tracking-wide text-console-accent">
-              {{ t(f('method'), { method: session.me.loginMethod }) }}
+              {{ signedInWith }}
             </span>
           </span>
           <Button variant="ghost" size="sm" class="justify-start text-console-text hover:bg-white/[0.07]" @click="session.logout()">
             {{ t(f('logout')) }}
           </Button>
+          <p v-if="session.signOutFailed" role="alert" class="text-[12px] text-status-late">{{ t(f('logoutFailed')) }}</p>
         </div>
       </template>
 
@@ -141,7 +147,7 @@ const labels = computed<ShellLabels>(() => ({
         <h1 class="mt-1 text-2xl font-bold tracking-tight">{{ t(f('down.title')) }}</h1>
         <p class="mt-3 text-muted-strong">{{ t(f('down.lead')) }}</p>
         <div class="mt-5">
-          <Button variant="outline" @click="session.resolve()">{{ t(f('down.again')) }}</Button>
+          <Button variant="outline" @click="session.ask()">{{ t(f('down.again')) }}</Button>
         </div>
       </section>
 
@@ -150,6 +156,9 @@ const labels = computed<ShellLabels>(() => ({
         <p class="font-mono text-[11px] uppercase tracking-wider text-faint">{{ t(f('nothing.eyebrow')) }}</p>
         <h1 class="mt-1 text-2xl font-bold tracking-tight">{{ t(f('nothing.title')) }}</h1>
         <p class="mt-3 text-muted-strong">{{ t(f('nothing.lead'), { product: t(options.product) }) }}</p>
+        <a v-if="session.appUrl" :href="session.appUrl" :class="[buttonVariants(), 'mt-5']" data-open-app>
+          {{ t(f('signIn.open'), { product: t(options.product) }) }}
+        </a>
       </section>
 
       <router-view v-else />

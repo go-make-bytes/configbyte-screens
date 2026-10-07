@@ -1,5 +1,33 @@
 {
   "configbyte": {
+    "signIn": {
+      "self": "English",
+      "language": "Language",
+      "waiting": "Waiting for the card…",
+      "hint": {
+        "card": "{name} is your ID card, read by the card software on this computer; it asks for your PIN.",
+        "redirect": "{name} opens your company’s own sign-in page."
+      },
+      "message": {
+        "cancelled": "The sign-in was cancelled. Nothing happened — you can try again.",
+        "notMember": "This account is not a member of this workspace. Ask its administrator to invite you, then sign in again.",
+        "providerError": "The identity provider could not complete the sign-in. Try again; if it keeps failing, it is on their side rather than yours.",
+        "incomplete": "The sign-in came back incomplete. Start it again from here.",
+        "expired": "That sign-in took too long and has expired. Start a fresh one.",
+        "unmatched": "That sign-in could not be matched to the one that started. Start a fresh one.",
+        "failed": "The sign-in could not be completed. Try again.",
+        "unknown": "The sign-in did not complete. Try again.",
+        "cardFailed": "That did not complete. Check the card is in the reader and try again.",
+        "signedOut": "You are signed out of {app}. If you used your company’s own sign-in, it stays signed in on this computer: on a shared computer, sign out of it too.",
+        "ended": "Your sign-in has ended. Sign in again.",
+        "noWays": "No way to sign in is set up here. Tell whoever runs this deployment."
+      },
+      "missing": {
+        "title": "The card software is not running",
+        "lead": "Signing in with a card needs the ID-software and its browser extension on this computer. Install it, then try again — nothing here has to be redone.",
+        "action": "Get the ID software"
+      }
+    },
     "frame": {
       "admin": "admin",
       "tab": "{name} — admin",
@@ -7,29 +35,11 @@
       "logout": "Sign out",
       "exportImport": "Export / Import",
       "signIn": {
-        "title": "Configure your workspace",
-        "lead": "This is the admin app. Everyday work stays in {product} at its usual address.",
-        "account": "Sign in with your account",
-        "card": {
-          "signIn": "Sign in with an ID card",
-          "waiting": "Waiting for the card…",
-          "hint": "The ID card is read by the card software on this computer, and it will ask for your PIN. The other sign-in opens the provider's own page instead.",
-          "failed": "That did not complete. Check the card is in the reader and try again.",
-          "missing": {
-            "title": "The card software is not running",
-            "lead": "Signing in with a card needs the ID-software and its browser extension on this computer. Install it, then try again — nothing here has to be redone.",
-            "action": "Get the ID software"
-          }
-        },
-        "loginFailed": {
-          "cancelled": "The sign-in was cancelled. Nothing happened — you can try again.",
-          "provider_error": "The identity provider could not complete the sign-in. Try again; if it keeps failing, it is on their side rather than yours.",
-          "missing_code": "The sign-in came back incomplete. Start it again from here.",
-          "expired": "That sign-in took too long and has expired. Start a fresh one.",
-          "bad_state": "That sign-in could not be matched to the one that started. Start a fresh one.",
-          "login_failed": "The sign-in could not be completed. Try again.",
-          "unknown": "The sign-in did not complete. Try again."
-        }
+        "tag": "admin",
+        "title": "Sign in to the admin app",
+        "lead": "This is the admin app, where the workspace is set up. Everyday work stays in {product} at its usual address.",
+        "open": "Open {product} →",
+        "signedOutOf": "the admin app"
       },
       "nothing": {
         "eyebrow": "workspace",
@@ -38,8 +48,8 @@
       },
       "down": {
         "eyebrow": "admin app",
-        "title": "The admin service is not answering",
-        "lead": "Nothing was changed. Try again in a minute. If it keeps happening, tell whoever runs this deployment: its start check may have stopped it, and its log says why.",
+        "title": "The admin app is not answering",
+        "lead": "Nothing was changed. Try again in a minute. If it keeps happening, tell whoever runs this deployment.",
         "again": "Try again"
       },
       "page": {
@@ -68,7 +78,9 @@
           "title": "This sign-in is not strong enough here",
           "lead": "The admin app asks for a stronger sign-in than the one you used. Sign in with an ID card, or with a sign-in your organisation counts as strong."
         }
-      }
+      },
+      "signedIn": "signed in",
+      "logoutFailed": "Signing out did not complete. Try again."
     },
     "transfer": {
       "export": {

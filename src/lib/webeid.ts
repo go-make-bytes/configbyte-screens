@@ -47,7 +47,14 @@ async function cardSoftware(): Promise<CardSoftware> {
     return loaded
   }
 
-  const mod = (await import(/* @vite-ignore */ LIBRARY_PATH)) as Record<string, unknown>
+  // A library that cannot be fetched is the same, to the person, as one that is not
+  // there: the card software is not available in this browser.
+  let mod: Record<string, unknown>
+  try {
+    mod = (await import(/* @vite-ignore */ LIBRARY_PATH)) as Record<string, unknown>
+  } catch {
+    throw new CardError(null, 'the card software is not available in this browser')
+  }
   const candidate = (
     typeof mod.authenticate === 'function' ? mod : (mod.default as Record<string, unknown> | undefined)
   ) as CardSoftware | undefined
