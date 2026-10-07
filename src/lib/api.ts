@@ -66,8 +66,29 @@ async function handle<T>(resp: Response): Promise<T> {
   return (await resp.json()) as T
 }
 
+/** Who is told when a read finds the person no longer signed in. */
+let signInEnded: () => void = () => {}
+
+/**
+ * Be told when a read is answered "not signed in". Every screen reads through
+ * here, so the sign-in ending is noticed once, by whoever listens, instead of by
+ * each screen that happened to be reading when it ended. Only a read: a change
+ * refused that way stays in the form that made it, where what was typed still is.
+ */
+export function whenSignInEnds(listener: () => void): void {
+  signInEnded = listener
+}
+
+/** A read, answered as it came — after telling whoever listens if it says nobody is signed in any more. */
+export async function read(path: string): Promise<Response> {
+  const resp = await fetch(path, { credentials: 'same-origin' })
+  if (resp.status === 401) signInEnded()
+
+  return resp
+}
+
 export async function get<T>(path: string): Promise<T> {
-  return handle<T>(await fetch(path, { credentials: 'same-origin' }))
+  return handle<T>(await read(path))
 }
 
 /**

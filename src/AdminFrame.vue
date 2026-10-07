@@ -14,6 +14,7 @@ import { AppShell, Button, buttonVariants, type NavGroup, type NavItem, type She
 
 import AdminBrand from './components/AdminBrand.vue'
 import AdminSignIn from './components/AdminSignIn.vue'
+import { whenSignInEnds } from './lib/api'
 import { takeSignedOut, wayName } from './lib/signin'
 import { useAdminOptions } from './options'
 import { EXPORT_IMPORT, HISTORY, PEOPLE_ACCESS } from './routes'
@@ -23,6 +24,10 @@ const { t, locale, availableLocales } = useI18n()
 const options = useAdminOptions()
 const session = useAdminSession()
 const f = (key: string) => `configbyte.frame.${key}`
+
+// A sign-in that ends while someone works is one page, the sign-in page saying so,
+// never a failure on every screen that was reading. Any other failure stays where it happened.
+whenSignInEnds(() => session.signInEnded())
 
 onMounted(() => {
   session.readMarker(new URLSearchParams(window.location.search).get('error') ?? '')
@@ -105,7 +110,7 @@ const labels = computed<ShellLabels>(() => ({
 <template>
   <template v-if="session.resolved">
     <!-- Signing in, and the pages that close the app before anyone is signed in. -->
-    <AdminSignIn v-if="!session.unreachable && (session.closed || !session.me)">
+    <AdminSignIn v-if="!session.notAnswering && (session.closed || !session.me)">
       <template #mark="{ size }"><slot name="mark" :size="size" /></template>
     </AdminSignIn>
 
@@ -142,7 +147,7 @@ const labels = computed<ShellLabels>(() => ({
       </template>
 
       <!-- The coordinator did not answer: nothing was changed, and the one way on is to ask again. -->
-      <section v-if="session.unreachable" class="mx-auto max-w-xl px-8 py-16" data-state="unreachable">
+      <section v-if="session.notAnswering" class="mx-auto max-w-xl px-8 py-16" data-state="unreachable">
         <p class="font-mono text-[11px] uppercase tracking-wider text-faint">{{ t(f('down.eyebrow')) }}</p>
         <h1 class="mt-1 text-2xl font-bold tracking-tight">{{ t(f('down.title')) }}</h1>
         <p class="mt-3 text-muted-strong">{{ t(f('down.lead')) }}</p>

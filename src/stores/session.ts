@@ -99,13 +99,15 @@ export const useAdminSession = defineStore('configbyte-session', {
     order: [] as string[],
     /** Whether the first answer has arrived, either way. */
     resolved: false,
-    /** The coordinator did not answer at all. */
+    /** The coordinator could not say who is signed in: it did not answer, or it failed. */
     unreachable: false,
     /** Why the app is closed to this person, if it is. */
     closed: '' as Closed,
     /** The ways this deployment offers to sign in, and whether they have been read. */
     ways: [] as SignInWay[],
     waysRead: false,
+    /** The ways could not be read; it matters only to someone not signed in. */
+    waysFailed: false,
     /** Where the everyday app is, and the deployment's language, from the same read. */
     appUrl: '',
     deploymentLanguage: '',
@@ -126,6 +128,13 @@ export const useAdminSession = defineStore('configbyte-session', {
 
         return scopes.some((s) => held.has(s))
       },
+
+    /**
+     * Whether to say the coordinator is not answering: it could not say who is
+     * signed in, or nobody is and the ways to sign in could not be read. Someone
+     * signed in works on without the ways.
+     */
+    notAnswering: (state): boolean => state.unreachable || (state.resolved && !state.me && state.waysFailed),
   },
   actions: {
     /** Ask who is signed in, and what this deployment has. A refusal means "not signed in". */
@@ -149,12 +158,13 @@ export const useAdminSession = defineStore('configbyte-session', {
 
     /**
      * Read the ways this deployment offers to sign in, once they have been read
-     * successfully. Without them the page cannot offer a way in, so a failure is
-     * the coordinator not answering — never an empty list, which would read as
-     * "no way is set up here".
+     * successfully. Without them the page cannot offer a way in, so to someone not
+     * signed in a failure is the coordinator not answering — never an empty list,
+     * which would read as "no way is set up here".
      */
     async readWays() {
       if (this.waysRead) return
+      this.waysFailed = false
       try {
         const read = await get<LoginWays>(`${API_ROOT}/login/ways`)
         this.ways = read.ways ?? []
@@ -162,8 +172,30 @@ export const useAdminSession = defineStore('configbyte-session', {
         this.deploymentLanguage = read.language ?? ''
         this.waysRead = true
       } catch (e) {
-        if (!this.closeFor(e)) this.unreachable = true
+        if (!this.closeFor(e)) this.waysFailed = true
       }
+    },
+
+    /**
+     * A read found nobody signed in any more: the sign-in ended while the person
+     * was working. The whole screen becomes the sign-in page, saying so — once,
+     * however many reads were out when it ended. Before anyone is signed in, "not
+     * signed in" is just that, and says nothing. A host whose own screens make their
+     * own calls calls this when one of their reads is answered that way.
+     */
+    signInEnded() {
+      if (!this.me) return
+      this.signOutFailed = false
+      this.forget('ended')
+      // The page needs the ways; they may not have arrived while someone was signed in.
+      void this.readWays()
+    },
+
+    /** Nobody is signed in any more: forget who was, and what this deployment has for them, and say why. */
+    forget(why: SignInMessage) {
+      this.me = null
+      this.order = []
+      this.message = why
     },
 
     /**
@@ -264,9 +296,7 @@ export const useAdminSession = defineStore('configbyte-session', {
 
         return
       }
-      this.me = null
-      this.order = []
-      this.message = 'signedOut'
+      this.forget('signedOut')
       if (out.next) {
         noteSignedOut()
         window.location.assign(out.next)

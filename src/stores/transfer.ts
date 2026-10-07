@@ -10,7 +10,7 @@
 // browser's storage, and never on screen.
 import { defineStore } from 'pinia'
 
-import { API_ROOT, ApiError, postText, refusalOf } from '../lib/api'
+import { API_ROOT, ApiError, postText, read, refusalOf } from '../lib/api'
 import { aboutDocument, canApply, downloadName, expectFrom, withExpect, type ImportAnswer } from '../lib/transfer'
 
 const EXPORT = `${API_ROOT}/config/export`
@@ -72,7 +72,7 @@ export const useTransfer = defineStore('configbyte-transfer', {
       this.exporting = true
       this.exportFailed = ''
       try {
-        const resp = await fetch(EXPORT, { credentials: 'same-origin' })
+        const resp = await read(EXPORT)
         if (!resp.ok) throw await refusalOf(resp)
         const blob = await resp.blob()
         const name = downloadName(resp.headers.get('Content-Disposition') ?? '', 'configuration.json')
