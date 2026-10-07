@@ -12,7 +12,7 @@ import type { AdminOptions } from './options'
 import { configbyteScreens } from './plugin'
 import { adminRoutes } from './routes'
 
-type Reply = { status: number; body: unknown } | 'unanswered'
+type Reply = { status: number; body: unknown; headers?: Record<string, string> } | 'unanswered'
 
 interface Call {
   method: string
@@ -93,7 +93,7 @@ function stubCoordinator(answers: Record<string, Reply | Reply[]>) {
       return {
         ok: reply.status < 400,
         status: reply.status,
-        headers: new Headers(),
+        headers: new Headers(reply.headers ?? {}),
         json: async () => reply.body,
       } as unknown as Response
     }),
@@ -517,6 +517,32 @@ describe('the admin app, closed to this person', () => {
     expect(wrapper.find('[data-said]').exists()).toBe(false)
     expect(wrapper.findComponent({ name: 'LanguageMenu' }).exists()).toBe(true)
     expect(calls.every((c) => c.method === 'GET')).toBe(true)
+  })
+
+  // Nothing else answers from outside the networks, so the refusal itself carries
+  // the one way on: where everyday work is.
+  it('points to everyday work from the page that closes the app, with the address the refusal carries', async () => {
+    const outside: Reply = {
+      status: 403,
+      body: { code: 'err:configbyte:networkNotAllowed' },
+      headers: { Link: '<https://app.example.test/>; rel="related"' },
+    }
+    stubCoordinator({ [`${API}/me`]: outside, [`${API}/login/ways`]: outside })
+    const { wrapper } = await render()
+    expect(wrapper.find('[data-closed="network"]').exists()).toBe(true)
+    expect(wrapper.get('a[href="https://app.example.test/"]').text()).toBe('Open acme →')
+  })
+
+  it('links only to a web address, whatever the coordinator names', async () => {
+    const outside: Reply = {
+      status: 403,
+      body: { code: 'err:configbyte:networkNotAllowed' },
+      headers: { Link: '<javascript:alert(1)>; rel="related"' },
+    }
+    stubCoordinator({ [`${API}/me`]: outside, [`${API}/login/ways`]: outside })
+    const { wrapper } = await render()
+    expect(wrapper.find('[data-closed="network"]').exists()).toBe(true)
+    expect(wrapper.findAll('main a')).toEqual([])
   })
 
   it('speaks the language this browser chose on the page that closes the app', async () => {

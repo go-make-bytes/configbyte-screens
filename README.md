@@ -24,7 +24,7 @@ are called, the lines its Export card lists, and its own admin screens; these sc
 | Signed out, just now | after *Sign out*, back on the sign-in page | that the person is signed out of this app, and that a company sign-in stays signed in on the computer |
 | Sign-out failed | `POST /logout` gets no answer or a refusal | a sentence saying so; the person stays signed in |
 | Not answering | `GET /me` or `GET /login/ways` gets no answer, `502`, `503` or `504`, or any failure from `GET /me` other than not being signed in | a sentence saying nothing was changed, and *Try again*, which asks both again |
-| Not open from here | the coordinator answers `403 err:configbyte:networkNotAllowed`, or a sign-in comes back with `?error=network` | in the sign-in page's place: a sentence saying the address answers only inside the networks the organisation set, the language menu, and no sign-in |
+| Not open from here | the coordinator answers `403 err:configbyte:networkNotAllowed`, or a sign-in comes back with `?error=network` | in the sign-in page's place: a sentence saying the address answers only inside the networks the organisation set, the language menu, no sign-in, and a link to everyday work when the refusal carries its address (`Link: <…>; rel="related"`) |
 | Sign-in not strong enough | a sign-in comes back with `?error=assurance`, or the card's completes with `403 err:session:assuranceTooLow` | in the sign-in page's place: a sentence saying so, every way the deployment offers, and *Back* to the sign-in |
 
 **The language before anyone is signed in** is the one chosen on the page in this browser, kept there; else the

@@ -74,6 +74,14 @@ function closedBy(e: unknown): Closed {
 }
 
 /**
+ * An address the page may link to: the web's own, never a script or anything else
+ * a link would run.
+ */
+function webAddress(value: string): string {
+  return /^https?:\/\//i.test(value) ? value : ''
+}
+
+/**
  * Whether a failure means the coordinator itself did not answer: the request never
  * arrived, or the web server in front of it answered for it. Anything else is the
  * coordinator speaking, and is read as what it says.
@@ -131,11 +139,9 @@ export const useAdminSession = defineStore('configbyte-session', {
       } catch (e) {
         this.me = null
         this.order = []
-        const closed = closedBy(e)
-        if (closed) this.closed = closed
         // Anything but "not signed in" means the coordinator could not say who is:
         // the page that says so, never the sign-in page as if nobody were.
-        else if (unanswered(e) || !(e instanceof ApiError) || e.status !== 401) this.unreachable = true
+        if (!this.closeFor(e) && (unanswered(e) || !(e instanceof ApiError) || e.status !== 401)) this.unreachable = true
       } finally {
         this.resolved = true
       }
@@ -152,14 +158,26 @@ export const useAdminSession = defineStore('configbyte-session', {
       try {
         const read = await get<LoginWays>(`${API_ROOT}/login/ways`)
         this.ways = read.ways ?? []
-        this.appUrl = read.appUrl ?? ''
+        this.appUrl = webAddress(read.appUrl ?? '')
         this.deploymentLanguage = read.language ?? ''
         this.waysRead = true
       } catch (e) {
-        const closed = closedBy(e)
-        if (closed) this.closed = closed
-        else this.unreachable = true
+        if (!this.closeFor(e)) this.unreachable = true
       }
+    },
+
+    /**
+     * Close the app for a refusal that says why, if it does. A refusal from outside
+     * the allowed networks points to where everyday work is — the one way on that
+     * such a page can offer, since nothing else here answers from there.
+     */
+    closeFor(e: unknown): boolean {
+      const closed = closedBy(e)
+      if (!closed) return false
+      this.closed = closed
+      if (closed === 'network' && e instanceof ApiError && !this.appUrl) this.appUrl = webAddress(e.related)
+
+      return true
     },
 
     /**
@@ -183,9 +201,8 @@ export const useAdminSession = defineStore('configbyte-session', {
         if (way.flow === 'redirect') await this.login()
         else await this.loginWithCard(lang)
       } catch (e) {
-        const closed = closedBy(e)
-        if (closed) this.closed = closed
-        else if (isCardSoftwareMissing(e)) this.softwareMissing = true
+        if (this.closeFor(e)) return
+        if (isCardSoftwareMissing(e)) this.softwareMissing = true
         else if (e instanceof ApiError && e.code === NOT_MEMBER) this.message = 'notMember'
         else if (unanswered(e)) this.unreachable = true
         else this.message = way.flow === 'card' ? 'cardFailed' : 'failed'

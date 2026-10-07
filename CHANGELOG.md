@@ -18,8 +18,9 @@ One sign-in page for every app of a deployment: the ways it offers, by their own
   does. A deployment that offers none is told so.
 - **A language menu before sign-in.** The page speaks the language chosen on it in this browser, else the browser's
   own, else the deployment's; a choice is kept in this browser.
-- **A link to everyday work**, where the deployment names its address: on the sign-in page and on *Nothing here for
-  you to configure*.
+- **A link to everyday work**, where the deployment names its address: on the sign-in page, on *Nothing here for
+  you to configure*, and on the page for an address outside the allowed networks, which takes it from the refusal
+  itself (`Link: <…>; rel="related"`) since nothing else answers from there. Only a web address is ever linked.
 - **Not a member, said**: a person the sign-in authority knows but who is not a member of the workspace is told to
   ask its administrator for an invitation, whether they came back from the authority or used the card.
 - **Signing out says what it did**, including that a company sign-in stays signed in on the computer; a sign-out that

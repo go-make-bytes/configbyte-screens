@@ -20,12 +20,25 @@ function csrfToken(): string {
 export class ApiError extends Error {
   status: number
   code: string
+  /** Where the refusal points instead, when it carries a related link. */
+  related: string
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, related = '') {
     super(message)
     this.status = status
     this.code = code
+    this.related = related
   }
+}
+
+/** The address a `Link` header names as related (`<…>; rel="related"`), if it names one. */
+export function relatedLink(header: string | null): string {
+  for (const part of (header ?? '').split(',')) {
+    const link = /^\s*<([^>]*)>(.*)$/.exec(part)
+    if (link && /;\s*rel="?related"?\s*(;|$)/i.test(link[2] ?? '')) return link[1] ?? ''
+  }
+
+  return ''
 }
 
 /** The refusal a response carries: its code, and the words meant for a person. */
@@ -42,7 +55,7 @@ export async function refusalOf(resp: Response): Promise<ApiError> {
     // A non-JSON body: the status alone carries the signal.
   }
 
-  return new ApiError(resp.status, code, detail || `HTTP ${resp.status}`)
+  return new ApiError(resp.status, code, detail || `HTTP ${resp.status}`, relatedLink(resp.headers.get('Link')))
 }
 
 async function handle<T>(resp: Response): Promise<T> {
