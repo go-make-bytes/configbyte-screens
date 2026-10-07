@@ -1,6 +1,6 @@
 {
   "name": "configbyte-screens",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "The shared screens of a deployment's admin app: sign-in, the frame, and carrying a workspace's configuration out as one file and back in. They talk only to the configuration coordinator.",
   "license": "MIT",
   "type": "module",

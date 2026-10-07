@@ -4,7 +4,8 @@
 import { defineStore } from 'pinia'
 
 import { API_ROOT, ApiError, get, post } from '../lib/api'
-import { signChallenge } from '../lib/webeid'
+import { messageOfMarker, noteSignedOut, type SignInMessage, type SignInWay } from '../lib/signin'
+import { isCardSoftwareMissing, signChallenge } from '../lib/webeid'
 
 export interface Identity {
   /** The person, as the owners name them in their history. */
@@ -38,6 +39,18 @@ interface CardChallenge {
 interface Logout {
   next?: string
 }
+
+/** What the sign-in page reads before anyone is signed in. */
+interface LoginWays {
+  ways: SignInWay[]
+  /** Where the everyday app is, when the deployment names it. */
+  appUrl?: string
+  /** The deployment's language. */
+  language?: string
+}
+
+/** The authority's answer for a person it knows who is not a member here. */
+const NOT_MEMBER = 'err:membership:notMember'
 
 /**
  * Why the admin app is closed to this person before anyone is signed in: the
@@ -82,6 +95,18 @@ export const useAdminSession = defineStore('configbyte-session', {
     unreachable: false,
     /** Why the app is closed to this person, if it is. */
     closed: '' as Closed,
+    /** The ways this deployment offers to sign in, and whether they have been read. */
+    ways: [] as SignInWay[],
+    waysRead: false,
+    /** Where the everyday app is, and the deployment's language, from the same read. */
+    appUrl: '',
+    deploymentLanguage: '',
+    /** What the sign-in page says, the way being waited on, and whether the card software is missing. */
+    message: '' as SignInMessage,
+    waitingFor: '',
+    softwareMissing: false,
+    /** The last sign-out did not complete. */
+    signOutFailed: false,
   }),
   getters: {
     /** Whether the person holds any of the scopes, under any section. */
@@ -108,10 +133,64 @@ export const useAdminSession = defineStore('configbyte-session', {
         this.order = []
         const closed = closedBy(e)
         if (closed) this.closed = closed
-        else if (unanswered(e)) this.unreachable = true
-        else if (!(e instanceof ApiError) || e.status !== 401) throw e
+        // Anything but "not signed in" means the coordinator could not say who is:
+        // the page that says so, never the sign-in page as if nobody were.
+        else if (unanswered(e) || !(e instanceof ApiError) || e.status !== 401) this.unreachable = true
       } finally {
         this.resolved = true
+      }
+    },
+
+    /**
+     * Read the ways this deployment offers to sign in, once they have been read
+     * successfully. Without them the page cannot offer a way in, so a failure is
+     * the coordinator not answering — never an empty list, which would read as
+     * "no way is set up here".
+     */
+    async readWays() {
+      if (this.waysRead) return
+      try {
+        const read = await get<LoginWays>(`${API_ROOT}/login/ways`)
+        this.ways = read.ways ?? []
+        this.appUrl = read.appUrl ?? ''
+        this.deploymentLanguage = read.language ?? ''
+        this.waysRead = true
+      } catch (e) {
+        const closed = closedBy(e)
+        if (closed) this.closed = closed
+        else this.unreachable = true
+      }
+    },
+
+    /**
+     * Ask the coordinator who is signed in and which ways it offers — on opening,
+     * and again when it did not answer.
+     */
+    async ask() {
+      await Promise.all([this.resolve(), this.readWays()])
+    },
+
+    /**
+     * Sign in the way a person chose. What can go wrong is said on the page: the
+     * card software missing, the card or the account refused, not being a member
+     * here, or the coordinator not answering — each apart from the others.
+     */
+    async start(way: SignInWay, lang: string) {
+      this.message = ''
+      this.softwareMissing = false
+      this.waitingFor = way.flow === 'card' ? way.key : ''
+      try {
+        if (way.flow === 'redirect') await this.login()
+        else await this.loginWithCard(lang)
+      } catch (e) {
+        const closed = closedBy(e)
+        if (closed) this.closed = closed
+        else if (isCardSoftwareMissing(e)) this.softwareMissing = true
+        else if (e instanceof ApiError && e.code === NOT_MEMBER) this.message = 'notMember'
+        else if (unanswered(e)) this.unreachable = true
+        else this.message = way.flow === 'card' ? 'cardFailed' : 'failed'
+      } finally {
+        this.waitingFor = ''
       }
     },
 
@@ -132,17 +211,9 @@ export const useAdminSession = defineStore('configbyte-session', {
       const challenge = await post<CardChallenge>(`${API_ROOT}/login/webeid/start`)
       const authToken = await signChallenge(challenge.nonce, lang)
 
-      try {
-        await post(`${API_ROOT}/login/webeid/complete`, { state: challenge.state, authToken })
-      } catch (e) {
-        // Turned away for its strength or its network: no session was made, and
-        // the page that says why replaces the sign-in.
-        const closed = closedBy(e)
-        if (!closed) throw e
-        this.closed = closed
-
-        return
-      }
+      // Turned away for its strength or its network, no session was made, and the
+      // page that says why replaces the sign-in; the caller reads the refusal.
+      await post(`${API_ROOT}/login/webeid/complete`, { state: challenge.state, authToken })
       await this.resolve()
     },
 
@@ -152,6 +223,7 @@ export const useAdminSession = defineStore('configbyte-session', {
      */
     readMarker(marker: string) {
       if (marker === 'network' || marker === 'assurance') this.closed = marker
+      else this.message = messageOfMarker(marker)
     },
 
     /** Leave the closed page for the sign-in, dropping the marker that brought it. */
@@ -160,11 +232,28 @@ export const useAdminSession = defineStore('configbyte-session', {
       window.history.replaceState(window.history.state, '', window.location.pathname)
     },
 
+    /**
+     * Sign out here, and at the authority when it asks. A sign-out that does not
+     * complete is said — the person may be on a shared computer — and leaves the
+     * session as it was.
+     */
     async logout() {
-      const out = await post<Logout>(`${API_ROOT}/logout`)
+      this.signOutFailed = false
+      let out: Logout
+      try {
+        out = await post<Logout>(`${API_ROOT}/logout`)
+      } catch {
+        this.signOutFailed = true
+
+        return
+      }
       this.me = null
       this.order = []
-      if (out.next) window.location.assign(out.next)
+      this.message = 'signedOut'
+      if (out.next) {
+        noteSignedOut()
+        window.location.assign(out.next)
+      }
     },
   },
 })
