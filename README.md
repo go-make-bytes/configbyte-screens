@@ -76,8 +76,8 @@ back, never by the register's own text.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.4.0",
-"uibyte": "github:gmb-lib/uibyte#v0.9.0"
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.5.0",
+"uibyte": "github:gmb-lib/uibyte#v0.10.0"
 ```
 
 Move both pins together, then read the result back with `npm ls uibyte`: one copy.

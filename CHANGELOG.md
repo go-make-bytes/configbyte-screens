@@ -3,6 +3,17 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.5.0
+
+The same screens, on the newer kit.
+
+### Changed
+
+- **Built on `uibyte` `v0.10.0`** (was `v0.9.0`). A host pins the same `uibyte` tag as these screens, so one copy is
+  installed: move both pins together, then read the result back with `npm ls uibyte`. The new kit adds a window for a
+  short form over the page, a mark and a closing line on `FindField`'s list, an `OrderableList` row moved by its grip
+  alone, and a `Menu` named for what it acts on; all of it is optional, and nothing these screens draw changes.
+
 ## v0.4.0
 
 A sign-in that ends while someone works is one page, in place of a failure on every screen that was reading.
