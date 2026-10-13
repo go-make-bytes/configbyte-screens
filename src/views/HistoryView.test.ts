@@ -118,7 +118,7 @@ async function render(locale = 'en') {
     loa: 'high',
     tenant: 'W-1',
     sections: { members: ['membership:admin'] },
-    presentation: { displayName: 'Kalns', locale: 'en' },
+    presentation: { displayName: 'Kalns', locale: 'en', personLocale: null, deploymentLocale: 'en' },
   }
   session.order = ['orders', 'stock', 'members']
   const i18n = createI18n({ legacy: false, locale, fallbackLocale: 'en', messages: structuredClone(words) })

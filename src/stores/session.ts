@@ -3,7 +3,7 @@
 // all from the coordinator. The browser holds only its opaque cookie.
 import { defineStore } from 'pinia'
 
-import { API_ROOT, ApiError, get, post } from '../lib/api'
+import { API_ROOT, ApiError, get, post, put } from '../lib/api'
 import { messageOfMarker, noteSignedOut, type SignInMessage, type SignInWay } from '../lib/signin'
 import { isCardSoftwareMissing, signChallenge } from '../lib/webeid'
 
@@ -18,9 +18,35 @@ export interface Identity {
   sections: Record<string, string[]>
   presentation: {
     displayName: string
+    /** The language to speak: the person's own, else the deployment's. */
     locale: string
+    /** The language the person chose for themselves, kept for them on the server; null when they chose none. */
+    personLocale: string | null
+    /** The language everyone here has, unless they chose their own. */
+    deploymentLocale: string
   }
 }
+
+/** The coordinator's answer to a change of the person's language: the three members it sets. */
+type LanguageAnswer = Pick<Identity['presentation'], 'locale' | 'personLocale' | 'deploymentLocale'>
+
+/** The three language members, and nothing else, of a presentation or an answer. */
+function languageOf(from: LanguageAnswer): LanguageAnswer {
+  return { locale: from.locale, personLocale: from.personLocale, deploymentLocale: from.deploymentLocale }
+}
+
+/**
+ * Counts the person's picks of a language, so only the latest one decides what
+ * the page shows: an earlier pick answered after it changes nothing on screen.
+ */
+let languagePicks = 0
+
+/**
+ * For each signed-in person, the language members as the coordinator last kept
+ * them: what a pick that fails puts back — never a language only shown while
+ * another pick was still out.
+ */
+const confirmedLanguage = new WeakMap<Identity, LanguageAnswer>()
 
 interface SectionLine {
   section: string
@@ -117,6 +143,8 @@ export const useAdminSession = defineStore('configbyte-session', {
     softwareMissing: false,
     /** The last sign-out did not complete. */
     signOutFailed: false,
+    /** The last language picked could not be kept, and the one last kept is back. */
+    languageFailed: false,
   }),
   getters: {
     /** Whether the person holds any of the scopes, under any section. */
@@ -196,6 +224,42 @@ export const useAdminSession = defineStore('configbyte-session', {
       this.me = null
       this.order = []
       this.message = why
+      // A language change that failed was this person's; the next one to sign in here may be someone else.
+      this.languageFailed = false
+    },
+
+    /**
+     * Set the person's own language, or clear it with null. The page changes at
+     * once; the coordinator then keeps the choice for the person, so it is the same
+     * on every computer, and its answer is what the page goes on with. The language
+     * everyone here has is sent by its code like any other — the coordinator keeps
+     * nothing of the person's own for it. If the choice cannot be kept, the language
+     * last kept is put back and the frame says so.
+     *
+     * Nothing is kept in this browser: the sign-in page's own choice is the
+     * browser's, and on a shared computer the next person's sign-in page must not
+     * open in this person's language.
+     */
+    async setLanguage(code: string | null) {
+      const me = this.me
+      if (!me) return
+      const pick = ++languagePicks
+      // Until a pick is answered, what the person signed in with is what was kept.
+      if (!confirmedLanguage.has(me)) confirmedLanguage.set(me, languageOf(me.presentation))
+
+      this.languageFailed = false
+      me.presentation.locale = code ?? me.presentation.deploymentLocale
+      try {
+        const answer = languageOf(await put<LanguageAnswer>(`${API_ROOT}/me/language`, { language: code }))
+        confirmedLanguage.set(me, answer)
+        // A later pick has the last word on screen.
+        if (pick === languagePicks) Object.assign(me.presentation, answer)
+      } catch {
+        // A later pick, or a sign-in that ended meanwhile, has the last word.
+        if (pick !== languagePicks || this.me !== me) return
+        Object.assign(me.presentation, confirmedLanguage.get(me))
+        this.languageFailed = true
+      }
     },
 
     /**

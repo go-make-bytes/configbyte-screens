@@ -23,6 +23,12 @@ describe('the words these screens carry', () => {
     expect([...leaves(en as Tree), ...leaves(lv as Tree)].filter(([, v]) => v.trim() === '').map(([k]) => k)).toEqual([])
   })
 
+  // The globe marks the language everyone here has with it, beside the names each language gives itself.
+  it('carries the word that marks the language everyone here has', () => {
+    const word = (tree: Tree) => Object.fromEntries(leaves(tree))['configbyte.language.everyoneHere']
+    expect([word(en as Tree), word(lv as Tree)]).toEqual(['everyone here', 'visiem šeit'])
+  })
+
   it('keeps every placeholder a word carries in both languages', () => {
     // A plural repeats its placeholder once per form, so each is counted once.
     const holes = (s: string) => [...new Set([...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort()

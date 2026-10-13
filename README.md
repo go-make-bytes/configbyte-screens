@@ -19,7 +19,8 @@ are called, the lines its Export card lists, and its own admin screens; these sc
 | No card software | the card software or its browser extension is not on this computer | what to install, with a link, above the buttons |
 | Came back unfinished | a sign-in returns with `?error=` and a marker | why, in plain words: cancelled, not a member of this workspace (and to ask its administrator for an invitation), took too long, could not be matched, the identity provider failed, or could not be completed |
 | Not a member | the card's sign-in completes with `403 err:membership:notMember` | the same sentence as a sign-in that came back not a member |
-| Signed in | the person holds a scope the host marks as configuring a section this deployment runs: a setup box, or the administrator's | the frame: the deployment's name, the entries in their groups, the screen opened, and who is signed in with the way's own name |
+| Signed in | the person holds a scope the host marks as configuring a section this deployment runs: a setup box, or the administrator's | the frame: the deployment's name, the entries in their groups, the screen opened, and at the foot of the menu the language globe above who is signed in, with the way's own name |
+| Language not kept | a language picked at the globe, and `PUT /me/language` gets no answer or a refusal | the language last kept back, and a sentence under the globe saying so |
 | Nothing to configure | signed in, and no such scope is held | a plain sentence saying so, a link to everyday work, and signing out |
 | Signed out, just now | after *Sign out*, back on the sign-in page | that the person is signed out of this app, and that a company sign-in stays signed in on the computer |
 | Sign-out failed | `POST /logout` gets no answer or a refusal | a sentence saying so; the person stays signed in |
@@ -30,7 +31,17 @@ are called, the lines its Export card lists, and its own admin screens; these sc
 
 **The language before anyone is signed in** is the one chosen on the page in this browser, kept there; else the
 first of the browser's own languages the app carries; else the deployment's (`language` in `GET /login/ways`). Once
-someone is signed in, the deployment's language from `GET /me` decides.
+someone is signed in, the language `GET /me` answers decides: the person's own, else the deployment's.
+
+**The person's own language is chosen at the globe** at the foot of the menu, above their name — and at the foot of
+the menu a phone opens. It names the language the page speaks in itself, and lists every language the app carries,
+each in its own name, the deployment's marked *everyone here*. Picking one changes the page at once; the coordinator
+then keeps the choice **for the person, on the server** (`PUT /me/language`), so it is the same on every computer they
+sign in on, and its answer is what the page goes on with. Picking the language everyone here has is sent by its code
+like any other, and the coordinator keeps nothing of the person's own for it. A choice that cannot be kept puts back
+the language last kept and says so. The globe keeps nothing in the browser: the sign-in page's choice stays the
+browser's, so on a shared computer the next person's sign-in page does not open in this person's language. The
+document's `lang` follows the page's language throughout, before sign-in and after.
 
 **An entry shows when two things are true:** its screen was built into this admin app, and the coordinator found
 its section's owner when it started (`GET /sections`). What the frame offers is display only: every call is judged by
@@ -85,8 +96,8 @@ language. When the list cannot tell, the first.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.6.0",
-"uibyte": "github:gmb-lib/uibyte#v0.10.0"
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.7.0",
+"uibyte": "github:gmb-lib/uibyte#v0.11.0"
 ```
 
 Move both pins together, then read the result back with `npm ls uibyte`: one copy.
@@ -163,6 +174,9 @@ their reads is answered `401`: `useAdminSession().signInEnded()`. It does nothin
 read: a change refused that way is said in its own form, where what was typed still is. A `403` and every other failure
 stay where they happened.
 
+**A host that offers the language elsewhere too** sets it the way the globe does, so both always show the same:
+`useAdminSession().setLanguage(code)`, or `null` to clear the person's own.
+
 ### What the host hands over
 
 Every text is a **message key in the host's own translator**, so it reads in the person's language.
@@ -185,8 +199,8 @@ A section the host does not describe keeps the name it arrived with, and so does
 ### Words
 
 The screens carry their own words in **English and Latvian**, merged into the host's translator under `configbyte.*`
-when the plugin is installed, then the host's `words` over them. The frame switches to the language the deployment
-names (`presentation.locale` in `GET /me`) when it carries that language.
+when the plugin is installed, then the host's `words` over them. The frame switches to the language `GET /me` answers
+(`presentation.locale`: the person's own, else the deployment's) when it carries that language.
 
 ### The ID card
 
@@ -241,7 +255,8 @@ Everything goes to the coordinator, same-origin, under `/api/configbyte/v1`, wit
 | Method | Path | For |
 |---|---|---|
 | `GET` | `/login/ways` | before anyone is signed in: the ways to sign in, the everyday app's address, the deployment's language |
-| `GET` | `/me` | who is signed in, the deployment's name and language, the person's scopes per section |
+| `GET` | `/me` | who is signed in, the deployment's name, the person's scopes per section, and in `presentation` the language to speak (`locale`), the person's own (`personLocale`, `null` when none) and the deployment's (`deploymentLocale`) |
+| `PUT` | `/me/language` | keeps the language picked at the globe for the person: `{"language": "lv"}`, answered with the three members above |
 | `GET` | `/sections` | the deployment's sections, in the order an import writes them |
 | `POST` | `/login/start` | the redirect sign-in; answers where to send the browser |
 | `POST` | `/login/webeid/start` · `/login/webeid/complete` | the ID card: a challenge out, the card's signed answer back, unchanged |

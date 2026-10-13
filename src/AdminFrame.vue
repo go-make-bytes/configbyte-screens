@@ -7,10 +7,23 @@
 // An entry shows when two things are true: its screen was built into this app,
 // and the coordinator found its section's owner at start. What the frame offers
 // is display; every call is judged by the service it reaches.
+//
+// At the foot of the menu, above the person's name, a globe names the language
+// the page speaks and changes it at once. The choice is the person's, kept for
+// them by the coordinator; the language everyone here has is marked as that.
 import { computed, onMounted, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
-import { AppShell, Button, buttonVariants, type NavGroup, type NavItem, type ShellLabels } from 'uibyte'
+import {
+  AppShell,
+  Button,
+  buttonVariants,
+  LanguageMenu,
+  type LanguageOption,
+  type NavGroup,
+  type NavItem,
+  type ShellLabels,
+} from 'uibyte'
 
 import AdminBrand from './components/AdminBrand.vue'
 import AdminSignIn from './components/AdminSignIn.vue'
@@ -45,11 +58,32 @@ const signedInWith = computed(() => {
 /** The deployment's own name once someone is signed in; the product's before. */
 const brandName = computed(() => session.me?.presentation.displayName || t(options.product))
 
-// The deployment says which language it reads in, where this app carries it.
+// Signed in, the page speaks the person's own language, else the deployment's —
+// the one the coordinator answers — where this app carries it.
 watchEffect(() => {
   const wanted = session.me?.presentation.locale
   if (wanted && availableLocales.includes(wanted)) locale.value = wanted
 })
+
+// The document says which language the page is in, before sign-in and after, so a
+// screen reader reads its words in that language.
+watchEffect(() => {
+  document.documentElement.lang = locale.value
+})
+
+/** Every language the app carries, each named in itself; the deployment's marked as the one everyone here has. */
+const languages = computed<LanguageOption[]>(() =>
+  availableLocales.map((code) => ({
+    code,
+    name: t('configbyte.signIn.self', {}, { locale: code }),
+    ...(code === session.me?.presentation.deploymentLocale ? { note: t('configbyte.language.everyoneHere') } : {}),
+  })),
+)
+
+/** A language picked at the globe: the page changes at once, and the person keeps it on every computer. */
+function chooseLanguage(code: string) {
+  void session.setLanguage(code)
+}
 
 watchEffect(() => {
   document.title = t(f('tab'), { name: brandName.value })
@@ -131,19 +165,32 @@ const labels = computed<ShellLabels>(() => ({
         </AdminBrand>
       </template>
 
+      <!-- The same foot is drawn at the bottom of the menu a phone opens: the globe first, then who is signed in. -->
       <template #sidebar-footer>
-        <div v-if="session.me" class="flex flex-col gap-2 border-t border-console-line pt-3">
-          <span class="min-w-0">
-            <span class="block truncate text-[13.5px] font-semibold text-console-text">{{ session.me.name }}</span>
-            <span class="block font-mono text-[10.5px] tracking-wide text-console-accent">
-              {{ signedInWith }}
+        <template v-if="session.me">
+          <LanguageMenu
+            side="top"
+            tone="console"
+            block
+            :languages="languages"
+            :model-value="locale"
+            :label="t('configbyte.signIn.language')"
+            @update:model-value="chooseLanguage"
+          />
+          <p v-if="session.languageFailed" role="alert" class="text-[12px] text-status-late">{{ t(f('languageFailed')) }}</p>
+          <div class="flex flex-col gap-2 border-t border-console-line pt-3">
+            <span class="min-w-0">
+              <span class="block truncate text-[13.5px] font-semibold text-console-text">{{ session.me.name }}</span>
+              <span class="block font-mono text-[10.5px] tracking-wide text-console-accent">
+                {{ signedInWith }}
+              </span>
             </span>
-          </span>
-          <Button variant="ghost" size="sm" class="justify-start text-console-text hover:bg-white/[0.07]" @click="session.logout()">
-            {{ t(f('logout')) }}
-          </Button>
-          <p v-if="session.signOutFailed" role="alert" class="text-[12px] text-status-late">{{ t(f('logoutFailed')) }}</p>
-        </div>
+            <Button variant="ghost" size="sm" class="justify-start text-console-text hover:bg-white/[0.07]" @click="session.logout()">
+              {{ t(f('logout')) }}
+            </Button>
+            <p v-if="session.signOutFailed" role="alert" class="text-[12px] text-status-late">{{ t(f('logoutFailed')) }}</p>
+          </div>
+        </template>
       </template>
 
       <!-- The coordinator did not answer: nothing was changed, and the one way on is to ask again. -->

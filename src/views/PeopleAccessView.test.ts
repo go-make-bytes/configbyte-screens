@@ -175,7 +175,7 @@ async function render(over: Partial<AdminOptions> = {}, locale = 'en') {
     loa: 'high',
     tenant: 'W-1',
     sections: held,
-    presentation: { displayName: 'Kalns', locale: 'en' },
+    presentation: { displayName: 'Kalns', locale: 'en', personLocale: null, deploymentLocale: 'en' },
   }
   session.order = ['orders', 'stock', 'members']
   session.resolved = true

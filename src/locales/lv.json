@@ -80,7 +80,11 @@
         }
       },
       "signedIn": "pieslēgts",
-      "logoutFailed": "Iziet neizdevās. Mēģiniet vēlreiz."
+      "logoutFailed": "Iziet neizdevās. Mēģiniet vēlreiz.",
+      "languageFailed": "Valodu nomainīt neizdevās. Mēģiniet vēlreiz."
+    },
+    "language": {
+      "everyoneHere": "visiem šeit"
     },
     "transfer": {
       "export": {
