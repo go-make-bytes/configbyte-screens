@@ -107,7 +107,7 @@ async function settle(wrapper: { vm: { $nextTick: () => Promise<unknown> } }) {
   }
 }
 
-async function render() {
+async function render(locale = 'en') {
   const pinia = createPinia()
   setActivePinia(pinia)
   const session = useAdminSession()
@@ -121,7 +121,7 @@ async function render() {
     presentation: { displayName: 'Kalns', locale: 'en' },
   }
   session.order = ['orders', 'stock', 'members']
-  const i18n = createI18n({ legacy: false, locale: 'en', fallbackLocale: 'en', messages: structuredClone(words) })
+  const i18n = createI18n({ legacy: false, locale, fallbackLocale: 'en', messages: structuredClone(words) })
   const wrapper = mount(HistoryView, { global: { plugins: [pinia, i18n, configbyteScreens(i18n, options)] } })
   await settle(wrapper)
 
@@ -195,6 +195,49 @@ describe('History', () => {
     expect(calls.filter((c) => c.startsWith(`${S}/orders/history`))).toHaveLength(1)
     expect(lines(wrapper)).toHaveLength(5)
     expect(wrapper.find('[data-act="older"]').exists()).toBe(false)
+  })
+
+  // A line whose name stayed records a change of the names in other languages alone.
+  it.each([
+    [
+      'en',
+      [
+        'Laura Zariņa changed the names of the role «Meistars» in other languages',
+        'Laura Zariņa renamed the role «Meistars» to «Vecākais meistars»',
+        'Laura Zariņa changed the names of the position «Ražošanas vadītājs» in other languages',
+        'Laura Zariņa renamed the position «Cehs» to «Ražošanas vadītājs»',
+      ],
+    ],
+    [
+      'lv',
+      [
+        'Laura Zariņa mainīja lomas «Meistars» nosaukumus citās valodās',
+        'Laura Zariņa pārdēvēja lomu «Meistars» par «Vecākais meistars»',
+        'Laura Zariņa mainīja amata «Ražošanas vadītājs» nosaukumus citās valodās',
+        'Laura Zariņa pārdēvēja amatu «Cehs» par «Ražošanas vadītājs»',
+      ],
+    ],
+  ])('in %s, says a change of names in other languages, never a rename to the same name', async (locale, said) => {
+    stub({
+      [`${S}/members/history`]: {
+        status: 200,
+        body: {
+          events: [
+            ev('e4', '2026-10-03T11:40:00Z', 'sub:L', 'tenantRoleRenamed', { roleId: 'r1', from: 'Meistars', to: 'Meistars', labels: { en: 'Foreman' } }),
+            ev('e3', '2026-10-03T11:30:00Z', 'sub:L', 'tenantRoleRenamed', { roleId: 'r1', from: 'Meistars', to: 'Vecākais meistars', labels: { en: 'Foreman' } }),
+            ev('e2', '2026-10-03T11:20:00Z', 'sub:L', 'chartPositionRenamed', { positionId: 'p1', name: 'Ražošanas vadītājs', from: 'Ražošanas vadītājs', labels: { en: 'Head of production' } }),
+            ev('e1', '2026-10-03T11:10:00Z', 'sub:L', 'chartPositionRenamed', { positionId: 'p1', name: 'Ražošanas vadītājs', from: 'Cehs', labels: {} }),
+          ],
+          more: false,
+        },
+      },
+      [`${S}/orders/history?family=setup`]: { status: 200, body: { items: [], more: false } },
+      [`${S}/stock/history?family=setup`]: { status: 200, body: { items: [], more: false } },
+    })
+    const wrapper = await render(locale)
+    const out = lines(wrapper)
+    expect(out).toHaveLength(4)
+    said.forEach((s, i) => expect(out[i]).toContain(s))
   })
 
   it('says nothing has changed yet when no service has a line', async () => {

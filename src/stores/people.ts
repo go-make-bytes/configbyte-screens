@@ -6,11 +6,20 @@
 // A refusal is worded by the act that was made and the status that came back,
 // never by the register's own text: the same status can mean several things,
 // and only the act knows which one the person needs to hear.
+//
+// Roles, user types and positions may carry names in other languages beside the
+// name as entered (`labels`); a register that keeps none answers without them.
+// These screens show the name as entered.
 import { defineStore } from 'pinia'
 
 import { ApiError, del, get, post, put, relay, segment } from '../lib/api'
 import type { DeclaringService } from '../lib/boxes'
+import { calledAlike, readsAlike, type Labels, type Named } from '../lib/names'
+import en from '../locales/en.json'
 import type { FieldBox } from '../options'
+
+/** The languages these screens have a word for, so a sentence can name one. */
+const NAMED_LANGUAGES = Object.keys(en.configbyte.people.inLanguage)
 
 /** A person or a machine that is a member of the workspace. */
 export interface Member {
@@ -21,10 +30,10 @@ export interface Member {
   status: 'invited' | 'active' | 'revoked'
   administrator: boolean
   arrival: boolean
-  tenantRoles: { id: string; name: string }[]
-  userType: { id: string; name: string } | null
+  tenantRoles: { id: string; name: string; labels?: Labels }[]
+  userType: { id: string; name: string; labels?: Labels } | null
   /** The user type the person's position in the chart gives, which is then the one in force. */
-  chartUserType: { id: string; name: string } | null
+  chartUserType: { id: string; name: string; labels?: Labels } | null
   /** The day the register last gave the member access, `YYYY-MM-DD`. */
   lastSignedInOn: string | null
 }
@@ -34,6 +43,7 @@ export interface Role {
   id: string
   seed?: string
   name: string
+  labels?: Labels
   description: string
   permissions: string[]
 }
@@ -42,6 +52,7 @@ export interface Role {
 export interface UserType {
   id: string
   name: string
+  labels?: Labels
   description: string
   permissions: string[]
   members: number
@@ -53,6 +64,7 @@ export interface UserType {
 export interface Position {
   id: string
   name: string
+  labels?: Labels
 }
 
 /** Words to show after an act: a key below `configbyte.people.said` or `.refused`, and what it names. */
@@ -60,6 +72,8 @@ export interface Said {
   kind: 'said' | 'refused'
   key: string
   values: Record<string, string | number>
+  /** A language the words name, by its code: said in the reader's own word for it. */
+  language?: string
 }
 
 /** The acts whose refusals read differently. */
@@ -176,12 +190,19 @@ export const usePeople = defineStore('configbyte-people', {
      * One act on the register. Answers whether it was accepted; either way the
      * words to show are in `said`.
      */
-    async act(act: Act, call: () => Promise<unknown>, said: Said['key'], values: Said['values'], about?: Record<string, string | number>) {
+    async act(
+      act: Act,
+      call: () => Promise<unknown>,
+      said: Said['key'],
+      values: Said['values'],
+      about?: Record<string, string | number>,
+      naming?: Named,
+    ) {
       this.said = null
       try {
         await call()
       } catch (e) {
-        this.said = this.refusal(act, e, { ...values, ...(about ?? {}) })
+        this.said = this.refusal(act, e, { ...values, ...(about ?? {}) }, naming)
 
         return false
       }
@@ -191,9 +212,21 @@ export const usePeople = defineStore('configbyte-people', {
       return true
     },
 
-    /** The words for a refused act. */
-    refusal(act: Act, e: unknown, values: Said['values']): Said {
+    /**
+     * The words for a refused act. A Save's `naming` is the role or user type as it
+     * would stand after the Save, to tell which other one its name collides with.
+     */
+    refusal(act: Act, e: unknown, values: Said['values'], naming?: Named): Said {
       const refused = (key: string, extra: Said['values'] = {}): Said => ({ kind: 'refused', key, values: { ...values, ...extra } })
+      // A name is taken when another item is called the same, or already reads
+      // that way in a language. Which one is worked out from the list already
+      // read; when that cannot tell, the plain sentence stays.
+      const taken = (list: Named[], plain: string, alike: string): Said => {
+        if (!naming || calledAlike(list, naming)) return refused(plain)
+        const found = readsAlike(list, naming, NAMED_LANGUAGES)
+
+        return found ? { ...refused(alike, { other: found.other.name, reads: found.reads }), language: found.language } : refused(plain)
+      }
       if (unanswered(e)) return refused('unanswered')
       if (!(e instanceof ApiError)) return refused('other', { reason: String(e) })
       // The register, or the coordinator before it, no longer counts this person
@@ -205,11 +238,11 @@ export const usePeople = defineStore('configbyte-people', {
           case 'takeAll':
             return refused('lastAdministrator')
           case 'saveRole':
-            return refused('roleNameTaken')
+            return taken(this.roles, 'roleNameTaken', 'roleReadsAlike')
           case 'deleteRole':
             return Number(values.n ?? 0) > 0 ? refused('roleHeld') : refused('rolePlaced')
           case 'saveUserType':
-            return refused('typeNameTaken')
+            return taken(this.userTypes, 'typeNameTaken', 'typeReadsAlike')
           case 'deleteUserType':
             if (values.workspaceDefault) return refused('typeIsDefault')
             if (values.corporateLogin) return refused('typeIsCorporate')
@@ -274,6 +307,8 @@ export const usePeople = defineStore('configbyte-people', {
      */
     async saveRole(input: { id: string; name: string; was: string; permissions: string[]; changed: boolean }): Promise<string> {
       let id = input.id
+      // A Save sends the name alone, so a role keeps its names in other languages.
+      const kept = this.roles.find((r) => r.id === input.id)?.labels
       const ok = await this.act(
         'saveRole',
         async () => {
@@ -287,6 +322,8 @@ export const usePeople = defineStore('configbyte-people', {
         },
         'roleSaved',
         { name: input.name },
+        undefined,
+        { id: input.id, name: input.name, labels: kept },
       )
 
       return ok ? id : ''
@@ -300,12 +337,16 @@ export const usePeople = defineStore('configbyte-people', {
 
     saveUserType(input: { id: string; name: string; description: string; permissions: string[] }) {
       const body = { name: input.name, description: input.description, permissions: input.permissions }
+      // A Save sends no names in other languages, so a user type keeps its own.
+      const kept = this.userTypes.find((u) => u.id === input.id)?.labels
 
       return this.act(
         'saveUserType',
         () => (input.id ? put(this.tenantPath(`user-types/${segment(input.id)}`), body) : post(this.tenantPath('user-types'), body)),
         'typeSaved',
         { name: input.name },
+        undefined,
+        { id: input.id, name: input.name, labels: kept },
       )
     },
 

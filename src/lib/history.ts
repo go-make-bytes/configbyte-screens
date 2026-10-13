@@ -168,8 +168,14 @@ export function registerWords(line: HistoryLine & { userId?: string }, names: Na
       return by('roleDefined', { role })
     case 'tenantRoleSeeded':
       return by('roleSeeded', { role })
-    case 'tenantRoleRenamed':
-      return by('roleRenamed', { from: asText(p.from), to: asText(p.to) })
+    case 'tenantRoleRenamed': {
+      // Written when the name or the names in other languages change: a name
+      // that stayed means only the names in other languages did.
+      const from = asText(p.from)
+      const to = asText(p.to)
+
+      return from === to ? by('roleNamesChanged', { role: to || role }) : by('roleRenamed', { from, to })
+    }
     case 'tenantRoleDescribed':
       return by('roleDescribed', { role })
     case 'tenantRoleDeleted':
@@ -203,7 +209,8 @@ export function registerWords(line: HistoryLine & { userId?: string }, names: Na
     case 'chartPositionAdded':
       return by('positionAdded', { position })
     case 'chartPositionRenamed':
-      return by('positionRenamed', { from: asText(p.from), position })
+      // As a role's: a name that stayed means only the names in other languages changed.
+      return asText(p.from) === asText(p.name) ? by('positionNamesChanged', { position }) : by('positionRenamed', { from: asText(p.from), position })
     case 'chartPositionMoved':
       return by('positionMoved', { position })
     case 'chartPositionRemoved':

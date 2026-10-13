@@ -330,14 +330,20 @@
         "roleHeld": "«{role}» is held by {n} person. Take it from them first. | «{role}» is held by {n} people. Take it from them first.",
         "rolePlaced": "«{role}» is still placed by a service on things it keeps. Move those places to another role first.",
         "roleNameTaken": "Another role is already called «{name}».",
+        "roleReadsAlike": "«{reads}» is how the role «{other}» reads {language}.",
         "typeHeld": "«{type}» is held by {n} person. Give them another user type first. | «{type}» is held by {n} people. Give them another user type first.",
         "typeIsDefault": "New people get «{type}». Choose another first.",
         "typeIsCorporate": "People arriving through your corporate login get «{type}». Choose another first.",
         "typeInChart": "A position in the chart of authority gives «{type}». Change that position first.",
         "typeNameTaken": "Another user type is already called «{name}».",
+        "typeReadsAlike": "«{reads}» is how the user type «{other}» reads {language}.",
         "setupBox": "That box sets up the workspace, and only the Administrator checkbox holds it.",
         "unanswered": "The admin service did not answer, so nothing was changed. Try again.",
         "other": "That was not done: {reason}"
+      },
+      "inLanguage": {
+        "en": "in English",
+        "lv": "in Latvian"
       }
     },
     "history": {
@@ -380,6 +386,7 @@
         "roleDefined": "added the role «{role}»",
         "roleSeeded": "set up the role «{role}» the workspace starts with",
         "roleRenamed": "renamed the role «{from}» to «{to}»",
+        "roleNamesChanged": "changed the names of the role «{role}» in other languages",
         "roleDescribed": "changed what the role «{role}» is for",
         "roleDeleted": "deleted the role «{role}»",
         "roleGranted": "gave {person} the role «{role}»",
@@ -399,6 +406,7 @@
         "corporateLoginCleared": "made the corporate login give what new people get",
         "positionAdded": "added the position «{position}» to the chart",
         "positionRenamed": "renamed the position «{from}» to «{position}»",
+        "positionNamesChanged": "changed the names of the position «{position}» in other languages",
         "positionMoved": "moved the position «{position}»",
         "positionRemoved": "removed the position «{position}»",
         "positionRemovedUnnamed": "removed a position from the chart",

@@ -65,7 +65,11 @@ export interface BoxGroup {
 
 /** One box a restricted field brings: held one field at a time, on a role. */
 export interface FieldBox {
-  /** The permission as a role holds it: `<family>@<field key>.<generation>`. */
+  /**
+   * The permission as a role holds it: `<family>@<field>.<generation>`, the field
+   * as its service names it (`orders/order:viewField@12.2`). Matched whole, never
+   * read past the `@`.
+   */
   permission: string
   /** The field's name, as the person who restricted it wrote it. */
   name: string

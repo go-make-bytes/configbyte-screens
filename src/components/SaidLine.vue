@@ -9,12 +9,17 @@ const props = defineProps<{ said: Said }>()
 
 const { t } = useI18n()
 
-/** A sentence that counts something reads in the plural its count asks for. */
+/**
+ * A sentence that counts something reads in the plural its count asks for; one
+ * that names a language names it in the reader's own word for it.
+ */
 const words = computed(() => {
   const key = `configbyte.people.${props.said.kind}.${props.said.key}`
-  const n = props.said.values.n
+  const language = props.said.language
+  const values = language ? { ...props.said.values, language: t(`configbyte.people.inLanguage.${language}`) } : props.said.values
+  const n = values.n
 
-  return typeof n === 'number' ? t(key, props.said.values, n) : t(key, props.said.values)
+  return typeof n === 'number' ? t(key, values, n) : t(key, values)
 })
 </script>
 

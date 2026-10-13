@@ -49,9 +49,11 @@ and each stream the host names, a page at a time, each with its own place, and k
 side only as far as every stream has been read, since a stream with older lines unread may still hold a line newer
 than another stream's oldest; *Show older* reads the next page of each stream that has more. The register's lines,
 and the lines every owner writes for an export and an import of its part (with the part's and the file's hash), are
-worded by the screens; the host words its own services' lines, and a line nobody words shows its kind. People are
-named from the register's list. A filter per stream the host names, one for the register, and a person filter over
-what has been read; a service that does not answer is named in a sentence above the list.
+worded by the screens; the host words its own services' lines, and a line nobody words shows its kind. A role's or a
+position's rename line whose name stayed records a change of its names in other languages alone, and is said that
+way, never as a rename to the same name. People are named from the register's list. A filter per stream the host
+names, one for the register, and a person filter over what has been read; a service that does not answer is named in
+a sentence above the list.
 
 **People & access** reads and writes the membership register, in three tabs:
 
@@ -68,15 +70,22 @@ what has been read; a service that does not answer is named in a sentence above 
 - **User types**: each with what it holds, from the boxes granted across the whole workspace only, and how many hold
   it; and what someone arriving through the corporate login gets.
 
+Roles, user types and positions are shown by their names as entered. The names in other languages the register may
+keep beside them (`labels`: a language's code and the name in it) are read but not edited here, and a Save leaves
+them as they are; a register that keeps none reads the same.
+
 Every act saves at once and says what it did. A refusal is worded by the act that was made and the status that came
-back, never by the register's own text.
+back, never by the register's own text. A role's or a user type's name the register refuses as taken (`409`) is
+said one of two ways, worked out from the list the screen holds: another is already called that, or another already
+reads that way in one of the languages these screens carry words for — then the sentence names that one and the
+language. When the list cannot tell, the first.
 
 ## Using it
 
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.5.0",
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.6.0",
 "uibyte": "github:gmb-lib/uibyte#v0.10.0"
 ```
 
