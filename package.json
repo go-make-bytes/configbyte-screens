@@ -37,7 +37,7 @@
     "vue-router": "^4.5.0"
   },
   "dependencies": {
-    "uibyte": "github:gmb-lib/uibyte#v0.11.0"
+    "uibyte": "github:gmb-lib/uibyte#v0.11.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

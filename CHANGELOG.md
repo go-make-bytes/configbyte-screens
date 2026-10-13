@@ -39,7 +39,7 @@ A language of one's own: a globe at the foot of the menu, and the choice kept fo
   "presentation": { "displayName": "Kalns", "locale": "lv", "personLocale": "lv", "deploymentLocale": "en" }
   ```
 
-- **Built on `uibyte` `v0.11.0`** (was `v0.10.0`). A host pins the same `uibyte` tag as these screens, so one copy is
+- **Built on `uibyte` `v0.11.1`** (was `v0.10.0`). A host pins the same `uibyte` tag as these screens, so one copy is
   installed: move both pins together, then read the result back with `npm ls uibyte`. The new kit lets a menu open
   upward, sit on the dark menu, span its column and mark an item with a short word; the globe uses all four, and
   nothing else these screens draw changes.

@@ -97,7 +97,7 @@ Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
 "configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.7.0",
-"uibyte": "github:gmb-lib/uibyte#v0.11.0"
+"uibyte": "github:gmb-lib/uibyte#v0.11.1"
 ```
 
 Move both pins together, then read the result back with `npm ls uibyte`: one copy.
