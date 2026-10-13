@@ -330,14 +330,20 @@
         "roleHeld": "Lomu «{role}» tur {n} cilvēks. Vispirms to noņemiet. | Lomu «{role}» tur {n} cilvēki. Vispirms to noņemiet.",
         "rolePlaced": "Lomu «{role}» joprojām izmanto kāds serviss savos objektos. Vispirms pārceliet tos uz citu lomu.",
         "roleNameTaken": "Cita loma jau saucas «{name}».",
+        "roleReadsAlike": "Loma «{other}» {language} jau saucas «{reads}».",
         "typeHeld": "Lietotāja veidu «{type}» tur {n} cilvēks. Vispirms piešķiriet viņam citu. | Lietotāja veidu «{type}» tur {n} cilvēki. Vispirms piešķiriet viņiem citu.",
         "typeIsDefault": "Jauni cilvēki saņem «{type}». Vispirms izvēlieties citu.",
         "typeIsCorporate": "Cilvēki, kas ienāk ar jūsu uzņēmuma pieteikšanos, saņem «{type}». Vispirms izvēlieties citu.",
         "typeInChart": "Pilnvaru shēmas amats piešķir «{type}». Vispirms mainiet šo amatu.",
         "typeNameTaken": "Cits lietotāja veids jau saucas «{name}».",
+        "typeReadsAlike": "Lietotāja veids «{other}» {language} jau saucas «{reads}».",
         "setupBox": "Šī atļauja iestata darbvietu, un to dod tikai atzīme Administrators.",
         "unanswered": "Administrēšanas serviss neatbildēja, tāpēc nekas netika mainīts. Mēģiniet vēlreiz.",
         "other": "Tas netika izdarīts: {reason}"
+      },
+      "inLanguage": {
+        "en": "angliski",
+        "lv": "latviski"
       }
     },
     "history": {
@@ -380,6 +386,7 @@
         "roleDefined": "pievienoja lomu «{role}»",
         "roleSeeded": "iestatīja lomu «{role}», ar ko darbvieta sāk",
         "roleRenamed": "pārdēvēja lomu «{from}» par «{to}»",
+        "roleNamesChanged": "mainīja lomas «{role}» nosaukumus citās valodās",
         "roleDescribed": "mainīja lomas «{role}» aprakstu",
         "roleDeleted": "izdzēsa lomu «{role}»",
         "roleGranted": "piešķīra {person} lomu «{role}»",
@@ -399,6 +406,7 @@
         "corporateLoginCleared": "noteica, ka uzņēmuma pieteikšanās piešķir to, ko saņem jauni cilvēki",
         "positionAdded": "pievienoja shēmai amatu «{position}»",
         "positionRenamed": "pārdēvēja amatu «{from}» par «{position}»",
+        "positionNamesChanged": "mainīja amata «{position}» nosaukumus citās valodās",
         "positionMoved": "pārvietoja amatu «{position}»",
         "positionRemoved": "noņēma amatu «{position}»",
         "positionRemovedUnnamed": "noņēma amatu no shēmas",

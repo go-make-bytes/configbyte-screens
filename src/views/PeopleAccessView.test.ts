@@ -34,7 +34,7 @@ const member = (over: Record<string, unknown>) => ({
   arrival: false,
   serviceRoles: [],
   tenantRoles: [],
-  userType: { id: 't-member', name: 'Member' },
+  userType: { id: 't-member', name: 'Member', labels: { lv: 'Dalībnieks' } },
   chartUserType: null,
   lastSignedInOn: null,
   ...over,
@@ -64,11 +64,13 @@ const roles = () => [
     description: '',
     permissions: ['orders/order:view', 'stock/shelf:view', 'orders/order:viewField@price.1', 'other/thing:do', 'orders/order:archive'],
   },
-  { id: 'r2', seed: 'worker', name: 'Worker', description: '', permissions: ['orders/order:view'] },
+  { id: 'r2', seed: 'worker', name: 'Worker', labels: { lv: 'Strādnieks' }, description: '', permissions: ['orders/order:view'] },
+  // A role made in Latvian, with its English name.
+  { id: 'r3', name: 'Noliktavas pārzinis', labels: { en: 'Storekeeper' }, description: '', permissions: [] },
 ]
 
 const userTypes = () => [
-  { id: 't-member', name: 'Member', description: 'Everyone who joins.', permissions: [], members: 1, corporateLoginDefault: false, workspaceDefault: true },
+  { id: 't-member', name: 'Member', labels: { lv: 'Dalībnieks' }, description: 'Everyone who joins.', permissions: [], members: 1, corporateLoginDefault: false, workspaceDefault: true },
   { id: 't-clerk', name: 'Clerk', description: '', permissions: ['orders/order:create'], members: 1, corporateLoginDefault: true, workspaceDefault: false },
   { id: 't-floor', name: 'Floor', description: '', permissions: [], members: 1, corporateLoginDefault: false, workspaceDefault: false },
   { id: 't-lead', name: 'Lead', description: '', permissions: [], members: 0, corporateLoginDefault: false, workspaceDefault: false },
@@ -162,7 +164,7 @@ async function settle(wrapper: { vm: { $nextTick: () => Promise<unknown> } }) {
   }
 }
 
-async function render(over: Partial<AdminOptions> = {}) {
+async function render(over: Partial<AdminOptions> = {}, locale = 'en') {
   const pinia = createPinia()
   setActivePinia(pinia)
   const session = useAdminSession()
@@ -177,7 +179,7 @@ async function render(over: Partial<AdminOptions> = {}) {
   }
   session.order = ['orders', 'stock', 'members']
   session.resolved = true
-  const i18n = createI18n({ legacy: false, locale: 'en', fallbackLocale: 'en', messages: structuredClone(words) })
+  const i18n = createI18n({ legacy: false, locale, fallbackLocale: 'en', messages: structuredClone(words) })
   const wrapper = mount(PeopleAccessView, { global: { plugins: [pinia, i18n, configbyteScreens(i18n, { ...options, ...over })] } })
   await settle(wrapper)
 
@@ -417,6 +419,26 @@ describe('People & access › Roles', () => {
     await settle(wrapper)
     expect(wrapper.find('[data-act="delete-role"]').exists()).toBe(false)
   })
+
+  // The register refuses a name that would read like another role's in a language
+  // the app speaks; the sentence names that role and the language, in the reader's.
+  it.each([
+    ['en', 'Roles', 'Strādnieks', '«Strādnieks» is how the role «Worker» reads in Latvian.'],
+    ['lv', 'Lomas', 'Strādnieks', 'Loma «Worker» latviski jau saucas «Strādnieks».'],
+    ['en', 'Roles', 'Storekeeper', '«Storekeeper» is how the role «Noliktavas pārzinis» reads in English.'],
+    ['lv', 'Lomas', 'Storekeeper', 'Loma «Noliktavas pārzinis» angliski jau saucas «Storekeeper».'],
+  ])('in %s, on %s, names the role that «%s» already reads as', async (locale, tab, name, said) => {
+    stub({ [`POST ${T}/roles`]: { status: 409, body: { code: 'err:membership:conflict' } } })
+    const wrapper = await render({}, locale)
+    await tabTo(wrapper, tab)
+    await wrapper.get('[data-act="new-role"]').trigger('click')
+    await settle(wrapper)
+    await wrapper.get('#role-name').setValue(name)
+    await wrapper.get('[data-act="save-role"]').trigger('click')
+    await settle(wrapper)
+    expect(writes().map((c) => [c.method, c.url, c.body])).toEqual([['POST', `${T}/roles`, { name }]])
+    expect(wrapper.get('[data-said="refused"]').text()).toBe(said)
+  })
 })
 
 describe('People & access › User types', () => {
@@ -439,6 +461,21 @@ describe('People & access › User types', () => {
     const wrapper = await render()
     await tabTo(wrapper, 'User types')
     await wrapper.get(`[data-act="delete-type-${id}"]`).trigger('click')
+    await settle(wrapper)
+    expect(wrapper.get('[data-said="refused"]').text()).toBe(said)
+  })
+
+  it.each([
+    ['en', 'User types', '«Dalībnieks» is how the user type «Member» reads in Latvian.'],
+    ['lv', 'Lietotāju veidi', 'Lietotāja veids «Member» latviski jau saucas «Dalībnieks».'],
+  ])('in %s, on %s, names the user type a refused name already reads as', async (locale, tab, said) => {
+    stub({ [`POST ${T}/user-types`]: { status: 409, body: { code: 'err:membership:conflict' } } })
+    const wrapper = await render({}, locale)
+    await tabTo(wrapper, tab)
+    await wrapper.get('[data-act="add-type"]').trigger('click')
+    await settle(wrapper)
+    await wrapper.get('[data-type-form] input').setValue('Dalībnieks')
+    await wrapper.get('[data-act="save-type"]').trigger('click')
     await settle(wrapper)
     expect(wrapper.get('[data-said="refused"]').text()).toBe(said)
   })

@@ -109,6 +109,34 @@ describe('the membership register’s lines', () => {
     })
   })
 
+  // A role's and a position's names in other languages change on the same line as
+  // a rename; a line whose name stayed is a change of those names alone.
+  it('reads a role whose name stayed as a change of its names in other languages, never a rename to itself', () => {
+    expect(registerWords(line('tenantRoleRenamed', { roleId: 'r1', from: 'Meistars', to: 'Meistars', labels: { en: 'Foreman' } }), names)!.words).toEqual({
+      key: 'configbyte.history.lines.roleNamesChanged',
+      values: { role: 'Meistars' },
+    })
+  })
+
+  it('keeps a role renamed a rename, whether or not the line carries other names', () => {
+    const renamed = { key: 'configbyte.history.lines.roleRenamed', values: { from: 'Meistars', to: 'Vecākais meistars' } }
+    expect(registerWords(line('tenantRoleRenamed', { roleId: 'r1', from: 'Meistars', to: 'Vecākais meistars', labels: { en: 'Senior foreman' } }), names)!.words).toEqual(renamed)
+    expect(registerWords(line('tenantRoleRenamed', { roleId: 'r1', from: 'Meistars', to: 'Vecākais meistars' }), names)!.words).toEqual(renamed)
+    // A change of letter case is a rename too.
+    expect(registerWords(line('tenantRoleRenamed', { roleId: 'r1', from: 'meistars', to: 'Meistars', labels: {} }), names)!.words.key).toBe('configbyte.history.lines.roleRenamed')
+  })
+
+  it('reads a position whose name stayed as a change of its names in other languages, and a renamed one as renamed', () => {
+    expect(registerWords(line('chartPositionRenamed', { positionId: 'p1', name: 'Ražošanas vadītājs', from: 'Ražošanas vadītājs', labels: { en: 'Head of production' } }), names)!.words).toEqual({
+      key: 'configbyte.history.lines.positionNamesChanged',
+      values: { position: 'Ražošanas vadītājs' },
+    })
+    expect(registerWords(line('chartPositionRenamed', { positionId: 'p1', name: 'Ražošanas vadītājs', from: 'Cehs' }), names)!.words).toEqual({
+      key: 'configbyte.history.lines.positionRenamed',
+      values: { from: 'Cehs', position: 'Ražošanas vadītājs' },
+    })
+  })
+
   it('answers nothing for a kind it does not know', () => {
     expect(registerWords(line('somethingNew', {}), names)).toBeNull()
   })

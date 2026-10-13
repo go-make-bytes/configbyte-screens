@@ -3,6 +3,36 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.6.0
+
+Roles, user types and positions may carry names in other languages; the screens read them, and say a clash or a
+change of them in plain words.
+
+### Added
+
+- **Names in other languages are read** wherever the membership register answers them: `labels`, a language's code
+  and the name in it, beside `name`, on the roles list, the user types list, the chart's positions, and each member's
+  roles and user types. The screens still show the name as entered and edit none of these; a Save leaves them as they
+  are, and a register that answers no `labels` reads as before.
+
+  ```json
+  { "id": "…", "seed": "manager", "name": "Manager", "labels": { "lv": "Vadītājs" }, "description": "…", "permissions": [] }
+  ```
+
+- **A name refused because it reads like another's says which one, and in which language.** The register refuses a
+  role's or a user type's Save with `409` when another of the same list is already called that name, or already
+  reads that way in a language the app speaks. Where the name is how another reads in some language, the screen now
+  says so — *«Vadītājs» is how the role «Manager» reads in Latvian.* — working it out from the list it already holds.
+  A name another already has as entered, or a list that cannot tell, keeps *Another role is already called «…».* The
+  same for user types. In English and Latvian.
+
+### Changed
+
+- **History says a change of a role's or a position's names in other languages as that** — *changed the names of the
+  role «Manager» in other languages* — never *renamed the role «Manager» to «Manager»*. The register writes the
+  rename line when the name or those names change, so a line whose name stayed (`from` equal to `to` for a role, to
+  `name` for a position) is read that way; a real rename reads as before.
+
 ## v0.5.0
 
 The same screens, on the newer kit.
