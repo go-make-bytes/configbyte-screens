@@ -3,6 +3,50 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.7.0
+
+A language of one's own: a globe at the foot of the menu, and the choice kept for the person.
+
+### Added
+
+- **A globe at the foot of the menu, above the person's name**, and at the foot of the menu a phone opens. It names
+  the language the page speaks in itself and lists every language the app carries, each in its own name, the
+  deployment's marked *everyone here* (*visiem šeit*). Picking one changes the page at once, then keeps the choice for
+  the person on the server, through the coordinator, so it is the same on every computer they sign in on:
+
+  ```
+  PUT /api/configbyte/v1/me/language   {"language": "lv"}
+  → 200 {"locale": "lv", "personLocale": "lv", "deploymentLocale": "en"}
+  ```
+
+  The answer is what the page goes on with. Picking the language everyone here has is sent by its code like any
+  other, and the coordinator keeps nothing of the person's own for it (`"personLocale": null`). A choice that cannot
+  be kept, refused, failing or unanswered, puts back the language last kept and says *Changing the language did not
+  complete. Try again.* under the globe. When picks cross, the latest decides what the page shows. A coordinator that does not know this request yet answers no
+  `deploymentLocale`, so no language is marked, and refuses the change, so every pick is put back and said.
+- **`useAdminSession().setLanguage(code)`**, the one place the language is set (`null` clears the person's own), for
+  a host that offers the choice elsewhere too.
+- **The document's `lang` follows the page's language**, before sign-in and after, so a screen reader reads the words
+  in the language they are in.
+
+### Changed
+
+- **`Identity.presentation` carries `personLocale` and `deploymentLocale`** beside `locale`, as `GET /me` answers
+  them: the person's own language (`null` when none) and the deployment's. `locale` is the person's own, else the
+  deployment's, and is still what the frame speaks.
+
+  ```json
+  "presentation": { "displayName": "Kalns", "locale": "lv", "personLocale": "lv", "deploymentLocale": "en" }
+  ```
+
+- **Built on `uibyte` `v0.11.1`** (was `v0.10.0`). A host pins the same `uibyte` tag as these screens, so one copy is
+  installed: move both pins together, then read the result back with `npm ls uibyte`. The new kit lets a menu open
+  upward, sit on the dark menu, span its column and mark an item with a short word; the globe uses all four, and
+  nothing else these screens draw changes.
+
+The sign-in page, and the language it keeps in the browser, are unchanged: the globe in the frame never writes that
+choice, so on a shared computer the next person's sign-in page does not open in this person's language.
+
 ## v0.6.0
 
 Roles, user types and positions may carry names in other languages; the screens read them, and say a clash or a

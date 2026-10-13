@@ -1,7 +1,7 @@
 // The admin app's frame, against a stand-in coordinator: signed out, an
 // administrator, someone who configures nothing here, and a coordinator that is
 // not answering — and which entries the sidebar offers in each.
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount, type DOMWrapper, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
@@ -13,7 +13,18 @@ import { configbyteScreens } from './plugin'
 import { adminRoutes } from './routes'
 import { useAdminSession } from './stores/session'
 
-type Reply = { status: number; body: unknown; headers?: Record<string, string> } | 'unanswered'
+/** An answer, or none. One that is `held` arrives only when the test lets it go. */
+type Reply = { status: number; body: unknown; headers?: Record<string, string>; held?: Promise<unknown> } | 'unanswered'
+
+/** An answer the test lets go of when it chooses, so the page can be read while the call is still out. */
+function held(answer: { status: number; body: unknown }): { reply: Reply; release: () => void } {
+  let release: () => void = () => {}
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+
+  return { reply: { ...answer, held: wait }, release: () => release() }
+}
 
 interface Call {
   method: string
@@ -90,6 +101,7 @@ function stubCoordinator(answers: Record<string, Reply | Reply[]>) {
       const queue = routes[url] ?? [{ status: 404, body: {} }]
       const reply = queue.length > 1 ? queue.shift()! : queue[0]!
       if (reply === 'unanswered') throw new TypeError('Failed to fetch')
+      if (reply.held) await reply.held
 
       return {
         ok: reply.status < 400,
@@ -108,7 +120,11 @@ async function settle(wrapper: { vm: { $nextTick: () => Promise<unknown> } }) {
   }
 }
 
-async function render() {
+/** Every frame a test drew, taken down after it. */
+let drawn: VueWrapper[] = []
+
+/** The frame, drawn against the stand-in coordinator; `attach` puts it in the document, where a menu can take focus. */
+async function render({ attach = false } = {}) {
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({
@@ -125,7 +141,9 @@ async function render() {
   const wrapper = mount(AdminFrame, {
     slots: { mark: '<svg data-mark />' },
     global: { plugins: [pinia, router, i18n, configbyteScreens(i18n, options)] },
+    ...(attach ? { attachTo: document.body } : {}),
   })
+  drawn.push(wrapper)
   await settle(wrapper)
 
   return { wrapper, router }
@@ -154,12 +172,16 @@ const card = { authenticate: vi.fn<(nonce: string, options?: { lang?: string }) 
 
 beforeEach(() => {
   document.cookie = 'configbyte_csrf=tok-1'
+  document.documentElement.lang = ''
   window.history.replaceState({}, '', '/')
   options = baseOptions
   card.authenticate = vi.fn(async () => ({ signature: 'sig' }))
   Object.assign(window, { webeid: card })
 })
 afterEach(() => {
+  for (const wrapper of drawn) wrapper.unmount()
+  drawn = []
+  document.body.innerHTML = ''
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
   window.localStorage.clear()
@@ -461,6 +483,291 @@ describe('the admin app, signed in', () => {
     expect(wrapper.get('[role="alert"]').text()).toBe('Signing out did not complete. Try again.')
     expect(wrapper.text()).toContain('Anna Example')
     expect(wrapper.find('[data-page="sign-in"]').exists()).toBe(false)
+  })
+})
+
+// The person's own language: picked at the globe at the foot of the menu, kept for the person by the coordinator
+// — the same on every computer — and never in this browser, where the sign-in page keeps a choice of its own.
+describe("the admin app, the person's own language", () => {
+  const language = `${API}/me/language`
+  const cardLane = {
+    [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } } as Reply,
+    [`${API}/login/webeid/complete`]: { status: 200, body: {} } as Reply,
+  }
+
+  /** Someone who configures the orders, with a language of their own or none, where everyone here reads `deployment`. */
+  const speaking = (own: string | null, deployment: string) => ({
+    ...me({ orders: ['orders/setup:import'] }),
+    presentation: { displayName: 'Kalns', locale: own ?? deployment, personLocale: own, deploymentLocale: deployment },
+  })
+
+  /** What the coordinator answers a kept choice with. */
+  const kept = (locale: string, own: string | null, deployment: string): Reply => ({
+    status: 200,
+    body: { locale, personLocale: own, deploymentLocale: deployment },
+  })
+
+  function signedIn(own: string | null, deployment: string, answers: Record<string, Reply | Reply[]> = {}) {
+    stubCoordinator({
+      [`${API}/me`]: { status: 200, body: speaking(own, deployment) },
+      [`${API}/sections`]: { status: 200, body: sectionsOf('orders') },
+      ...answers,
+    })
+  }
+
+  /** The globe in the menu beside the page. */
+  const globe = (wrapper: ReturnType<typeof mount>) => wrapper.getComponent({ name: 'LanguageMenu' })
+
+  /** A language picked at the globe. */
+  async function pick(wrapper: ReturnType<typeof mount>, code: string) {
+    globe(wrapper).vm.$emit('update:modelValue', code)
+    await settle(wrapper)
+  }
+
+  /** The globe opened from the keyboard, as a person would: its button focused, then Enter. */
+  async function open(group: Pick<DOMWrapper<Element>, 'get'>) {
+    const button = group.get('button')
+    ;(button.element as HTMLElement).focus()
+    await button.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+  }
+
+  /** The languages the opened globe lists, as read: the words (the check mark aside), and whether each is the one in use. */
+  const listed = () =>
+    [...document.body.querySelectorAll('[role^="menuitem"]')].map((el) => [
+      (el.textContent ?? '').replace('✓', '').replace(/\s+/g, ' ').trim(),
+      el.getAttribute('aria-checked'),
+    ])
+
+  const presentation = () => useAdminSession().me?.presentation
+
+  it('puts the globe first at the foot of the menu, above the name, naming the language in use in itself', async () => {
+    signedIn(null, 'en')
+    const { wrapper } = await render({ attach: true })
+    const aside = wrapper.get('aside')
+    const group = aside.get('[role="group"]')
+
+    expect(group.attributes('aria-label')).toBe('Language')
+    expect(group.get('button span[lang]').text()).toBe('English')
+    expect(group.element.parentElement?.firstElementChild).toBe(group.element)
+    const name = aside.findAll('span').find((s) => s.text() === 'Anna Example')!
+    expect(group.element.compareDocumentPosition(name.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // Drawn for the dark menu, across its width, its list opening upward.
+    expect(group.get('button').classes()).toEqual(expect.arrayContaining(['w-full', 'bg-transparent', 'text-console-text']))
+    await open(group)
+    expect(document.body.querySelector('[role="menu"]')?.getAttribute('data-side')).toBe('top')
+  })
+
+  it("lists every language the app carries in its own name, the deployment's marked in the page's language", async () => {
+    signedIn('lv', 'en')
+    const { wrapper } = await render({ attach: true })
+    const group = wrapper.get('aside [role="group"]')
+
+    expect(group.attributes('aria-label')).toBe('Valoda')
+    await open(group)
+    expect(listed()).toEqual([
+      ['English visiem šeit', 'false'],
+      ['Latviešu', 'true'],
+    ])
+    // The name is said in its own language; the mark, in the page's.
+    const english = document.body.querySelector('[role^="menuitem"] [lang]')
+    expect([english?.getAttribute('lang'), english?.textContent]).toEqual(['en', 'English'])
+  })
+
+  it('draws the same globe at the foot of the menu a phone opens', async () => {
+    signedIn(null, 'en')
+    const { wrapper } = await render()
+    await wrapper.get('button[aria-label="Open menu"]').trigger('click')
+    await settle(wrapper)
+
+    expect(wrapper.findAllComponents({ name: 'LanguageMenu' })).toHaveLength(2)
+    const group = document.body.querySelector('[role="dialog"] [role="group"]')
+    expect(group?.getAttribute('aria-label')).toBe('Language')
+    expect(group?.parentElement?.firstElementChild).toBe(group)
+  })
+
+  it('changes the page at once, then keeps the choice for the person, taking what the coordinator answers', async () => {
+    const put = held({ status: 200, body: { locale: 'lv', personLocale: 'lv', deploymentLocale: 'en' } })
+    signedIn(null, 'en', { [language]: put.reply })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'lv')
+    // The coordinator has not answered yet, and the page already reads in Latvian.
+    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(globe(wrapper).props('modelValue')).toBe('lv')
+    expect(calls.filter((c) => c.url === language).map((c) => [c.method, JSON.parse(c.body), c.csrf])).toEqual([
+      ['PUT', { language: 'lv' }, 'tok-1'],
+    ])
+
+    put.release()
+    await settle(wrapper)
+    expect(presentation()).toEqual({ displayName: 'Kalns', locale: 'lv', personLocale: 'lv', deploymentLocale: 'en' })
+    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  // The coordinator turns it into a clear; the screens need not know which language that is.
+  it("sends the code of the language everyone here has like any other, and takes the answer that clears the person's own", async () => {
+    signedIn('lv', 'en', { [language]: kept('en', null, 'en') })
+    const { wrapper } = await render({ attach: true })
+    await open(wrapper.get('aside [role="group"]'))
+    ;(document.body.querySelectorAll('[role^="menuitem"]')[0] as HTMLElement).click()
+    await settle(wrapper)
+
+    expect(calls.filter((c) => c.url === language).map((c) => JSON.parse(c.body))).toEqual([{ language: 'en' }])
+    expect(presentation()).toMatchObject({ locale: 'en', personLocale: null, deploymentLocale: 'en' })
+    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+  })
+
+  it.each([
+    ['refused', { status: 400, body: { code: 'err:request:invalid' } } as Reply],
+    ['answered for by the web server', { status: 502, body: '' } as Reply],
+    ['not answered', 'unanswered' as Reply],
+  ])('puts the language back, and says so, when the choice is %s', async (_case, reply) => {
+    signedIn(null, 'en', { [language]: reply })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'lv')
+    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(globe(wrapper).props('modelValue')).toBe('en')
+    expect(presentation()).toMatchObject({ locale: 'en', personLocale: null })
+    expect(document.documentElement.lang).toBe('en')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Changing the language did not complete. Try again.')
+  })
+
+  it('says it in the language put back, and no more once a choice is kept', async () => {
+    signedIn('lv', 'en', { [language]: [{ status: 500, body: {} }, kept('en', null, 'en')] })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'en')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Valodu nomainīt neizdevās. Mēģiniet vēlreiz.')
+    await pick(wrapper, 'en')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+  })
+
+  // The page follows the latest pick; what an earlier one is answered with afterwards changes nothing.
+  it('keeps the latest pick when an earlier one is answered after it', async () => {
+    const first = held({ status: 200, body: { locale: 'lv', personLocale: 'lv', deploymentLocale: 'en' } })
+    signedIn(null, 'en', { [language]: [first.reply, kept('en', null, 'en')] })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'lv')
+    await pick(wrapper, 'en')
+    first.release()
+    await settle(wrapper)
+    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(presentation()).toMatchObject({ locale: 'en', personLocale: null })
+  })
+
+  it('says nothing when an earlier pick fails after a later one was kept', async () => {
+    const first = held({ status: 500, body: {} })
+    signedIn(null, 'en', { [language]: [first.reply, kept('en', null, 'en')] })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'lv')
+    await pick(wrapper, 'en')
+    first.release()
+    await settle(wrapper)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+  })
+
+  // What a failure puts back is the language last kept, never one only shown while a call was out.
+  it('puts back the language last kept when a later pick fails while an earlier one is still out', async () => {
+    const first = held({ status: 500, body: {} })
+    signedIn(null, 'en', { [language]: [first.reply, { status: 500, body: {} }] })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'lv')
+    await pick(wrapper, 'en')
+    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Changing the language did not complete. Try again.')
+    first.release()
+    await settle(wrapper)
+    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(presentation()).toMatchObject({ locale: 'en', personLocale: null })
+  })
+
+  it('puts back what an earlier pick kept when a later one then fails', async () => {
+    const first = held({ status: 200, body: { locale: 'lv', personLocale: 'lv', deploymentLocale: 'en' } })
+    const second = held({ status: 500, body: {} })
+    signedIn(null, 'en', { [language]: [first.reply, second.reply] })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'lv')
+    await pick(wrapper, 'en')
+    first.release()
+    await settle(wrapper)
+    second.release()
+    await settle(wrapper)
+    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(presentation()).toMatchObject({ locale: 'lv', personLocale: 'lv' })
+    expect(wrapper.get('[role="alert"]').text()).toBe('Valodu nomainīt neizdevās. Mēģiniet vēlreiz.')
+  })
+
+  // A screen reader reads the words in the language the document says it is in.
+  it("marks the document with the page's language, and moves it with every change", async () => {
+    signedIn(null, 'lv', { [language]: [{ status: 500, body: {} }, kept('en', 'en', 'lv')] })
+    const { wrapper } = await render()
+    expect(document.documentElement.lang).toBe('lv')
+
+    await pick(wrapper, 'en')
+    expect(document.documentElement.lang).toBe('lv')
+    await pick(wrapper, 'en')
+    expect(document.documentElement.lang).toBe('en')
+  })
+
+  it("marks the document with the sign-in page's language too", async () => {
+    stubCoordinator({ [`${API}/me`]: notSignedIn })
+    const { wrapper } = await render()
+    expect(document.documentElement.lang).toBe('en')
+
+    wrapper.findComponent({ name: 'LanguageMenu' }).vm.$emit('update:modelValue', 'lv')
+    await settle(wrapper)
+    expect(document.documentElement.lang).toBe('lv')
+  })
+
+  // On a shared computer the next person's sign-in page must not open in this person's language.
+  it("leaves the language this browser keeps for the sign-in page as it was", async () => {
+    window.localStorage.setItem('sign-in.language', 'en')
+    const write = vi.spyOn(Storage.prototype, 'setItem')
+    signedIn(null, 'en', { [language]: kept('lv', 'lv', 'en') })
+    const { wrapper } = await render()
+
+    await pick(wrapper, 'lv')
+    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(window.localStorage.getItem('sign-in.language')).toBe('en')
+    expect(write.mock.calls.filter(([key]) => key === 'sign-in.language')).toEqual([])
+  })
+
+  // The session it was about is gone; on a shared computer the next sign-in may be someone else's.
+  it('drops a failed change once the sign-in has ended', async () => {
+    signedIn(null, 'en', { [language]: { status: 500, body: {} }, ...cardLane })
+    const { wrapper } = await render()
+    await pick(wrapper, 'lv')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+
+    useAdminSession().signInEnded()
+    await settle(wrapper)
+    await click(wrapper, '[data-way="webEid"]')
+    expect(wrapper.text()).toContain('Anna Example')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('says nothing of a change whose failure arrives after the sign-in ended', async () => {
+    const put = held({ status: 500, body: {} })
+    signedIn(null, 'en', { [language]: put.reply, ...cardLane })
+    const { wrapper } = await render()
+    await pick(wrapper, 'lv')
+
+    useAdminSession().signInEnded()
+    await settle(wrapper)
+    put.release()
+    await settle(wrapper)
+    await click(wrapper, '[data-way="webEid"]')
+    expect(wrapper.text()).toContain('Anna Example')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 })
 

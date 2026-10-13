@@ -80,7 +80,11 @@
         }
       },
       "signedIn": "signed in",
-      "logoutFailed": "Signing out did not complete. Try again."
+      "logoutFailed": "Signing out did not complete. Try again.",
+      "languageFailed": "Changing the language did not complete. Try again."
+    },
+    "language": {
+      "everyoneHere": "everyone here"
     },
     "transfer": {
       "export": {
