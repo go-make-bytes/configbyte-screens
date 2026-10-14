@@ -3,6 +3,12 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.7.2
+
+Built on `uibyte` `v0.13.0`, so a host that also uses the kit's newer pieces (an identity-code field, a segmented
+choice) carries one copy of it. Nothing this package draws changes: the kit's existing pieces draw what they drew
+before.
+
 ## v0.7.1
 
 Built on `uibyte` `v0.12.0`, so a host that also uses the kit's newer pieces carries one copy of it. Nothing this
