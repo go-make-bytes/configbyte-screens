@@ -3,6 +3,12 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.7.4
+
+Built on `uibyte` `v0.15.0`, so a host that also uses the kit's newer pieces (a text field, a select, a file-pick
+button, and their compact size and button look) carries one copy of the kit. Nothing this package draws changes:
+the kit's existing pieces draw what they drew before.
+
 ## v0.7.3
 
 Built on `uibyte` `v0.13.1`, the kit's fix that keeps the identity-code field from moving the form's button
