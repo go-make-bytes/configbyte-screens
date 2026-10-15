@@ -3,6 +3,12 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.7.5
+
+Built on `uibyte` `v0.16.0`, so a host that also uses the kit's newer options (a split view sized to its list; a
+fold that goes back, keeps matches and draws rows) carries one copy of the kit. Nothing this package draws changes:
+the kit's existing pieces draw what they drew before.
+
 ## v0.7.4
 
 Built on `uibyte` `v0.15.0`, so a host that also uses the kit's newer pieces (a text field, a select, a file-pick
