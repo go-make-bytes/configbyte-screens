@@ -356,7 +356,7 @@ describe('the admin app, signed in', () => {
       [`${API}/sections`]: { status: 200, body: sectionsOf('orders') },
     })
     const { wrapper } = await render()
-    expect(sidebar(wrapper)).toEqual(['Export / Import', 'History', 'Staff rotas'])
+    expect(sidebar(wrapper)).toEqual(['Export & import', 'History', 'Staff rotas'])
   })
 
   // The shared screens open the first group; a host screen naming a group of its own
@@ -379,7 +379,7 @@ describe('the admin app, signed in', () => {
     const { wrapper } = await render()
     // Holding the administrator's box alone opens the frame.
     expect(wrapper.find('[data-state="nothing"]').exists()).toBe(false)
-    expect(sidebar(wrapper)).toEqual(['Export / Import', 'History', 'People & access', 'Org chart', 'Staff rotas', 'Shelves'])
+    expect(sidebar(wrapper)).toEqual(['Export & import', 'History', 'People & access', 'Org chart', 'Staff rotas', 'Shelves'])
     const text = wrapper.text()
     expect(text.indexOf('Workspace')).toBeLessThan(text.indexOf('Order register'))
     expect(text.indexOf('Order register')).toBeLessThan(text.indexOf('Storage'))
@@ -449,7 +449,7 @@ describe('the admin app, signed in', () => {
       [`${API}/sections`]: { status: 200, body: sectionsOf('orders') },
     })
     const { wrapper } = await render()
-    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(sidebar(wrapper)[0]).toBe('Eksports un imports')
     expect(document.title).toBe('Kalns — administrēšana')
   })
 
@@ -593,7 +593,7 @@ describe("the admin app, the person's own language", () => {
 
     await pick(wrapper, 'lv')
     // The coordinator has not answered yet, and the page already reads in Latvian.
-    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(sidebar(wrapper)[0]).toBe('Eksports un imports')
     expect(globe(wrapper).props('modelValue')).toBe('lv')
     expect(calls.filter((c) => c.url === language).map((c) => [c.method, JSON.parse(c.body), c.csrf])).toEqual([
       ['PUT', { language: 'lv' }, 'tok-1'],
@@ -602,7 +602,7 @@ describe("the admin app, the person's own language", () => {
     put.release()
     await settle(wrapper)
     expect(presentation()).toEqual({ displayName: 'Kalns', locale: 'lv', personLocale: 'lv', deploymentLocale: 'en' })
-    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(sidebar(wrapper)[0]).toBe('Eksports un imports')
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
@@ -616,7 +616,7 @@ describe("the admin app, the person's own language", () => {
 
     expect(calls.filter((c) => c.url === language).map((c) => JSON.parse(c.body))).toEqual([{ language: 'en' }])
     expect(presentation()).toMatchObject({ locale: 'en', personLocale: null, deploymentLocale: 'en' })
-    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(sidebar(wrapper)[0]).toBe('Export & import')
   })
 
   it.each([
@@ -628,7 +628,7 @@ describe("the admin app, the person's own language", () => {
     const { wrapper } = await render()
 
     await pick(wrapper, 'lv')
-    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(sidebar(wrapper)[0]).toBe('Export & import')
     expect(globe(wrapper).props('modelValue')).toBe('en')
     expect(presentation()).toMatchObject({ locale: 'en', personLocale: null })
     expect(document.documentElement.lang).toBe('en')
@@ -643,7 +643,7 @@ describe("the admin app, the person's own language", () => {
     expect(wrapper.get('[role="alert"]').text()).toBe('Valodu nomainīt neizdevās. Mēģiniet vēlreiz.')
     await pick(wrapper, 'en')
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(sidebar(wrapper)[0]).toBe('Export & import')
   })
 
   // The page follows the latest pick; what an earlier one is answered with afterwards changes nothing.
@@ -656,7 +656,7 @@ describe("the admin app, the person's own language", () => {
     await pick(wrapper, 'en')
     first.release()
     await settle(wrapper)
-    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(sidebar(wrapper)[0]).toBe('Export & import')
     expect(presentation()).toMatchObject({ locale: 'en', personLocale: null })
   })
 
@@ -670,7 +670,7 @@ describe("the admin app, the person's own language", () => {
     first.release()
     await settle(wrapper)
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(sidebar(wrapper)[0]).toBe('Export & import')
   })
 
   // What a failure puts back is the language last kept, never one only shown while a call was out.
@@ -681,11 +681,11 @@ describe("the admin app, the person's own language", () => {
 
     await pick(wrapper, 'lv')
     await pick(wrapper, 'en')
-    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(sidebar(wrapper)[0]).toBe('Export & import')
     expect(wrapper.get('[role="alert"]').text()).toBe('Changing the language did not complete. Try again.')
     first.release()
     await settle(wrapper)
-    expect(sidebar(wrapper)[0]).toBe('Export / Import')
+    expect(sidebar(wrapper)[0]).toBe('Export & import')
     expect(presentation()).toMatchObject({ locale: 'en', personLocale: null })
   })
 
@@ -701,7 +701,7 @@ describe("the admin app, the person's own language", () => {
     await settle(wrapper)
     second.release()
     await settle(wrapper)
-    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(sidebar(wrapper)[0]).toBe('Eksports un imports')
     expect(presentation()).toMatchObject({ locale: 'lv', personLocale: 'lv' })
     expect(wrapper.get('[role="alert"]').text()).toBe('Valodu nomainīt neizdevās. Mēģiniet vēlreiz.')
   })
@@ -736,7 +736,7 @@ describe("the admin app, the person's own language", () => {
     const { wrapper } = await render()
 
     await pick(wrapper, 'lv')
-    expect(sidebar(wrapper)[0]).toBe('Eksports / Imports')
+    expect(sidebar(wrapper)[0]).toBe('Eksports un imports')
     expect(window.localStorage.getItem('sign-in.language')).toBe('en')
     expect(write.mock.calls.filter(([key]) => key === 'sign-in.language')).toEqual([])
   })

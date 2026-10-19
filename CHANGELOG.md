@@ -3,6 +3,83 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.9.0
+
+Export & import says what a file carries, area by area, and what an import would do to each item, in words.
+
+### Added
+
+- **The Export card is by area.** The host's lines sit under the name of the section they describe, in the
+  coordinator's order, only for the sections the deployment runs. With `register` set and the register run, the
+  register has a group of its own (*the list of services and their boxes this deployment runs on*), and under the
+  groups a line says what is not in the file today. After a download the card names the areas the file carries.
+- **The file chip says where the file came from**: *from this workspace* among the facts under its name, or *from another
+  workspace* on the chip's own line, which a narrow screen never cuts off (*edited since export* then joins the facts);
+  nothing when the file names no workspace. The raw workspace id is no longer shown.
+- **Items by their names from the file, and changes in words.** A preview row is drawn by the name the file gives the
+  item (its `labels` in the language the screen speaks, else `label`, `name`, `displayName`), with its key after it.
+  What happens is said in words: *new in the file*, *its name changes*, *taken out of use*, *restored*; a refusal says
+  what to do about it. A skipped item is *not taken*, and the tally counts it when there is one. The membership
+  register's services, role rungs and boxes are named from its own shape.
+- **Host option `transfer`**, for what the screens cannot know, and `PartWord.count` and `PartWord.area`:
+
+  ```ts
+  sections: {
+    orders: {
+      parts: [{ key: 'priorities', word: 'admin.parts.priorities', count: 'admin.counts.priorities', area: 'workflow' }],
+    },
+  },
+  transfer: {
+    // a report key that is not the item's `key` or `number`, such as `order/1`; `list` holds the part's items
+    // as the file has them, so check a value's type before using it
+    find: (section, part, key, list) =>
+      list.find((i) => typeof i.entityKind === 'string' && typeof i.number === 'number' && `${i.entityKind}/${i.number}` === key),
+    // a changed member the screens have no words for, said as "its … changes"
+    members: { noticeDays: 'admin.members.noticeDays' },
+    // a row in the host's own words; null keeps the screens' own
+    describe: (row) => (row.part === 'links' ? { name: 'A link', change: 'a new link', area: 'workflow' } : null),
+  }
+  ```
+
+  `count` is a message with `{n}` and plural forms, said when a part's unchanged items fold (*14 unchanged: 2
+  priorities, 5 stages*); `area` is the key of the host's entry where the part's items are taken out of use.
+  Exported: `TransferOptions`, `TransferRow`, `TransferWords`.
+- **An area that refuses is named with its reason**: *{area} refused this file: you do not hold the box that imports
+  it*, or its part is out of shape, or the owner's own title; told apart from an area that did not answer, which is
+  named too. The stop line under the preview names the areas either way.
+- **After an Apply that landed**, the first area whose changes landed ends with *See them in History →*, which opens
+  History at the person who applied it.
+- **A rolled-back Apply says what stayed.** A restore never removes, so what the file added is still there: it is
+  listed by part and name, and when the host names where each part is taken out of use, those screens are linked. A
+  part whose service could not write says whether it did not answer or refused, and why.
+- **A file that names the workspace** (its name or its corporate login) is said in one sentence in the register's area,
+  with what the workspace keeps. Neither is a row or counted.
+- **History's `who` also takes a person's key** (`/history?who=sub:…`): the person is the member whose id or key it
+  is. The address is kept as it was given.
+- **A role that came with the workspace is said to be shipped** when its delete is refused and the roles, read again,
+  carry that mark: *came with the workspace and is never deleted. Rename it, or change what it holds.*
+- `Identity.workspace`: the workspace's own name and what it was given, `null` when it could not be read.
+
+### Changed
+
+- The screen is called *Export & import* (*Eksports un imports*).
+- The words say *file* where they said *document* and *part* where they said *section*, and the fold says what it holds
+  by part (*{n} unchanged: {parts}*). New words are in English and Latvian.
+- A section whose service refused the file at preview is badged *refused* and one that did not answer *failed*; after
+  an Apply a section that did not write is *could not write*.
+- After a download the card names the areas the file carries, where it said how many sections it had.
+- **The Apply's outcome is drawn first under the file**, above the rows of the preview; the ways on stay last.
+- A group's count says its changes apart from what it refused and what it does not take (*4 changes · 1 refused*),
+  and *no changes* when nothing changes. The column of items is headed *item*.
+- Names that arrive in an answer or in the chosen file — a section nobody owns is reported under the name the file gave
+  it — are looked up as names only: a section called `constructor` or `__proto__` is drawn by that name and finds
+  nothing it does not hold. A value of the file that is not a word or a number names nothing, and never stops the
+  screen; each part of a file is indexed once, so a long file is named in one pass.
+
+### Removed
+
+- The words `export.sections`, `file.workspace`, `summary.unchanged` and `line.failed`.
+
 ## v0.8.0
 
 History opens from its address, asks each service for one person's lines, and says names where it printed keys.

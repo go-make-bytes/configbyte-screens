@@ -25,6 +25,9 @@ export type {
   RoleBoxOptions,
   RoleSetting,
   SectionWords,
+  TransferOptions,
+  TransferRow,
+  TransferWords,
 } from './options'
 // What a host's `write` throws when a change is refused, so the refusal is said in words.
 export { ApiError } from './lib/api'

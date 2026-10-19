@@ -464,7 +464,9 @@ export const usePeople = defineStore('configbyte-people', {
     /**
      * Delete a role. `holds` is the host's sentence for a setting that holds the
      * role: the register counts that as a place the role is kept, and refuses, so
-     * the refusal is said in the setting's words.
+     * the refusal is said in the setting's words. A refusal nobody holds the role for
+     * may be a role the workspace came with: the roles are read again, and one that
+     * now carries its `seed` is said to be shipped, which no setting can change.
      */
     async deleteRole(role: Role, holds?: string) {
       const held = this.members.filter((m) => m.status !== 'revoked' && m.tenantRoles.some((r) => r.id === role.id)).length
@@ -472,6 +474,14 @@ export const usePeople = defineStore('configbyte-people', {
         reread: ['roles'],
         about: { n: held },
       })
+      if (!ok && this.said?.key === 'rolePlaced') {
+        await this.reread(['roles'])
+        if (this.roles.find((r) => r.id === role.id)?.seed) {
+          this.said = { kind: 'refused', key: 'roleShipped', values: { role: role.name } }
+
+          return ok
+        }
+      }
       if (!ok && holds && this.said?.key === 'rolePlaced') this.said = { ...this.said, hostKey: holds }
 
       return ok

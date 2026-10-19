@@ -12,6 +12,49 @@ import type { NavIconName } from 'uibyte'
 export interface PartWord {
   key: string
   word: string
+  /** The message key of the part's count, with `{n}` and plural forms: "{n} priority | {n} priorities". */
+  count?: string
+  /** The key of the host's entry (one of `entries`) where this part's items are taken out of use. */
+  area?: string
+}
+
+/** One row of an import's preview or answer, as a host may word it. */
+export interface TransferRow {
+  section: string
+  part: string
+  key: string
+  status: string
+  reason?: string
+  /** The service's words: the members a change touches, or a refusal's sentence. */
+  detail?: string
+  /** The file's item the row is about, when one was found. */
+  item?: Record<string, unknown>
+  /** The file's whole section, `{}` when the file has none. */
+  file: Record<string, unknown>
+  /** The language the screen speaks. */
+  lang: string
+}
+
+/** A host's words for one row; a member left out keeps the screens' own. */
+export interface TransferWords {
+  /** The row's name exactly as drawn (the host adds any quotes). */
+  name?: string
+  /** What happens to it, in words. */
+  change?: string
+  /** The part's word for this row, when the part's own word is wider than the row. */
+  part?: string
+  /** The key of the host's entry where this row's item is taken out of use. */
+  area?: string
+}
+
+/** How an import's rows are named and worded. */
+export interface TransferOptions {
+  /** Finds a part's item in the file by the report's key, when it is not the item's `key` or `number`. */
+  find?: (section: string, part: string, key: string, list: unknown[]) => Record<string, unknown> | undefined
+  /** The words for one changed member, by its name: a message key, said as "its … changes". */
+  members?: Record<string, string>
+  /** A row in the host's own words; `null` keeps the screens' own. */
+  describe?: (row: TransferRow) => TransferWords | null
 }
 
 /** How the host describes one section of its configuration. */
@@ -231,6 +274,8 @@ export interface AdminOptions {
    * same name read it; absent, or not found by the coordinator, neither shows.
    */
   register?: string
+  /** How an import's rows are named and worded. Absent: the screens' own words. */
+  transfer?: TransferOptions
   /** How the Roles screen shows boxes. */
   roles?: RoleBoxOptions
   /** How History reads the host's own services. Absent: History shows the register's lines alone. */

@@ -255,6 +255,35 @@ describe('History', () => {
     expect(out.every((l) => l.includes('Jānis Ozols'))).toBe(true)
   })
 
+  // A link from elsewhere names a person the way the services do, by the key they
+  // attribute work to; the screen finds the member by it and leaves the address as given.
+  it('opens from a person’s key as well, finds the member by it, and keeps the address as it was given', async () => {
+    stub()
+    const { wrapper, router } = await render({ url: '/history?who=sub:J' })
+    expect(reads().sort()).toEqual(
+      [
+        `${S}/members/history?actor=sub%3AJ`,
+        `${S}/orders/history?family=setup&actor=sub%3AJ`,
+        `${S}/stock/history?family=setup&actor=sub%3AJ`,
+        `${S}/stock/history?family=shelves&actor=sub%3AJ`,
+      ].sort(),
+    )
+    const out = lines(wrapper)
+    expect(out).toHaveLength(2)
+    expect(out.every((l) => l.includes('Jānis Ozols'))).toBe(true)
+    expect(query(router).who).toBe('sub:J')
+    // The choice shows the member the key belongs to.
+    expect((wrapper.get('[data-filter="who"]').element as HTMLSelectElement).value).toBe('m2')
+    expect(wrapper.findAll('[data-filter="who"] option').find((o) => (o.element as HTMLOptionElement).selected)?.text()).toBe('Jānis Ozols')
+  })
+
+  it('takes a key the list does not hold to mean everyone, as an id it does not hold does', async () => {
+    stub()
+    const { router } = await render({ url: '/history?who=sub:ZZ' })
+    expect(query(router).who).toBeUndefined()
+    expect(reads().every((c) => !c.includes('actor='))).toBe(true)
+  })
+
   it('writes what is ticked back to the address, and reads an area when it is ticked, not before', async () => {
     stub()
     const { wrapper, router } = await render({ url: '/history?show=people' })

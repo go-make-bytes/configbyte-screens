@@ -14,6 +14,8 @@ export interface Identity {
   loginMethod: string
   loa: string
   tenant: string
+  /** The workspace's own name and what it was given; null when they could not be read. */
+  workspace?: { name: string; entitlements: { service: string; feature: string }[] } | null
   /** Every section of this deployment, with the person's scopes under its owner's keys. */
   sections: Record<string, string[]>
   presentation: {

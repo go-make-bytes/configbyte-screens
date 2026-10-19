@@ -41,8 +41,8 @@ export function offerDownload(blob: Blob, name: string): void {
 export const useTransfer = defineStore('configbyte-transfer', {
   state: () => ({
     exporting: false,
-    /** What the last export handed over: its name, its size, how many sections. */
-    exported: null as { name: string; bytes: number; sections: number } | null,
+    /** What the last export handed over: its name, its size, and the sections it carries. */
+    exported: null as { name: string; bytes: number; sections: string[] } | null,
     exportFailed: '',
 
     /** The chosen file, held so a preview can be asked again without choosing it again. */
@@ -77,7 +77,7 @@ export const useTransfer = defineStore('configbyte-transfer', {
         const blob = await resp.blob()
         const name = downloadName(resp.headers.get('Content-Disposition') ?? '', 'configuration.json')
         offerDownload(blob, name)
-        this.exported = { name, bytes: blob.size, sections: aboutDocument(await blob.text()).sections }
+        this.exported = { name, bytes: blob.size, sections: aboutDocument(await blob.text()).sectionKeys }
       } catch (e) {
         this.exportFailed = e instanceof Error ? e.message : String(e)
       } finally {

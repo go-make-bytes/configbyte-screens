@@ -60,14 +60,19 @@ const filters = computed(() => {
 const areas = computed(() => filters.value.map((f) => f.key))
 const areaWord = computed(() => new Map(filters.value.map((f) => [f.key, f.label])))
 
-// The address: `show` the ticked areas (absent when all are), `who` a person's id or `operator`.
+// The address: `show` the ticked areas (absent when all are), `who` a member's id, a person's key
+// (`sub:…`, the way the services name them) or `operator`.
 const first = (value: unknown) => String((Array.isArray(value) ? value[0] : value) ?? '')
 const asked = computed(() => first(route.query.show).split(',').filter((k) => areas.value.includes(k)))
 /** An address naming none of the areas on screen means all of them. */
 const tickedKeys = computed(() => (asked.value.length ? areas.value.filter((k) => asked.value.includes(k)) : areas.value))
 const whoParam = computed(() => first(route.query.who))
 
-const person = computed(() => (whoParam.value && whoParam.value !== OPERATOR ? people.people.find((m) => m.id === whoParam.value) : undefined))
+const person = computed(() =>
+  whoParam.value && whoParam.value !== OPERATOR ? people.people.find((m) => m.id === whoParam.value || m.subjectKey === whoParam.value) : undefined,
+)
+/** What the Who choice shows as chosen: the member's id when the address gave their key, since the choices are the members. */
+const whoShown = computed(() => person.value?.id ?? whoParam.value)
 /** The key the services are asked for: a person's, `operator`, or none for everyone. */
 const actor = computed(() => (whoParam.value === OPERATOR ? OPERATOR : (person.value?.subjectKey ?? '')))
 /** Whether the people list has been answered, one way or the other. */
@@ -386,12 +391,12 @@ const whoOptions = computed(() =>
           class="max-w-[260px] rounded-full border bg-surface px-3 py-[5px] text-[13px]"
           :class="whoParam ? 'border-ink text-ink' : 'border-dashed border-line text-muted-strong'"
           data-filter="who"
-          :value="whoParam"
+          :value="whoShown"
           @change="write({ who: ($event.target as HTMLSelectElement).value })"
         >
-          <option value="" :selected="whoParam === ''">{{ t(w('filters.everyone')) }}</option>
-          <option v-for="o in whoOptions" :key="o.value" :value="o.value" :selected="whoParam === o.value">{{ o.label }}</option>
-          <option :value="OPERATOR" :selected="whoParam === OPERATOR">{{ t(w('operator')) }}</option>
+          <option value="" :selected="whoShown === ''">{{ t(w('filters.everyone')) }}</option>
+          <option v-for="o in whoOptions" :key="o.value" :value="o.value" :selected="whoShown === o.value">{{ o.label }}</option>
+          <option :value="OPERATOR" :selected="whoShown === OPERATOR">{{ t(w('operator')) }}</option>
         </select>
       </label>
     </div>

@@ -889,6 +889,43 @@ describe('People & access › Roles', () => {
     expect(s.wrapper.get('[data-said="refused"]').text()).toBe('The creator becomes its «Noliktavas pārzinis». Choose another role for the creator first.')
   })
 
+  // The register answers the same conflict for a role a service keeps and for a role
+  // the workspace came with. The roles are read again, and one that now carries its
+  // mark is said to be shipped — which no setting can change, so the setting's own
+  // sentence is not used.
+  it.each([
+    ['en', '«Noliktavas pārzinis» came with the workspace and is never deleted. Rename it, or change what it holds.'],
+    ['lv', 'Loma «Noliktavas pārzinis» nāca līdzi darbvietai un netiek dzēsta. Pārdēvējiet to vai mainiet, ko tā ietver.'],
+  ])('in %s, says a role the workspace came with is shipped when its delete is refused and the roles read again say so', async (locale, said) => {
+    const shipped = roles().map((r) => (r.id === 'r3' ? { ...r, seed: 'storekeeper' } : r))
+    stub({
+      [`GET ${T}/roles`]: [
+        { status: 200, body: { roles: roles() } },
+        { status: 200, body: { roles: shipped } },
+      ],
+      [`DELETE ${T}/roles/r3`]: { status: 409, body: { code: 'err:request:conflict' } },
+    })
+    const options = hostOptions([creator({ read: vi.fn(async () => 'r3') })])
+    const s = await render({ url: '/people/roles/r3', options, locale })
+    expect(reads('/roles')).toBe(1)
+    await s.wrapper.get('[data-act="delete-role"]').trigger('click')
+    await settle(s.wrapper)
+    expect(s.wrapper.get('[data-said="refused"]').text()).toBe(said)
+    expect(reads('/roles')).toBe(2)
+    // The page now knows the role shipped, so it offers no Delete.
+    expect(s.wrapper.find('[data-act="delete-role"]').exists()).toBe(false)
+  })
+
+  it('keeps saying a role is still placed when the roles read again do not mark it as shipped', async () => {
+    stub({ [`DELETE ${T}/roles/r3`]: { status: 409, body: { code: 'err:request:conflict' } } })
+    const s = await render({ url: '/people/roles/r3' })
+    await s.wrapper.get('[data-act="delete-role"]').trigger('click')
+    await settle(s.wrapper)
+    expect(reads('/roles')).toBe(2)
+    expect(s.wrapper.get('[data-said="refused"]').text()).toBe('«Noliktavas pārzinis» is still placed by a service on things it keeps. Move those places to another role first.')
+    expect(s.wrapper.find('[data-act="delete-role"]').exists()).toBe(true)
+  })
+
   it('deletes a role and goes back to the list, which says so', async () => {
     stub({ [`DELETE ${T}/roles/r3`]: { status: 200, body: {} } })
     const s = await render({ url: '/people/roles/r3' })
