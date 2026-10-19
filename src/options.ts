@@ -83,8 +83,41 @@ export interface GuardWords {
   values?: Record<string, string>
 }
 
+/**
+ * A setting of the host's that names one of the workspace's roles, such as the
+ * role someone receives when they make something. The Roles screen lists it
+ * under the roles, as a choice among them.
+ */
+export interface RoleSetting {
+  /** Tells it apart from the host's other settings. */
+  key: string
+  /** The key of its name, drawn before the choice. */
+  word: string
+  /** The key of a quiet line under it. */
+  note?: string
+  /** The id of the role chosen now; empty for none. */
+  read(): Promise<string>
+  /** Choose a role. Throws the screens' `ApiError` when it is refused, so the refusal is said in words. */
+  write(roleId: string): Promise<void>
+  /** The key of the sentence said once a choice was saved, given `{role}`: the role's name. */
+  saved: string
+  /**
+   * The key of the sentence said when the setting's owner refuses the role chosen
+   * (a 400), given `{role}`: the role's name. Absent: the refusal is said in the
+   * screens' own words.
+   */
+  refused?: string
+  /**
+   * The key of the sentence said when deleting a role is refused because this
+   * setting holds it, given `{role}`: the role's name.
+   */
+  holds: string
+}
+
 /** How the Roles screen shows the boxes the services declare. */
 export interface RoleBoxOptions {
+  /** The settings listed under the roles, each a choice of one of the workspace's roles. */
+  settings?: RoleSetting[]
   /** The groups, in the order the screen lists them. */
   groups?: BoxGroup[]
   /**

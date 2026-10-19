@@ -131,8 +131,13 @@ watch(plan, (next, prev) => void (next && apply(next, prev)), { immediate: true 
 
 onMounted(() => {
   // Read again for another workspace: a sign-in can end and another begin without the page loading again.
-  if (register.value && session.me && (!people.loaded || people.tenant !== session.me.tenant)) {
+  if (!register.value || !session.me) return
+  if (!people.loaded || people.tenant !== session.me.tenant) {
     void people.load({ section: register.value, tenant: session.me.tenant, fields: options.roles?.fields })
+  } else {
+    // The lists were read for another screen, which may not have needed the chart or the restricted fields.
+    void people.ensurePositions()
+    void people.ensureFields(options.roles?.fields)
   }
 })
 

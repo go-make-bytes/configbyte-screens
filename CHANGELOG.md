@@ -6,6 +6,11 @@ and the package is consumed as a pinned git tag.
 ## v0.8.0
 
 History opens from its address, asks each service for one person's lines, and says names where it printed keys.
+People & access has an address for each tab and for each person, role and user type, filters its list of people, and
+opens a role and a user type on a page of their own.
+
+Built on `uibyte` `v0.17.0` (People & access draws its user types and roles with the kit's `Chip`): move the
+`uibyte` pin together with this one, then `npm ls uibyte` reads one copy.
 
 ### Added
 
@@ -34,6 +39,41 @@ History opens from its address, asks each service for one person's lines, and sa
   ```
 - `describe` receives a second argument, `names.member(subjectKey)`: a member's name from the list the screens already
   hold (empty when it does not hold them), so a host's sentence names a member without reading the list again.
+- **People & access has an address for everything open.** `/people` Users · `/people/users/:id` a person ·
+  `/people/roles` · `/people/roles/new` · `/people/roles/:id` · `/people/user-types` · `/people/user-types/new` ·
+  `/people/user-types/:id`, all children of the one `/people` route, so the sidebar's entry is marked on each. The
+  route names are exported (`PEOPLE_ACCESS`, `PEOPLE_USER`, `PEOPLE_ROLES`, `PEOPLE_ROLE`, `PEOPLE_ROLE_NEW`,
+  `PEOPLE_USER_TYPES`, `PEOPLE_USER_TYPE`, `PEOPLE_USER_TYPE_NEW`). An id the lists do not hold opens its list.
+- **The head** says *{n} people · {a} administrators · {s} services*, and each tab carries its count.
+- **Users.** The band of people who hold nothing across the workspace yet (the first five by name, then *+ n more*);
+  counts that are the filters (*Everyone*, *Administrators*, *Nothing across the workspace*, *Has not signed in yet*,
+  *Not signed in for 30 days*); filters for user type and role; *Show people who lost access*; *Find a person*, which
+  ignores case and the marks over letters; 25 a page. A person opens beside the list, or alone with a way back, from
+  their own address, with the chart's note on their user type and a link to History at that person
+  (`/history?who=<member id>`). The user type the chart gives is drawn with a dashed border and says so.
+- **Roles are a list and a page each.** The list says what each role is for, how many of the boxes it can be given it
+  holds, and whether it shipped. A role's page has *What it is for*, which is now read and sent with the name
+  (`{ name, description }`, on making a role and on changing one), and counts the changes not saved yet.
+- **User types are a list and a page each**, with the chart's positions that give one shown as a flag, and Delete
+  inside the page.
+- **Host option `roles.settings`**, the host's own choices of a role, listed under the roles. Exported:
+  `RoleSetting`, `RoleBoxOptions` and `ApiError` (what a setting's `write` throws when a change is refused):
+
+  ```ts
+  roles: {
+    groups,
+    settings: [{
+      key: 'creatorRole',
+      word: 'admin.settings.creatorRole.word',
+      note: 'admin.settings.creatorRole.note',
+      read: async () => currentRoleId(),                       // '' for none
+      write: async (roleId) => { await saveRoleId(roleId) },   // throws ApiError when refused
+      saved: 'admin.settings.creatorRole.saved',                // given {role}
+      holds: 'admin.settings.creatorRole.holds',                // given {role}: said when deleting that role is refused
+      refused: 'admin.settings.creatorRole.refused',            // optional, given {role}: said when write throws a 400
+    }],
+  }
+  ```
 
 ### Changed
 
@@ -44,10 +84,25 @@ History opens from its address, asks each service for one person's lines, and sa
 - The register's section is called *People & access* in History and on Export & import whenever the host gives it no
   title.
 - The list is drawn with the kit's page header, day list and state block.
+- **People & access reads each list once a visit, and an act reads again only what it changed**: a person's acts the
+  people; a role's Save the roles (and the people when its name changed); a role's delete the roles; a user type's Save
+  the user types (and the people when its name changed); its delete and the corporate login the user types. The
+  chart's positions are read when a person or the user types are first shown, the restricted fields when Roles first
+  opens.
+- **How many people hold a user type is counted from the people already read** (persons whose access is not revoked
+  and whose own user type it is), not from the register's count, which includes services.
+- The Users lead is the word `configbyte.people.users.lead` (it was `configbyte.people.lead`); the band's heading is
+  *Nothing across the workspace yet ({n})* and its line says they may still hold something inside a product. New
+  words are in English and Latvian; the Latvian is for a native speaker's read.
+- A role's *shipped* and *made* lines, the corporate-login flag and the *New role* and *New user type* buttons are
+  worded anew.
 
 ### Removed
 
 - `HistorySource.chip` and the `configbyte.history.chips` words: a line's area is its tick's word.
+- The *People* column and the *Acts* column of the user types list, with the words `types.columns.people`,
+  `types.columns.acts`, `types.edit` and `types.form.edit`; Edit and Delete move into a user type's page.
+- `configbyte.people.lead`, now `configbyte.people.users.lead`.
 
 ## v0.7.5
 

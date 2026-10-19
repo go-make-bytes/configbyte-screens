@@ -12,7 +12,6 @@ const type = (id: string, name: string, labels?: Record<string, string>): UserTy
   name,
   description: '',
   permissions: [],
-  members: 0,
   corporateLoginDefault: false,
   workspaceDefault: false,
   ...(labels ? { labels } : {}),
@@ -43,7 +42,8 @@ function store(roles: Role[], userTypes: UserType[] = []) {
   return people
 }
 
-const newRole = (name: string) => ({ id: '', name, was: '', permissions: [], changed: false })
+const newRole = (name: string) => ({ id: '', name, was: '', description: '', wasDescription: '', permissions: [], changed: false })
+const edited = (id: string, name: string, was: string) => ({ id, name, was, description: '', wasDescription: '', permissions: [], changed: false })
 
 beforeEach(refuseEveryChange)
 afterEach(() => {
@@ -78,12 +78,12 @@ describe('a role’s name refused as taken', () => {
   it('reads a renamed role by its own other names, and never against itself', async () => {
     // Renamed to what it already reads as in Latvian: nothing else reads that way.
     const own = store([role('r1', 'Worker', { lv: 'Strādnieks' }), role('r2', 'Manager', { lv: 'Vadītājs' })])
-    await own.saveRole({ id: 'r1', name: 'Strādnieks', was: 'Worker', permissions: [], changed: false })
+    await own.saveRole(edited('r1', 'Strādnieks', 'Worker'))
     expect(own.said?.key).toBe('roleNameTaken')
 
     // Its own Latvian name stays, so only its name as entered is compared in English.
     const kept = store([role('r1', 'Packer', { lv: 'Pakotājs' }), role('r2', 'Worker', { lv: 'Strādnieks' })])
-    await kept.saveRole({ id: 'r1', name: 'Strādnieks', was: 'Packer', permissions: [], changed: false })
+    await kept.saveRole(edited('r1', 'Strādnieks', 'Packer'))
     expect(kept.said?.key).toBe('roleNameTaken')
   })
 
@@ -110,19 +110,19 @@ describe('a role’s name refused as taken', () => {
 describe('a user type’s name refused as taken', () => {
   it('says the plain sentence when another user type is already called that', async () => {
     const people = store([], [type('t1', 'Member', { lv: 'Dalībnieks' })])
-    await people.saveUserType({ id: '', name: 'member', description: '', permissions: [] })
+    await people.saveUserType({ id: '', name: 'member', was: '', description: '', permissions: [] })
     expect(people.said).toEqual({ kind: 'refused', key: 'typeNameTaken', values: { name: 'member' } })
   })
 
   it('names the other user type and the language when the name is how that type reads there', async () => {
     const people = store([role('r1', 'Dalībnieks')], [type('t1', 'Member', { lv: 'Dalībnieks' }), type('t2', 'Office')])
-    await people.saveUserType({ id: '', name: 'Dalībnieks', description: '', permissions: [] })
+    await people.saveUserType({ id: '', name: 'Dalībnieks', was: '', description: '', permissions: [] })
     expect(people.said).toEqual({ kind: 'refused', key: 'typeReadsAlike', values: { name: 'Dalībnieks', other: 'Member', reads: 'Dalībnieks' }, language: 'lv' })
   })
 
   it('reads an edited user type by its own other names, never against itself', async () => {
     const people = store([], [type('t1', 'Office', { en: 'Office', lv: 'Birojs' }), type('t2', 'Member', { lv: 'Dalībnieks' })])
-    await people.saveUserType({ id: 't1', name: 'Birojs', description: '', permissions: [] })
+    await people.saveUserType({ id: 't1', name: 'Birojs', was: 'Office', description: '', permissions: [] })
     expect(people.said?.key).toBe('typeNameTaken')
   })
 })

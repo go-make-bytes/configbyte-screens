@@ -91,20 +91,43 @@ kind. A role's or a position's rename line whose name stayed records a change of
 and is said that way, never as a rename to the same name. The screen's root is a size container, and the day list
 folds the area under the sentence when it is narrow.
 
-**People & access** reads and writes the membership register, in three tabs:
+**People & access** reads and writes the membership register, in three tabs, each its own address: `/people` (Users),
+`/people/roles` and `/people/user-types`, and inside them `/people/users/:id` a person open, `/people/roles/:id` and
+`/people/roles/new` a role, `/people/user-types/:id` and `/people/user-types/new` a user type. The tabs carry a count,
+and the head says how many people, administrators and services there are, all from the lists already read. A link, a
+refresh and *Back* keep what is open; an id the lists do not hold opens the list it belongs to. The route names are
+exported (`PEOPLE_ACCESS`, `PEOPLE_USER`, `PEOPLE_ROLES`, `PEOPLE_ROLE`, `PEOPLE_ROLE_NEW`, `PEOPLE_USER_TYPES`,
+`PEOPLE_USER_TYPE`, `PEOPLE_USER_TYPE_NEW`); all are children of the one `/people` route, so the sidebar's entry stays
+marked on every one of them.
 
-- **Users**: the people by what they hold, the ones who signed in and were given nothing yet, and one person open
-  beside the list, with their user type, their roles across the workspace, the Administrator checkbox and taking away
-  all access (after a confirm). The day each last signed in. Machines that act in the workspace are listed apart and
-  are not changed here; people who lost access show on request.
-- **Roles**: one role at a time, its boxes in the groups the host names and the rest under their service's own name,
-  each in the words the service declares. Setting the workspace up is never offered: it comes only with the
-  Administrator checkbox. A restricted field brings a box of its own, listed by the host; what ticking it hands out is
-  said before Save. Save writes the role's whole set: the boxes shown as ticked, and every box the role holds that the
-  screen does not show, except a field's box from an earlier restriction, which grants nothing any more (dropped only
-  when the restricted fields could be read).
-- **User types**: each with what it holds, from the boxes granted across the whole workspace only, and how many hold
-  it; and what someone arriving through the corporate login gets.
+- **Users**: the people by name, with their user type, their roles across the workspace, whether they are an
+  administrator and the day each last signed in; machines that act in the workspace are named apart and are not
+  changed here. Above the list, a band of the people who hold nothing across the workspace yet (no role, no box on
+  their user type, no position in the chart): the first five by name, each opening that person, then *+ n more*, which
+  turns on the filter for them. The counts are the filters (*Everyone*, *Administrators*, *Nothing across the
+  workspace*, *Has not signed in yet*, *Not signed in for 30 days*), each counting the people it shows, with a filter
+  for user type (the one in force) and one for role, a *Show people who lost access* toggle, *Find a person* (matching
+  ignores case and the marks over letters), and *People* or *By access*, which gathers the same people under the
+  Administrator checkbox, each role and each user type. The list goes 25 to a page. A person opens beside the list, or
+  alone with a way back when there is no room: their user type, with what the chart of authority says of it, their
+  roles across the workspace, the Administrator checkbox, a link to History at that person, and taking away all access
+  (after a question asked in place). Every act saves at once and says what it did.
+- **Roles**: a list, each row opening the role's page: what it is for, how many of the boxes it can be given it holds,
+  and whether it shipped or was made here. The role's page has its name and what it is for (both are sent), and its
+  boxes in the groups the host names and the rest under their service's own name, each in the words the service
+  declares; a count of the changes not saved yet; **Save**, **Cancel** and, for a role made here, **Delete**. Setting
+  the workspace up is never offered: it comes only with the Administrator checkbox. A restricted field brings a box of
+  its own, listed by the host; what ticking it hands out is said before Save. Save writes the role's whole set: the
+  boxes shown as ticked, and every box the role holds that the screen does not show, except a field's box from an
+  earlier restriction, which grants nothing any more (dropped only when the restricted fields could be read). The
+  host's own settings that name a role (`roles.settings`, below) are listed under the roles.
+- **User types**: a list, each row opening the user type's page: what it holds, from the boxes granted across the whole
+  workspace only, and its flags: the one new people get, the one the corporate login gives, and the chart's positions
+  that give it. Below the list, what someone arriving through the corporate login gets. A user type's page has its
+  name, what it is for and what it holds, **Save**, **Cancel** and **Delete** (not on the one new people get). How
+  many people hold a user type is never shown: a delete is refused by the register with the reason.
+
+Each list is read once a visit, and an act reads again only the list it changed.
 
 Roles, user types and positions are shown by their names as entered. The names in other languages the register may
 keep beside them (`labels`: a language's code and the name in it) are read but not edited here, and a Save leaves
@@ -219,12 +242,40 @@ Every text is a **message key in the host's own translator**, so it reads in the
 | `never` | the Export card's last line: what the file never carries |
 | `entries` | the host's own admin screens: a label, the route it opens, the section whose owner serves it, and optionally the `group` it sits in, its `icon`, and `locked` for a subject the workspace lacks |
 | `register` | the section of the membership register; People & access and its History filter show only when the coordinator found it |
-| `roles` | how the Roles screen shows boxes: its `groups` (each a word and the starts of the permission names it gathers), the restricted `fields` the host reads from their owners, and the `guard` sentence for a ticked field's box |
+| `roles` | how the Roles screen shows boxes: its `groups` (each a word and the starts of the permission names it gathers), the restricted `fields` the host reads from their owners, the `guard` sentence for a ticked field's box, and `settings`, the host's own choices of a role, listed under the roles |
 | `history` | History: its `filters` (each an area: a key and the key of its word) and `sources` (a section, the query that keeps its lines, its filter, and optionally `locked`); `describe`, the sentence for a line of the host's own services; `entitlements` and `boxes`, the host's words (message keys) for what a workspace was given, by service or `service/feature`, and for a box a position sees, by permission; and `prepare(areas)`, called with the ticked areas' keys when History opens and when a tick turns on, so the host can read what its sentences name |
 | `words` | replacements for any of the screens' own words, per language, for the sentences better said in the host's own terms |
 | `onApplied` | called after an import that may have changed something (`applied`, `partial`, `rolledBack`), so the host re-reads what it shows |
 
 A section the host does not describe keeps the name it arrived with, and so does a part.
+
+**A setting that names a role** is `roles.settings`: each lists under the roles as its word and a choice among the
+workspace's roles, read when Roles opens (once a visit) and written at once when a role is chosen. `word`, `note`,
+`saved` and `holds` are keys in the host's translator; `saved` and `holds` are given `{role}`, the role's name. `read`
+answers the id of the role chosen now (empty for none). `write` throws the screens' `ApiError` when the change is
+refused, and the refusal is said in words. `holds` is said when deleting a role is refused because a setting holds it.
+`refused` is optional: the key of the sentence said when the setting's owner refuses the role chosen (a `400`), given
+`{role}`; without it that refusal is said in the screens' own words.
+
+```ts
+import { ApiError, type RoleSetting } from 'configbyte-screens'
+
+const creatorRole: RoleSetting = {
+  key: 'creatorRole',
+  word: 'admin.settings.creatorRole.word',
+  note: 'admin.settings.creatorRole.note',
+  read: async () => (await readSetting()).roleId,
+  write: async (roleId) => {
+    const res = await saveSetting({ roleId })
+    if (!res.ok) throw new ApiError(res.status, res.code, res.message)
+  },
+  saved: 'admin.settings.creatorRole.saved', // "Saved: whoever makes one is placed as «{role}»."
+  holds: 'admin.settings.creatorRole.holds', // "Whoever makes one is placed as «{role}». Choose another role first."
+  refused: 'admin.settings.creatorRole.refused', // optional, a 400 from write: "«{role}» could not be chosen: …"
+}
+
+// configbyteScreens(i18n, { …, roles: { groups, settings: [creatorRole] } })
+```
 
 ### Words
 

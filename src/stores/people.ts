@@ -10,13 +10,15 @@
 // Roles, user types and positions may carry names in other languages beside the
 // name as entered (`labels`); a register that keeps none answers without them.
 // These screens show the name as entered.
+//
+// Each list is read once a visit. An act reads again only the list it changed.
 import { defineStore } from 'pinia'
 
 import { ApiError, del, get, post, put, relay, segment } from '../lib/api'
 import type { DeclaringService } from '../lib/boxes'
 import { calledAlike, readsAlike, type Labels, type Named } from '../lib/names'
 import en from '../locales/en.json'
-import type { FieldBox } from '../options'
+import type { FieldBox, RoleSetting } from '../options'
 
 /** The languages these screens have a word for, so a sentence can name one. */
 const NAMED_LANGUAGES = Object.keys(en.configbyte.people.inLanguage)
@@ -55,25 +57,41 @@ export interface UserType {
   labels?: Labels
   description: string
   permissions: string[]
-  members: number
   corporateLoginDefault: boolean
   workspaceDefault: boolean
 }
 
-/** A position in the chart of authority, for naming it in a history line. */
+/** A position in the chart of authority: who sits in it, and the user type it gives. */
 export interface Position {
   id: string
   name: string
   labels?: Labels
+  /** The user type the position gives to whoever sits in it; empty when it gives none. */
+  userTypeId?: string
+  /** Whoever sits in it, by the register's member id. */
+  people?: { userId: string }[]
 }
 
-/** Words to show after an act: a key below `configbyte.people.said` or `.refused`, and what it names. */
+/** What the host's setting holds now: read, being read, or not readable. */
+export interface SettingValue {
+  state: 'reading' | 'read' | 'unread'
+  /** The role chosen now; empty for none. */
+  roleId: string
+}
+
+/**
+ * Words to show after an act: a key below `configbyte.people.said` or `.refused`,
+ * and what it names. A sentence the host worded is a key of the host's own
+ * translator (`hostKey`), which then stands in for the screens' key.
+ */
 export interface Said {
   kind: 'said' | 'refused'
   key: string
   values: Record<string, string | number>
   /** A language the words name, by its code: said in the reader's own word for it. */
   language?: string
+  /** The host's own sentence, a key of its translator. */
+  hostKey?: string
 }
 
 /** The acts whose refusals read differently. */
@@ -88,6 +106,10 @@ type Act =
   | 'saveUserType'
   | 'deleteUserType'
   | 'corporateLogin'
+  | 'setting'
+
+/** The three lists the register keeps for a workspace. */
+type List = 'access' | 'roles' | 'user-types'
 
 function unanswered(e: unknown): boolean {
   if (e instanceof ApiError) return e.status === 502 || e.status === 503 || e.status === 504
@@ -105,12 +127,27 @@ export const usePeople = defineStore('configbyte-people', {
     userTypes: [] as UserType[],
     services: [] as DeclaringService[],
     positions: [] as Position[],
+    /** Whether the chart's positions were asked for in this visit. */
+    positionsRead: false,
     /** The restricted fields' boxes; null when they could not be read. */
     fields: null as FieldBox[] | null,
+    /** Whether the restricted fields were asked for in this visit, and whether that read is still under way. */
+    fieldsRead: false,
+    fieldsReading: false,
+    /** The host's role settings, by key. */
+    settings: {} as Record<string, SettingValue>,
+    settingsRead: false,
     loading: false,
     loaded: false,
-    /** Why the register could not be read: its code or the reason given. Empty means it was. */
-    failed: '',
+    /**
+     * Why the register could not be read, as a kind: it did not answer, the person
+     * is no longer an administrator, or something else (then `failedReason` holds
+     * the refusal's own words, when it had any). Empty means it was read.
+     */
+    failed: '' as '' | 'unanswered' | 'notAdministrator' | 'other',
+    failedReason: '',
+    /** Which visit is the latest; an answer to an earlier one is dropped. */
+    visit: 0,
     /** The words after the last act. */
     said: null as Said | null,
   }),
@@ -123,6 +160,8 @@ export const usePeople = defineStore('configbyte-people', {
     administrators: (state) => state.members.filter((m) => m.administrator && m.status !== 'revoked'),
     /** The user type every arrival receives. */
     workspaceDefault: (state) => state.userTypes.find((u) => u.workspaceDefault) ?? null,
+    /** The restricted fields have been answered, one way or the other. */
+    fieldsSettled: (state) => state.fieldsRead && !state.fieldsReading,
   },
   actions: {
     path(rest: string): string {
@@ -134,53 +173,128 @@ export const usePeople = defineStore('configbyte-people', {
     },
 
     /**
-     * Read everything the screens show. The people, roles and user types are
-     * needed; the vocabulary, the chart and the restricted fields only make the
-     * boxes and the history read better, so a failure there leaves them empty.
+     * Start a visit: read the people, roles and user types, which are needed, and
+     * the vocabulary, which only makes the boxes read better, so a failure there
+     * leaves it empty. The chart and the restricted fields are read when a screen
+     * first needs them.
      */
-    async load(input: { section: string; tenant: string; fields?: () => Promise<FieldBox[]> }) {
+    async open(input: { section: string; tenant: string }) {
+      // Another section or workspace shows nothing of the one before while it is read.
+      if (input.section !== this.section || input.tenant !== this.tenant) {
+        this.members = []
+        this.roles = []
+        this.userTypes = []
+        this.services = []
+        this.loaded = false
+      }
+      this.visit += 1
+      const visit = this.visit
       this.section = input.section
       this.tenant = input.tenant
       this.loading = true
       this.failed = ''
-      try {
-        const [access, roles, types] = await Promise.all([
-          get<{ members: Member[] }>(this.tenantPath('access')),
-          get<{ roles: Role[] }>(this.tenantPath('roles')),
-          get<{ userTypes: UserType[] }>(this.tenantPath('user-types')),
-        ])
-        this.members = access.members ?? []
-        this.roles = roles.roles ?? []
-        this.userTypes = types.userTypes ?? []
-        this.loaded = true
-      } catch (e) {
-        this.failed = e instanceof ApiError ? e.code || e.message : String(e)
+      this.failedReason = ''
+      this.positions = []
+      this.positionsRead = false
+      this.fields = null
+      this.fieldsRead = false
+      this.fieldsReading = false
+      this.settings = {}
+      this.settingsRead = false
+      const [access, roles, types, vocabulary] = await Promise.allSettled([
+        get<{ members: Member[] }>(this.tenantPath('access')),
+        get<{ roles: Role[] }>(this.tenantPath('roles')),
+        get<{ userTypes: UserType[] }>(this.tenantPath('user-types')),
+        get<{ services: DeclaringService[] }>(this.path('config')),
+      ])
+      if (visit !== this.visit) return
+      if (access.status === 'rejected' || roles.status === 'rejected' || types.status === 'rejected') {
+        const why = [access, roles, types].find((r) => r.status === 'rejected') as PromiseRejectedResult
+        const e = why.reason
+        if (unanswered(e)) this.failed = 'unanswered'
+        else if (e instanceof ApiError && e.status === 403) this.failed = 'notAdministrator'
+        else {
+          this.failed = 'other'
+          // The refusal's title is words; the status line stands in for one when it had none.
+          this.failedReason = e instanceof ApiError && !/^HTTP \d+$/.test(e.message) ? e.message : ''
+        }
         this.loading = false
 
         return
       }
-      const [vocabulary, chart, fields] = await Promise.allSettled([
-        get<{ services: DeclaringService[] }>(this.path('config')),
-        get<{ positions: Position[] }>(this.tenantPath('chart/positions')),
-        input.fields ? input.fields() : Promise.resolve([] as FieldBox[]),
-      ])
+      this.members = access.value.members ?? []
+      this.roles = roles.value.roles ?? []
+      this.userTypes = types.value.userTypes ?? []
       this.services = vocabulary.status === 'fulfilled' ? (vocabulary.value.services ?? []) : []
-      this.positions = chart.status === 'fulfilled' ? (chart.value.positions ?? []) : []
-      this.fields = fields.status === 'fulfilled' ? fields.value : null
+      this.loaded = true
       this.loading = false
     },
 
-    /** Read the people, roles and user types again after an act. */
-    async refresh() {
+    /** Start a visit and read everything a screen that names positions and fields needs. */
+    async load(input: { section: string; tenant: string; fields?: () => Promise<FieldBox[]> }) {
+      await this.open(input)
+      if (!this.loaded || this.failed) return
+      await Promise.all([this.ensurePositions(), this.ensureFields(input.fields)])
+    },
+
+    /** The chart's positions, once a visit; a chart that cannot be read leaves them empty. */
+    async ensurePositions() {
+      if (this.positionsRead) return
+      this.positionsRead = true
+      const visit = this.visit
+      try {
+        const chart = await get<{ positions: Position[] }>(this.tenantPath('chart/positions'))
+        if (visit === this.visit) this.positions = chart.positions ?? []
+      } catch {
+        if (visit === this.visit) this.positions = []
+      }
+    },
+
+    /** The boxes of the restricted fields, once a visit; null when the host could not read them. */
+    async ensureFields(read?: () => Promise<FieldBox[]>) {
+      if (this.fieldsRead) return
+      this.fieldsRead = true
+      this.fieldsReading = true
+      const visit = this.visit
+      try {
+        const boxes = read ? await read() : []
+        if (visit === this.visit) this.fields = boxes
+      } catch {
+        if (visit === this.visit) this.fields = null
+      } finally {
+        if (visit === this.visit) this.fieldsReading = false
+      }
+    },
+
+    /** What each of the host's role settings holds now, once a visit. */
+    async readSettings(list: RoleSetting[]) {
+      if (this.settingsRead) return
+      this.settingsRead = true
+      const visit = this.visit
+      await Promise.all(
+        list.map(async (s) => {
+          this.settings[s.key] = { state: 'reading', roleId: '' }
+          try {
+            const roleId = await s.read()
+            if (visit === this.visit) this.settings[s.key] = { state: 'read', roleId }
+          } catch {
+            if (visit === this.visit) this.settings[s.key] = { state: 'unread', roleId: '' }
+          }
+        }),
+      )
+    },
+
+    /** Read again only the lists an act changed. */
+    async reread(which: List[]) {
       try {
         const [access, roles, types] = await Promise.all([
-          get<{ members: Member[] }>(this.tenantPath('access')),
-          get<{ roles: Role[] }>(this.tenantPath('roles')),
-          get<{ userTypes: UserType[] }>(this.tenantPath('user-types')),
+          which.includes('access') ? get<{ members: Member[] }>(this.tenantPath('access')) : undefined,
+          which.includes('roles') ? get<{ roles: Role[] }>(this.tenantPath('roles')) : undefined,
+          which.includes('user-types') ? get<{ userTypes: UserType[] }>(this.tenantPath('user-types')) : undefined,
         ])
-        this.members = access.members ?? []
-        this.roles = roles.roles ?? []
-        this.userTypes = types.userTypes ?? []
+        if (access) this.members = access.members ?? []
+        if (roles) this.roles = roles.roles ?? []
+        if (types) this.userTypes = types.userTypes ?? []
       } catch {
         // The act itself went through; what is shown is a moment old until the next read.
       }
@@ -188,26 +302,25 @@ export const usePeople = defineStore('configbyte-people', {
 
     /**
      * One act on the register. Answers whether it was accepted; either way the
-     * words to show are in `said`.
+     * words to show are in `said`. `reread` names the lists it changed.
      */
     async act(
       act: Act,
       call: () => Promise<unknown>,
       said: Said['key'],
       values: Said['values'],
-      about?: Record<string, string | number>,
-      naming?: Named,
+      extra: { reread: List[]; about?: Record<string, string | number>; naming?: Named },
     ) {
       this.said = null
       try {
         await call()
       } catch (e) {
-        this.said = this.refusal(act, e, { ...values, ...(about ?? {}) }, naming)
+        this.said = this.refusal(act, e, { ...values, ...(extra.about ?? {}) }, extra.naming)
 
         return false
       }
       this.said = { kind: 'said', key: said, values }
-      await this.refresh()
+      await this.reread(extra.reread)
 
       return true
     },
@@ -228,7 +341,7 @@ export const usePeople = defineStore('configbyte-people', {
         return found ? { ...refused(alike, { other: found.other.name, reads: found.reads }), language: found.language } : refused(plain)
       }
       if (unanswered(e)) return refused('unanswered')
-      if (!(e instanceof ApiError)) return refused('other', { reason: String(e) })
+      if (!(e instanceof ApiError)) return refused('unreadable')
       // The register, or the coordinator before it, no longer counts this person
       // as an administrator of the workspace.
       if (e.status === 403) return refused('notAdministrator')
@@ -262,6 +375,7 @@ export const usePeople = defineStore('configbyte-people', {
         () => put(this.tenantPath(`users/${segment(member.id)}/user-type`), { userTypeId: type.id }),
         'userType',
         { name: member.displayName, type: type.name },
+        { reread: ['access'] },
       )
     },
 
@@ -271,6 +385,7 @@ export const usePeople = defineStore('configbyte-people', {
         () => post(this.path(`users/${segment(member.id)}/roles?tenant=${segment(this.tenant)}`), { roleId: role.id }),
         'roleGiven',
         { name: member.displayName, role: role.name },
+        { reread: ['access'] },
       )
     },
 
@@ -280,15 +395,20 @@ export const usePeople = defineStore('configbyte-people', {
         () => del(this.path(`users/${segment(member.id)}/roles?roleId=${segment(role.id)}&tenant=${segment(this.tenant)}`)),
         'roleTaken',
         { name: member.displayName, role: role.name },
+        { reread: ['access'] },
       )
     },
 
     setAdministrator(member: Member, on: boolean) {
       const path = this.tenantPath(`administrators/${segment(member.id)}`)
 
-      return this.act('administrator', () => (on ? put(path) : del(path)), on ? 'administrator' : 'administratorOff', {
-        name: member.displayName,
-      })
+      return this.act(
+        'administrator',
+        () => (on ? put(path) : del(path)),
+        on ? 'administrator' : 'administratorOff',
+        { name: member.displayName },
+        { reread: ['access'] },
+      )
     },
 
     takeAll(member: Member) {
@@ -297,71 +417,107 @@ export const usePeople = defineStore('configbyte-people', {
         () => del(this.path(`users/${segment(member.id)}?tenant=${segment(this.tenant)}`)),
         'takenAll',
         { name: member.displayName },
+        { reread: ['access'] },
       )
     },
 
     /**
-     * Save a role: its name when it changed, then its whole set of boxes when that
-     * changed. A new role is made first, holding nothing. Answers the role's id
-     * when it was saved, or an empty string.
+     * Save a role: its name and what it is for when either changed, then its whole
+     * set of boxes when that changed. A new role is made first, with both, holding
+     * nothing. Answers the role's id when it was saved, or an empty string. Only
+     * the roles are read again, and the people too when the name changed, since
+     * each person's roles carry it.
      */
-    async saveRole(input: { id: string; name: string; was: string; permissions: string[]; changed: boolean }): Promise<string> {
+    async saveRole(input: {
+      id: string
+      name: string
+      was: string
+      description: string
+      wasDescription: string
+      permissions: string[]
+      changed: boolean
+    }): Promise<string> {
       let id = input.id
-      // A Save sends the name alone, so a role keeps its names in other languages.
+      // A Save sends no names in other languages, so a role keeps its own.
       const kept = this.roles.find((r) => r.id === input.id)?.labels
+      const renamed = input.id !== '' && input.name !== input.was
       const ok = await this.act(
         'saveRole',
         async () => {
+          const words = { name: input.name, description: input.description }
           if (!id) {
-            const made = await post<{ id: string }>(this.tenantPath('roles'), { name: input.name })
+            const made = await post<{ id: string }>(this.tenantPath('roles'), words)
             id = made.id
-          } else if (input.name !== input.was) {
-            await put(this.tenantPath(`roles/${segment(id)}`), { name: input.name })
+          } else if (input.name !== input.was || input.description !== input.wasDescription) {
+            await put(this.tenantPath(`roles/${segment(id)}`), words)
           }
           if (input.changed) await put(this.tenantPath(`roles/${segment(id)}/permissions`), { permissions: input.permissions })
         },
         'roleSaved',
         { name: input.name },
-        undefined,
-        { id: input.id, name: input.name, labels: kept },
+        { reread: renamed ? ['roles', 'access'] : ['roles'], naming: { id: input.id, name: input.name, labels: kept } },
       )
 
       return ok ? id : ''
     },
 
-    deleteRole(role: Role) {
+    /**
+     * Delete a role. `holds` is the host's sentence for a setting that holds the
+     * role: the register counts that as a place the role is kept, and refuses, so
+     * the refusal is said in the setting's words.
+     */
+    async deleteRole(role: Role, holds?: string) {
       const held = this.members.filter((m) => m.status !== 'revoked' && m.tenantRoles.some((r) => r.id === role.id)).length
+      const ok = await this.act('deleteRole', () => del(this.tenantPath(`roles/${segment(role.id)}`)), 'roleDeleted', { role: role.name }, {
+        reread: ['roles'],
+        about: { n: held },
+      })
+      if (!ok && holds && this.said?.key === 'rolePlaced') this.said = { ...this.said, hostKey: holds }
 
-      return this.act('deleteRole', () => del(this.tenantPath(`roles/${segment(role.id)}`)), 'roleDeleted', { role: role.name }, { n: held })
+      return ok
     },
 
-    saveUserType(input: { id: string; name: string; description: string; permissions: string[] }) {
+    /**
+     * Save a user type: made, or changed. Answers its id when it was saved, or an
+     * empty string. Only the user types are read again, and the people too when
+     * the name changed, since each person carries it.
+     */
+    async saveUserType(input: { id: string; name: string; was: string; description: string; permissions: string[] }): Promise<string> {
       const body = { name: input.name, description: input.description, permissions: input.permissions }
       // A Save sends no names in other languages, so a user type keeps its own.
       const kept = this.userTypes.find((u) => u.id === input.id)?.labels
-
-      return this.act(
+      let id = input.id
+      const renamed = input.id !== '' && input.name !== input.was
+      const ok = await this.act(
         'saveUserType',
-        () => (input.id ? put(this.tenantPath(`user-types/${segment(input.id)}`), body) : post(this.tenantPath('user-types'), body)),
+        async () => {
+          if (id) await put(this.tenantPath(`user-types/${segment(id)}`), body)
+          else id = (await post<{ id?: string }>(this.tenantPath('user-types'), body))?.id ?? ''
+        },
         'typeSaved',
         { name: input.name },
-        undefined,
-        { id: input.id, name: input.name, labels: kept },
+        { reread: renamed ? ['user-types', 'access'] : ['user-types'], naming: { id: input.id, name: input.name, labels: kept } },
       )
+      if (!ok) return ''
+
+      return id || (this.userTypes.find((u) => u.name === input.name)?.id ?? '')
     },
 
+    /**
+     * Delete a user type. How many hold it is counted from the people already
+     * read: persons whose access is not revoked and whose own user type it is.
+     */
     deleteUserType(type: UserType) {
-      return this.act(
-        'deleteUserType',
-        () => del(this.tenantPath(`user-types/${segment(type.id)}`)),
-        'typeDeleted',
-        { type: type.name },
-        {
-          n: type.members,
+      const held = this.members.filter((m) => m.kind === 'person' && m.status !== 'revoked' && m.userType?.id === type.id).length
+
+      return this.act('deleteUserType', () => del(this.tenantPath(`user-types/${segment(type.id)}`)), 'typeDeleted', { type: type.name }, {
+        reread: ['user-types'],
+        about: {
+          n: held,
           workspaceDefault: type.workspaceDefault ? 1 : 0,
           corporateLogin: type.corporateLoginDefault ? 1 : 0,
         },
-      )
+      })
     },
 
     setCorporateLogin(typeId: string) {
@@ -370,6 +526,7 @@ export const usePeople = defineStore('configbyte-people', {
         () => put(this.tenantPath('corporate-login-default'), { userTypeId: typeId }),
         'corporateLogin',
         {},
+        { reread: ['user-types'] },
       )
     },
   },
