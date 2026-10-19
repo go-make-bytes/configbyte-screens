@@ -1,6 +1,6 @@
 # configbyte-screens
 
-The shared screens of a deployment's **admin app**: the sign-in page, the frame, **Export / Import**, which
+The shared screens of a deployment's **admin app**: the sign-in page, the frame, **Export & import**, which
 carries a workspace's configuration out as one file and back in, **History**, every change a person made to the
 workspace's setup across its services, and **People & access**, who is in the workspace and what each person holds,
 with its roles and its user types. They are Vue 3 screens that a product's own
@@ -47,12 +47,39 @@ document's `lang` follows the page's language throughout, before sign-in and aft
 its section's owner when it started (`GET /sections`). What the frame offers is display only: every call is judged by
 the service it reaches.
 
-**The sidebar is grouped.** The shared screens open the first group: Export / Import, History, and People & access
+**The sidebar is grouped.** The shared screens open the first group: Export & import, History, and People & access
 when the membership register's owner answered. A host screen sits in the group it names, or after the shared screens
 when it names none; the host's groups follow in the order their first screen arrives. A screen whose subject the
 workspace lacks can be shown locked, marked *not included*, and does not open.
 
 ## The screens
+
+**Export & import** carries the whole configuration out as one file and back in. The coordinator judges the file —
+each owning service its own part, the coordinator the whole — and the screen only draws what they answer, in words.
+
+- **The Export card** lists what the file carries by area: the host's lines under the name of the section they
+  describe, in the coordinator's order, for the sections the deployment runs; then, when the host names the membership
+  register and the deployment runs it, the register's own group (the list of services and their boxes). Under them,
+  what is never in the file and, with the register, what is not in it yet. After a download the card names the areas
+  the file carries, in the same order.
+- **The file's chip** says its size, when it was exported, and *from this workspace*; a file from another workspace
+  says so on the chip's own line, which a narrow screen never cuts off (a file that names no workspace says neither).
+  The workspace's id is never shown.
+- **The preview** is one group per area, a row for each item the file would add, change, refuse or not take. A row is
+  drawn by the name the file gives the item, with its key after it; what the file does to it is said in words (*new in
+  the file*, *its name changes*, *taken out of use*), and a refusal in words that say what to do about it. Items found
+  by their `key`, else their `number`; a host finds the others with `transfer.find`. The membership register's
+  services, role rungs and boxes are named from its own shape. What stays as it is folds into one line that counts
+  by part (*14 unchanged: 2 priorities, 5 stages*).
+- **An area that refuses** is named with its reason (*refused this file: you do not hold the box that imports it*)
+  and told apart from one that did not answer. Either stops the preview, and Apply stays shut.
+- **After an Apply that landed**, the first area whose changes landed ends with a link to History at the person who
+  applied it (`/history?who=<their key>`).
+- **A rolled-back Apply** says what the restore could not take back — an apply never removes, so what the file added
+  is still there — lists it by part and name, and, where the host says where each part's items are taken out of use
+  (`PartWord.area`, or `transfer.describe`), links to those screens.
+- **A file that names the workspace** (its name or its corporate login) is not taken from: the register's area says
+  what the file named and what the workspace keeps, and neither is drawn as a row or counted.
 
 **History** is one list, newest first, of every change a person made to the workspace's setup, whichever way it was
 made: a screen, an import, this app. Each service keeps its own history; the screen reads the membership register's
@@ -61,8 +88,10 @@ side only as far as every stream has been read, since a stream with older lines 
 than another stream's oldest; *Show older* reads the next page of each stream that has more.
 
 - **The address holds what is shown.** `show` is the ticked areas' keys, comma-separated, absent when every area is
-  ticked (a `show` naming none of the areas on screen means all of them); `who` is a member's id, or `operator`,
-  absent for everyone (an id the people list does not hold means everyone, and the address is rewritten without it).
+  ticked (a `show` naming none of the areas on screen means all of them); `who` is a member's id, a person's key
+  (`sub:…`, the way the services name them — what another screen links with), or `operator`, absent for everyone (a
+  person the people list does not hold means everyone, and the address is rewritten without it; a key is kept as it
+  was given).
   The screen reads both on open and whenever the query changes, and writes them back with `router.replace`, so a
   link, a refresh and *Back* keep them. The register's own area has the key `people`: `/history?show=people`.
   The last ticked area stays ticked, since an address cannot say none.
@@ -115,7 +144,9 @@ marked on every one of them.
 - **Roles**: a list, each row opening the role's page: what it is for, how many of the boxes it can be given it holds,
   and whether it shipped or was made here. The role's page has its name and what it is for (both are sent), and its
   boxes in the groups the host names and the rest under their service's own name, each in the words the service
-  declares; a count of the changes not saved yet; **Save**, **Cancel** and, for a role made here, **Delete**. Setting
+  declares; a count of the changes not saved yet; **Save**, **Cancel** and, for a role made here, **Delete**
+  (a role that came with the workspace is never deleted: a page opened from a list read without that mark that meets
+  the register's refusal reads the roles again and says the role is shipped). Setting
   the workspace up is never offered: it comes only with the Administrator checkbox. A restricted field brings a box of
   its own, listed by the host; what ticking it hands out is said before Save. Save writes the role's whole set: the
   boxes shown as ticked, and every box the role holds that the screen does not show, except a field's box from an
@@ -144,8 +175,8 @@ language. When the list cannot tell, the first.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.7.5",
-"uibyte": "github:gmb-lib/uibyte#v0.16.0"
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.8.0",
+"uibyte": "github:gmb-lib/uibyte#v0.17.0"
 ```
 
 Move both pins together, then read the result back with `npm ls uibyte`: one copy.
@@ -237,13 +268,14 @@ Every text is a **message key in the host's own translator**, so it reads in the
 | Option | Meaning |
 |---|---|
 | `product` | the product's name, on the sign-in page and wherever the deployment's own name is not yet known |
-| `sections` | per section name: its `title`, its `parts` in the host's order with their words, and the scopes that mark a person who may `configure` it |
+| `sections` | per section name: its `title`, its `parts` in the host's order with their words (each may also carry a `count`, a message with `{n}` and plural forms, said when the part's unchanged items are folded, and an `area`, the key of the host's entry where the part's items are taken out of use), and the scopes that mark a person who may `configure` it |
 | `carries` | the Export card's lines, in order, each naming the section it describes; a line shows only when the deployment runs that section |
 | `never` | the Export card's last line: what the file never carries |
 | `entries` | the host's own admin screens: a label, the route it opens, the section whose owner serves it, and optionally the `group` it sits in, its `icon`, and `locked` for a subject the workspace lacks |
 | `register` | the section of the membership register; People & access and its History filter show only when the coordinator found it |
 | `roles` | how the Roles screen shows boxes: its `groups` (each a word and the starts of the permission names it gathers), the restricted `fields` the host reads from their owners, the `guard` sentence for a ticked field's box, and `settings`, the host's own choices of a role, listed under the roles |
 | `history` | History: its `filters` (each an area: a key and the key of its word) and `sources` (a section, the query that keeps its lines, its filter, and optionally `locked`); `describe`, the sentence for a line of the host's own services; `entitlements` and `boxes`, the host's words (message keys) for what a workspace was given, by service or `service/feature`, and for a box a position sees, by permission; and `prepare(areas)`, called with the ticked areas' keys when History opens and when a tick turns on, so the host can read what its sentences name |
+| `transfer` | how an import's rows are named and worded: `find`, which finds an item in the file when a report's key is not the item's `key` or `number` (it is handed the part's items as the file has them, so it checks a value's type before using it); `members`, a message for each changed member the screens have no words for (said as *its … changes*); and `describe`, a row in the host's own words (its name, what happens to it, its part, the entry where it is taken out of use), or `null` to keep the screens' own |
 | `words` | replacements for any of the screens' own words, per language, for the sentences better said in the host's own terms |
 | `onApplied` | called after an import that may have changed something (`applied`, `partial`, `rolledBack`), so the host re-reads what it shows |
 

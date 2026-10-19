@@ -33,7 +33,7 @@
       "tab": "{name} — admin",
       "method": "signed in with {method}",
       "logout": "Sign out",
-      "exportImport": "Export / Import",
+      "exportImport": "Export & import",
       "signIn": {
         "tag": "admin",
         "title": "Sign in to the admin app",
@@ -92,7 +92,6 @@
         "lead": "Your whole configuration as one file — to keep, to hand to another workspace, or to edit and bring back.",
         "action": "Download configuration",
         "working": "Preparing the file…",
-        "sections": "{n} section | {n} sections",
         "failed": "The configuration could not be downloaded: {reason}"
       },
       "import": {
@@ -105,18 +104,23 @@
           "count": "Drop one file at a time."
         }
       },
+      "carries": {
+        "register": "The list of services and their boxes this deployment runs on",
+        "notToday": "Not in it today: roles, user types, the chart of authority."
+      },
       "file": {
         "exported": "exported {day}",
-        "workspace": "from workspace {id}",
+        "this": "from this workspace",
+        "other": "from another workspace",
         "edited": "edited since export"
       },
       "preview": {
-        "title": "What this document would do",
-        "working": "Reading the document…"
+        "title": "What this file would do",
+        "working": "Reading the file…"
       },
       "columns": {
         "part": "part",
-        "key": "key",
+        "key": "item",
         "status": "what happens",
         "detail": "why / what moves"
       },
@@ -124,7 +128,56 @@
         "added": "added",
         "changed": "changed",
         "unchanged": "unchanged",
-        "refused": "refused"
+        "refused": "refused",
+        "skipped": "not taken",
+        "named": "«{name}»",
+        "rung": "«{group} {level}» of {service}"
+      },
+      "part": {
+        "services": "Services",
+        "roles": "Role rungs",
+        "permissions": "Boxes"
+      },
+      "count": {
+        "services": "{n} service | {n} services",
+        "roles": "{n} role rung | {n} role rungs",
+        "permissions": "{n} box | {n} boxes"
+      },
+      "change": {
+        "added": "new in the file",
+        "name": "its name changes",
+        "labels": "its names in other languages change",
+        "description": "its description changes",
+        "retired": "taken out of use",
+        "restored": "restored",
+        "status": "whether it is in use changes",
+        "other": "something else about it changes"
+      },
+      "refusal": {
+        "keyConflict": "It already means something else here, and what an item is never changes. Add a new one with the meaning you want, and take this one out of use.",
+        "unknownReference": "It names something this workspace does not have, or has taken out of use. Name one that is in use, or add it in the file too.",
+        "inUse": "It is still in use here, so the file cannot take it away. Move what uses it first, then drop the file again.",
+        "numberTaken": "Its number already belongs to something else here. Give it a number of its own in the file.",
+        "badDocument": "It is out of shape in the file: {said}",
+        "other": "Refused: {said}"
+      },
+      "skip": {
+        "deploymentOwned": "This deployment's list says otherwise; only whoever runs the deployment changes it.",
+        "other": "Not taken from a file: {said}"
+      },
+      "reason": {
+        "noBox": "you do not hold the box that imports it",
+        "outOfShape": "its part of the file is out of shape ({said})",
+        "outOfShapePlain": "its part of the file is out of shape"
+      },
+      "workspace": {
+        "both": "This file names the workspace «{file}» and a corporate login.",
+        "bothUnnamed": "This file names a workspace and a corporate login.",
+        "name": "This file names the workspace «{file}».",
+        "login": "This file names a corporate login.",
+        "unnamed": "This file names a workspace.",
+        "kept": "Neither is taken from a file: this workspace keeps «{mine}» and its own corporate login.",
+        "keptUnnamed": "Neither is taken from a file: this workspace keeps its own name and its own corporate login."
       },
       "badge": {
         "clean": "clean",
@@ -135,30 +188,35 @@
         "applied": "applied",
         "withheld": "withheld",
         "rolledBack": "rolled back",
-        "notRestored": "not restored"
+        "notRestored": "not restored",
+        "notWritten": "could not write"
       },
       "note": {
-        "failed": "did not answer, so its part of the document could not be judged",
-        "skipped": "No service in this workspace owns this section, so it is not applied here — the rest of the document can be."
+        "failed": "{area} did not answer, so its part of the file could not be judged.",
+        "refusedArea": "{area} refused this file: {reason}",
+        "skipped": "No service in this workspace owns this part, so it is not applied here — the rest of the file can be."
       },
       "summary": {
         "changes": "{n} change | {n} changes",
-        "unchanged": "{n} unchanged"
+        "none": "no changes",
+        "unchangedBy": "{n} unchanged: {parts}"
       },
       "tally": {
         "added": "{n} added",
         "changed": "{n} changed",
         "unchanged": "{n} unchanged",
-        "refused": "{n} refused"
+        "refused": "{n} refused",
+        "skipped": "{n} not taken"
       },
       "stop": {
-        "refused": "{n} item was refused, so this document cannot be applied — none of it. Change it in the file (the reason says what) and drop the file again. | {n} items were refused, so this document cannot be applied — none of it. Change them in the file (each reason says what) and drop the file again.",
-        "failed": "A service did not answer, so this document could not be judged. Nothing was written. Preview again in a moment.",
+        "refused": "{n} item was refused, so this file cannot be applied — none of it. Change it in the file (the reason says what) and drop the file again. | {n} items were refused, so this file cannot be applied — none of it. Change them in the file (each reason says what) and drop the file again.",
+        "refusedArea": "{areas} refused this file, so none of it can be applied. Change what the reason says, then drop the file again.",
+        "failed": "{areas} did not answer, so this file could not be judged. Nothing was written. Preview again in a moment.",
         "bad": "This file cannot be read as a configuration document. Nothing was written. Drop a file exported from this screen.",
-        "other": "The document could not be previewed: {reason}"
+        "other": "The file could not be previewed: {reason}"
       },
       "act": {
-        "apply": "Apply this document",
+        "apply": "Apply this file",
         "applying": "Applying…",
         "cancel": "Cancel",
         "again": "Preview again",
@@ -168,11 +226,11 @@
       "outcome": {
         "applied": {
           "head": "Applied.",
-          "rest": "The whole document is in force."
+          "rest": "The whole file is in force."
         },
         "moved": {
           "head": "The configuration changed after your preview.",
-          "rest": "Nothing was written. Preview again to see what this document would do now — the new preview shows anyone else's change it would overwrite."
+          "rest": "Nothing was written. Preview again to see what this file would do now — the new preview shows anyone else's change it would overwrite."
         },
         "refused": {
           "head": "Refused at Apply.",
@@ -180,28 +238,34 @@
         },
         "failed": {
           "head": "Nothing was written.",
-          "rest": "A service could not write its section, so the rest of the document was withheld."
+          "rest": "A service could not write its part, so the rest of the file was withheld."
         },
         "rolledBack": {
-          "head": "Nothing of this document is in force.",
-          "rest": "A service could not write its section after another had written its own, so that one was restored to what it held before."
+          "head": "Rolled back, except what it added.",
+          "headNone": "Nothing of this file is in force.",
+          "rest": "{failed} could not write its part after {written} had written its own, so it was restored to what it held before. | {failed} could not write its part after {written} had written theirs, so they were restored to what they held before.",
+          "kept": "A restore never removes, so what the file added is still here:",
+          "outOfUse": "In use nowhere yet. Take it out of use in {areas} if you do not want it. | In use nowhere yet. Take them out of use in {areas} if you do not want them."
         },
         "partial": {
-          "head": "Only part of this document is in force.",
-          "rest": "A service could not write its section, and restoring the section written before it failed too. Preview again: the new preview shows exactly what is still to land, and applying it completes the document."
+          "head": "Only part of this file is in force.",
+          "rest": "A service could not write its part, and restoring the part written before it failed too. Preview again: the new preview shows exactly what is still to land, and applying it completes the file."
         },
         "other": {
-          "head": "The document could not be applied."
+          "head": "The file could not be applied."
         }
       },
       "line": {
-        "applied": "{n} change landed, recorded in the history under your name | {n} changes landed, recorded in the history under your name",
-        "appliedNothing": "nothing in it changes this section",
-        "withheld": "clean, not applied because another section did not land",
-        "refused": "nothing of this section was written",
-        "failed": "could not be written",
-        "rolledBack": "written, then restored to what it held before this import",
-        "notRestored": "holds this document's section — the restore after the failure did not succeed",
+        "applied": "{n} change landed, recorded in History under your name | {n} changes landed, recorded in History under your name",
+        "history": "See them in History →",
+        "appliedNothing": "nothing in it changes this part",
+        "withheld": "clean, not applied because another part did not land",
+        "refused": "nothing of this part was written",
+        "notWritten": "its service did not answer. Nothing of this part was written.",
+        "refusedPart": "it refused its part: {reason}. Nothing of this part was written.",
+        "rolledBack": "restored to what it held before this import",
+        "rolledBackKept": "restored: every change is back as it was, except what the file added",
+        "notRestored": "holds this file's part — the restore after the failure did not succeed",
         "skipped": "not applied here — no service in this workspace owns it"
       }
     },
@@ -396,6 +460,7 @@
         "notAdministrator": "You are no longer an administrator of this workspace, so nothing was changed. Sign in again to see what is yours.",
         "roleHeld": "«{role}» is held by {n} person. Take it from them first. | «{role}» is held by {n} people. Take it from them first.",
         "rolePlaced": "«{role}» is still placed by a service on things it keeps. Move those places to another role first.",
+        "roleShipped": "«{role}» came with the workspace and is never deleted. Rename it, or change what it holds.",
         "roleNameTaken": "Another role is already called «{name}».",
         "roleReadsAlike": "«{reads}» is how the role «{other}» reads {language}.",
         "typeHeld": "«{type}» is held by {n} person. Give them another user type first. | «{type}» is held by {n} people. Give them another user type first.",

@@ -33,7 +33,7 @@
       "tab": "{name} — administrēšana",
       "method": "pieslēgts ar {method}",
       "logout": "Iziet",
-      "exportImport": "Eksports / Imports",
+      "exportImport": "Eksports un imports",
       "signIn": {
         "tag": "administrēšana",
         "title": "Pieslēgšanās administrēšanas lietotnei",
@@ -92,7 +92,6 @@
         "lead": "Visa jūsu konfigurācija vienā failā — lai to paturētu, nodotu citai darbvietai vai labotu un atnestu atpakaļ.",
         "action": "Lejupielādēt konfigurāciju",
         "working": "Gatavo failu…",
-        "sections": "{n} sadaļa | {n} sadaļas",
         "failed": "Konfigurāciju neizdevās lejupielādēt: {reason}"
       },
       "import": {
@@ -105,18 +104,23 @@
           "count": "Nometiet vienu failu vienlaikus."
         }
       },
+      "carries": {
+        "register": "Servisu un to atļauju saraksts, ar ko darbojas šis izvietojums",
+        "notToday": "Šobrīd tajā nav: lomu, lietotāju veidu, pilnvaru shēmas."
+      },
       "file": {
         "exported": "eksportēts {day}",
-        "workspace": "no darbvietas {id}",
+        "this": "no šīs darbvietas",
+        "other": "no citas darbvietas",
         "edited": "labots pēc eksporta"
       },
       "preview": {
-        "title": "Ko šis dokuments izdarītu",
-        "working": "Lasa dokumentu…"
+        "title": "Ko šis fails izdarītu",
+        "working": "Lasa failu…"
       },
       "columns": {
         "part": "daļa",
-        "key": "atslēga",
+        "key": "vienums",
         "status": "kas notiek",
         "detail": "kāpēc / kas mainās"
       },
@@ -124,7 +128,56 @@
         "added": "pievienots",
         "changed": "mainīts",
         "unchanged": "nemainīts",
-        "refused": "atteikts"
+        "refused": "atteikts",
+        "skipped": "netiek ņemts",
+        "named": "«{name}»",
+        "rung": "«{group} {level}» — {service}"
+      },
+      "part": {
+        "services": "Servisi",
+        "roles": "Lomu pakāpes",
+        "permissions": "Atļaujas"
+      },
+      "count": {
+        "services": "{n} serviss | {n} servisi",
+        "roles": "{n} lomas pakāpe | {n} lomas pakāpes",
+        "permissions": "{n} atļauja | {n} atļaujas"
+      },
+      "change": {
+        "added": "jauns failā",
+        "name": "nosaukums mainās",
+        "labels": "nosaukumi citās valodās mainās",
+        "description": "apraksts mainās",
+        "retired": "izņemts no lietošanas",
+        "restored": "atjaunots",
+        "status": "mainās tas, vai to lieto",
+        "other": "mainās kaut kas cits"
+      },
+      "refusal": {
+        "keyConflict": "Tam šeit jau ir cita nozīme, un vienuma nozīme nekad nemainās. Pievienojiet jaunu ar vajadzīgo nozīmi un šo izņemiet no lietošanas.",
+        "unknownReference": "Tas norāda uz kaut ko, kā šajā darbvietā nav vai kas ir izņemts no lietošanas. Norādiet lietošanā esošu vai pievienojiet to arī failā.",
+        "inUse": "Tas šeit joprojām tiek lietots, tāpēc fails to nevar noņemt. Vispirms pārceliet to, kas to lieto, un tad nometiet failu vēlreiz.",
+        "numberTaken": "Tā numurs šeit jau pieder kam citam. Piešķiriet tam failā savu numuru.",
+        "badDocument": "Tas failā ir nepareizi veidots: {said}",
+        "other": "Atteikts: {said}"
+      },
+      "skip": {
+        "deploymentOwned": "Šī izvietojuma saraksts ir citāds; to maina tikai tas, kas uztur izvietojumu.",
+        "other": "Netiek ņemts no faila: {said}"
+      },
+      "reason": {
+        "noBox": "jums nav atļaujas, kas ļauj to importēt",
+        "outOfShape": "šī faila daļa ir nepareizi veidota ({said})",
+        "outOfShapePlain": "šī faila daļa ir nepareizi veidota"
+      },
+      "workspace": {
+        "both": "Šis fails min darbvietu «{file}» un uzņēmuma pieteikšanos.",
+        "bothUnnamed": "Šis fails min darbvietu un uzņēmuma pieteikšanos.",
+        "name": "Šis fails min darbvietu «{file}».",
+        "login": "Šis fails min uzņēmuma pieteikšanos.",
+        "unnamed": "Šis fails min darbvietu.",
+        "kept": "Neviens no tiem netiek ņemts no faila: šī darbvieta patur «{mine}» un savu uzņēmuma pieteikšanos.",
+        "keptUnnamed": "Neviens no tiem netiek ņemts no faila: šī darbvieta patur savu nosaukumu un savu uzņēmuma pieteikšanos."
       },
       "badge": {
         "clean": "tīrs",
@@ -135,30 +188,35 @@
         "applied": "piemērots",
         "withheld": "aizturēts",
         "rolledBack": "atsaukts",
-        "notRestored": "nav atjaunots"
+        "notRestored": "nav atjaunots",
+        "notWritten": "nevarēja ierakstīt"
       },
       "note": {
-        "failed": "neatbildēja, tāpēc šo dokumenta daļu nevarēja izvērtēt",
-        "skipped": "Šajā darbvietā šo sadaļu nepārvalda neviens serviss, tāpēc šeit tā netiek piemērota — pārējo dokumentu piemērot var."
+        "failed": "{area} neatbildēja, tāpēc šo faila daļu nevarēja izvērtēt.",
+        "refusedArea": "{area} atteica šo failu: {reason}",
+        "skipped": "Šajā darbvietā šo daļu nepārvalda neviens serviss, tāpēc šeit tā netiek piemērota — pārējo failu piemērot var."
       },
       "summary": {
         "changes": "{n} izmaiņa | {n} izmaiņas",
-        "unchanged": "{n} nemainīts | {n} nemainīti"
+        "none": "nav izmaiņu",
+        "unchangedBy": "{n} nemainīts: {parts} | {n} nemainīti: {parts}"
       },
       "tally": {
         "added": "{n} pievienots | {n} pievienoti",
         "changed": "{n} mainīts | {n} mainīti",
         "unchanged": "{n} nemainīts | {n} nemainīti",
-        "refused": "{n} atteikts | {n} atteikti"
+        "refused": "{n} atteikts | {n} atteikti",
+        "skipped": "{n} netiek ņemts | {n} netiek ņemti"
       },
       "stop": {
-        "refused": "{n} vienums tika atteikts, tāpēc šo dokumentu nevar piemērot — nevienu tā daļu. Izlabojiet to failā (iemesls pasaka, ko) un nometiet failu vēlreiz. | {n} vienumi tika atteikti, tāpēc šo dokumentu nevar piemērot — nevienu tā daļu. Izlabojiet tos failā (katrs iemesls pasaka, ko) un nometiet failu vēlreiz.",
-        "failed": "Kāds serviss neatbildēja, tāpēc šo dokumentu nevarēja izvērtēt. Nekas netika ierakstīts. Pēc brīža priekšskatiet vēlreiz.",
+        "refused": "{n} vienums tika atteikts, tāpēc šo failu nevar piemērot — nevienu tā daļu. Izlabojiet to failā (iemesls pasaka, ko) un nometiet failu vēlreiz. | {n} vienumi tika atteikti, tāpēc šo failu nevar piemērot — nevienu tā daļu. Izlabojiet tos failā (katrs iemesls pasaka, ko) un nometiet failu vēlreiz.",
+        "refusedArea": "{areas} atteica šo failu, tāpēc nevienu tā daļu nevar piemērot. Mainiet to, ko norāda iemesls, un nometiet failu vēlreiz.",
+        "failed": "{areas} neatbildēja, tāpēc šo failu nevarēja izvērtēt. Nekas netika ierakstīts. Pēc brīža priekšskatiet vēlreiz.",
         "bad": "Šo failu nevar nolasīt kā konfigurācijas dokumentu. Nekas netika ierakstīts. Nometiet failu, kas eksportēts šajā ekrānā.",
-        "other": "Dokumentu neizdevās priekšskatīt: {reason}"
+        "other": "Failu neizdevās priekšskatīt: {reason}"
       },
       "act": {
-        "apply": "Piemērot šo dokumentu",
+        "apply": "Piemērot šo failu",
         "applying": "Piemēro…",
         "cancel": "Atcelt",
         "again": "Priekšskatīt vēlreiz",
@@ -168,11 +226,11 @@
       "outcome": {
         "applied": {
           "head": "Piemērots.",
-          "rest": "Viss dokuments ir spēkā."
+          "rest": "Viss fails ir spēkā."
         },
         "moved": {
           "head": "Konfigurācija mainījās pēc jūsu priekšskatījuma.",
-          "rest": "Nekas netika ierakstīts. Priekšskatiet vēlreiz, lai redzētu, ko šis dokuments izdarītu tagad, — jaunajā priekšskatījumā redzamas arī citu izmaiņas, ko tas pārrakstītu."
+          "rest": "Nekas netika ierakstīts. Priekšskatiet vēlreiz, lai redzētu, ko šis fails izdarītu tagad, — jaunajā priekšskatījumā redzamas arī citu izmaiņas, ko tas pārrakstītu."
         },
         "refused": {
           "head": "Atteikts piemērojot.",
@@ -180,28 +238,34 @@
         },
         "failed": {
           "head": "Nekas netika ierakstīts.",
-          "rest": "Kāds serviss nevarēja ierakstīt savu sadaļu, tāpēc pārējais dokuments tika aizturēts."
+          "rest": "Kāds serviss nevarēja ierakstīt savu daļu, tāpēc pārējais fails tika aizturēts."
         },
         "rolledBack": {
-          "head": "Nekas no šī dokumenta nav spēkā.",
-          "rest": "Kāds serviss nevarēja ierakstīt savu sadaļu pēc tam, kad cits jau bija ierakstījis savējo, tāpēc tā tika atjaunota tāda, kāda bija iepriekš."
+          "head": "Atsaukts, izņemot to, ko fails pievienoja.",
+          "headNone": "Nekas no šī faila nav spēkā.",
+          "rest": "Daļu {failed} neizdevās ierakstīt pēc tam, kad daļa {written} jau bija ierakstīta, tāpēc tā tika atjaunota, kāda bija iepriekš. | Daļu {failed} neizdevās ierakstīt pēc tam, kad daļas {written} jau bija ierakstītas, tāpēc tās tika atjaunotas, kādas bija iepriekš.",
+          "kept": "Atjaunošana nekad neko nenoņem, tāpēc tas, ko fails pievienoja, joprojām ir šeit:",
+          "outOfUse": "Nekur vēl netiek izmantots. Ja to nevēlaties, izņemiet to no lietošanas šeit: {areas}. | Nekur vēl netiek izmantoti. Ja tos nevēlaties, izņemiet tos no lietošanas šeit: {areas}."
         },
         "partial": {
-          "head": "Spēkā ir tikai daļa šī dokumenta.",
-          "rest": "Kāds serviss nevarēja ierakstīt savu sadaļu, un neizdevās arī pirms tam ierakstītās sadaļas atjaunošana. Priekšskatiet vēlreiz: jaunais priekšskatījums parāda tieši to, kas vēl jāpiemēro, un tā piemērošana pabeidz dokumentu."
+          "head": "Spēkā ir tikai daļa šī faila.",
+          "rest": "Kāds serviss nevarēja ierakstīt savu daļu, un neizdevās arī pirms tam ierakstītās daļas atjaunošana. Priekšskatiet vēlreiz: jaunais priekšskatījums parāda tieši to, kas vēl jāpiemēro, un tā piemērošana pabeidz failu."
         },
         "other": {
-          "head": "Dokumentu neizdevās piemērot."
+          "head": "Failu neizdevās piemērot."
         }
       },
       "line": {
         "applied": "{n} izmaiņa piemērota un ierakstīta vēsturē ar jūsu vārdu | {n} izmaiņas piemērotas un ierakstītas vēsturē ar jūsu vārdu",
-        "appliedNothing": "šajā sadaļā nekas nemainās",
-        "withheld": "tīrs, bet netika piemērots, jo cita sadaļa netika piemērota",
-        "refused": "nekas no šīs sadaļas netika ierakstīts",
-        "failed": "neizdevās ierakstīt",
-        "rolledBack": "ierakstīts un pēc tam atjaunots tāds, kāds bija pirms šī importa",
-        "notRestored": "satur šī dokumenta sadaļu — atjaunošana pēc kļūmes neizdevās",
+        "history": "Skatīt tās vēsturē →",
+        "appliedNothing": "šajā daļā nekas nemainās",
+        "withheld": "tīrs, bet netika piemērots, jo cita daļa netika piemērota",
+        "refused": "nekas no šīs daļas netika ierakstīts",
+        "notWritten": "serviss neatbildēja. Nekas no šīs daļas netika ierakstīts.",
+        "refusedPart": "daļa tika atteikta: {reason}. Nekas no tās netika ierakstīts.",
+        "rolledBack": "atjaunots tāds, kāds bija pirms šī importa",
+        "rolledBackKept": "atjaunots: katra izmaiņa ir atpakaļ, kāda bija, izņemot to, ko fails pievienoja",
+        "notRestored": "satur šī faila daļu — atjaunošana pēc kļūmes neizdevās",
         "skipped": "šeit netiek piemērots — šajā darbvietā to nepārvalda neviens serviss"
       }
     },
@@ -396,6 +460,7 @@
         "notAdministrator": "Jūs vairs neesat šīs darbvietas administrators, tāpēc nekas netika mainīts. Piesakieties vēlreiz, lai redzētu, kas ir jūsu ziņā.",
         "roleHeld": "Lomu «{role}» tur {n} cilvēks. Vispirms to noņemiet. | Lomu «{role}» tur {n} cilvēki. Vispirms to noņemiet.",
         "rolePlaced": "Lomu «{role}» joprojām izmanto kāds serviss savos objektos. Vispirms pārceliet tos uz citu lomu.",
+        "roleShipped": "Loma «{role}» nāca līdzi darbvietai un netiek dzēsta. Pārdēvējiet to vai mainiet, ko tā ietver.",
         "roleNameTaken": "Cita loma jau saucas «{name}».",
         "roleReadsAlike": "Loma «{other}» {language} jau saucas «{reads}».",
         "typeHeld": "Lietotāja veidu «{type}» tur {n} cilvēks. Vispirms piešķiriet viņam citu. | Lietotāja veidu «{type}» tur {n} cilvēki. Vispirms piešķiriet viņiem citu.",
