@@ -207,20 +207,56 @@
     },
     "people": {
       "title": "Cilvēki un piekļuve",
-      "lead": "Kas ir šajā darbvietā un kas katram ir visā darbvietā.",
       "loading": "Nolasa, kas ir darbvietā…",
       "failed": "Šīs darbvietas cilvēkus neizdevās nolasīt: {reason}",
+      "failedPlain": "Šīs darbvietas cilvēkus neizdevās nolasīt. Mēģiniet vēlreiz.",
+      "failedUnanswered": "Administrēšanas serviss neatbildēja, tāpēc šīs darbvietas cilvēkus neizdevās nolasīt. Mēģiniet vēlreiz.",
+      "boxUndeclared": "atļauja, ko nedeklarē neviens serviss",
+      "head": {
+        "people": "{n} cilvēks | {n} cilvēki",
+        "administrators": "{n} administrators | {n} administratori",
+        "services": "{n} serviss | {n} servisi"
+      },
       "tabs": {
         "users": "Lietotāji",
         "roles": "Lomas",
         "types": "Lietotāju veidi"
       },
       "users": {
+        "lead": "Kas ir šajā darbvietā un kas katram ir visā darbvietā.",
         "arrivals": {
-          "heading": "Pieslēgušies, vēl nekas nav piešķirts ({n})",
-          "lead": "Viņi var pieslēgties, bet neko neredz, kamēr nepiešķirat lomu vai lietotāja veidu ar kādu atļauju."
+          "heading": "Visā darbvietā vēl nekas nav piešķirts ({n})",
+          "lead": "Viņiem nav ne lomas, ne lietotāja veida atļaujas, ne amata pilnvaru shēmā. Kaut kas viņiem var būt piešķirts kādā produktā: šis saraksts to neredz.",
+          "more": "+ vēl {n}"
+        },
+        "show": {
+          "label": "Rādīt cilvēkus",
+          "everyone": "Visi",
+          "administrators": "Administratori",
+          "nothing": "Visā darbvietā nekas nav piešķirts",
+          "invited": "Vēl nav pieslēdzies",
+          "away": "Nav pieslēdzies 30 dienas"
+        },
+        "filters": {
+          "userType": "Lietotāja veids: jebkurš",
+          "userTypeLabel": "Atlasīt pēc lietotāja veida",
+          "role": "Loma: jebkura",
+          "roleLabel": "Atlasīt pēc lomas"
+        },
+        "find": "Meklēt cilvēku",
+        "noMatch": "Neviens neatbilst.",
+        "showEveryone": "Rādīt visus",
+        "chartGives": "piešķirts ar amatu pilnvaru shēmā",
+        "administratorYes": "✓ Administrators",
+        "pager": {
+          "range": "{from}–{to} no {total}",
+          "label": "Lapas",
+          "previous": "Iepriekšējā lapa",
+          "next": "Nākamā lapa",
+          "page": "{n}. lapa"
         },
         "views": {
+          "label": "Skats",
           "people": "Cilvēki",
           "access": "Pēc piekļuves"
         },
@@ -234,7 +270,8 @@
         },
         "marks": {
           "invited": "vēl nav pieslēdzies",
-          "revoked": "vairs nav piekļuves"
+          "revoked": "vairs nav piekļuves",
+          "away": "nav pieslēdzies {n} dienas"
         },
         "state": {
           "arrival": "pieslēdzies, vēl nekas nav piešķirts",
@@ -249,14 +286,19 @@
         "access": {
           "role": "loma · {n}",
           "type": "lietotāja veids · {n}",
-          "typeHoldsNothing": "nedod neko"
+          "typeHoldsNothing": "nedod neko",
+          "more": "+ vēl {n}",
+          "nobody": "neviena"
         },
         "panel": {
           "last": "pēdējoreiz pieslēdzies {when}",
           "gone": "Viņa vēsture paliek. Piekļuves atjaunošana ir jauns uzaicinājums.",
+          "history": "Skatīt vēsturē, ko veica {name} →",
           "userType": "Lietotāja veids",
           "userTypeNote": "Tāds ir katram. Tas dod tikai atļaujas visā darbvietā.",
-          "chartType": "Viņa amats pilnvaru shēmā piešķir «{type}», un tas ir spēkā, kamēr viņš ieņem šo amatu.",
+          "chartType": "Viņa amats «{position}» pilnvaru shēmā piešķir «{type}», un tas ir spēkā, kamēr viņš ieņem šo amatu. «{own}», kas iestatīts šeit, atkal stājas spēkā, kad viņš to atstāj.",
+          "chartTypeNoPosition": "Viņa amats pilnvaru shēmā piešķir «{type}», un tas ir spēkā, kamēr viņš ieņem šo amatu. «{own}», kas iestatīts šeit, atkal stājas spēkā, kad viņš to atstāj.",
+          "chartNoType": "Pilnvaru shēmā: «{position}», kas nepiešķir lietotāja veidu, tāpēc spēkā ir šeit iestatītais.",
           "roles": "Lomas visā darbvietā",
           "none": "Nav.",
           "give": "Piešķirt lomu…",
@@ -264,16 +306,36 @@
           "rolesNote": "Šeit piešķirta loma ir spēkā visā darbvietā.",
           "administratorNote": "Tam ir visas atļaujas visā, kas ir šai darbvietai, bez lomas, un tas iestata darbvietu. Administratoru var iecelt tikai administrators.",
           "takeAll": "Atņemt visu piekļuvi",
+          "takeAllAsk": "Vai atņemt visu piekļuvi lietotājam {name}?",
           "takeAllLead": "{name} vairs nevarēs pieslēgties šai darbvietai un zaudēs visas lomas tajā. Viss, ko viņš darījis, paliek vēsturē.",
           "takeAllDo": "Atņemt",
           "cancel": "Atcelt"
         }
       },
       "roles": {
-        "new": "+ Jauna loma",
+        "lead": "Ko cilvēks drīkst darīt, atļauju pa atļaujai. Lomu cilvēkam piešķir visā darbvietā sadaļā Lietotāji, vai arī to kādā produkta daļā ievieto tas, kas to tur pārvalda.",
+        "new": "Jauna loma",
         "name": "Lomas nosaukums",
-        "shipped": "Ir katrā darbvietā; tās atzīmes var mainīt.",
-        "made": "Izveidota šajā darbvietā.",
+        "namePlaceholder": "Kā to sauc",
+        "for": "Kam tā paredzēta",
+        "forHint": "Tiek rādīts blakus lomai visur, kur to piešķir",
+        "forPlaceholder": "Kam tā ir, dažos vārdos",
+        "noDescription": "apraksta vēl nav",
+        "columns": {
+          "role": "Loma",
+          "boxes": "Atļaujas"
+        },
+        "boxesOf": "{n} no {m} atļaujām",
+        "pill": {
+          "shipped": "iebūvēta",
+          "made": "izveidota šeit"
+        },
+        "shipped": "Ir katrā darbvietā: to var pārdēvēt un mainīt tās atļaujas; dzēst nevar",
+        "made": "Izveidota šajā darbvietā",
+        "pending": "● {n} izmaiņa vēl nav saglabāta. Nekas nemainās nevienam, kamēr nenospiežat Saglabāt. | ● {n} izmaiņas vēl nav saglabātas. Nekas nemainās nevienam, kamēr nenospiežat Saglabāt.",
+        "reading": "Nolasa…",
+        "settingNone": "Loma nav izvēlēta",
+        "settingUnread": "Šobrīd to neizdevās nolasīt, tāpēc to šeit nevar mainīt.",
         "administrators": "Administratoriem ir visas atļaujas, arī šīs, bez lomas. Tos iestata sadaļā Cilvēki un piekļuve › Lietotāji.",
         "noSetup": "Darbvietas iestatīšana nekad nav lomas ziņā: to dod tikai atzīme Administrators.",
         "noVocabulary": "Servisu deklarētās atļaujas neizdevās nolasīt, tāpēc lomas atļaujas šobrīd šeit nevar mainīt.",
@@ -289,27 +351,28 @@
         "lead": "Tas, kas ir katram, nosaukts pēc darba. Lietotāja veids dod tikai atļaujas visā darbvietā.",
         "columns": {
           "type": "Lietotāja veids",
-          "holds": "Ko tas dod",
-          "people": "Cilvēki",
-          "acts": "Darbības"
+          "holds": "Ko tas dod"
         },
         "marks": {
           "default": "to saņem jauni cilvēki",
-          "corporate": "to piešķir uzņēmuma pieteikšanās"
+          "corporate": "to piešķir jūsu uzņēmuma pieteikšanās",
+          "chart": "to piešķir pilnvaru shēma: {positions}"
         },
+        "chartGives": "Pilnvaru shēma to piešķir ar: {positions}",
+        "defaultKeeps": "Jauni cilvēki to saņem visos ienākšanas veidos, tāpēc tas paliek: to nevar dzēst.",
         "nothing": "neko",
-        "edit": "Labot",
-        "delete": "Dzēst",
+        "delete": "Dzēst šo lietotāja veidu",
         "corporate": {
           "label": "Cilvēki, kas ienāk ar jūsu uzņēmuma pieteikšanos, saņem:",
           "default": "{type} (ko saņem jauni cilvēki)",
           "note": "Tiek piešķirts vienreiz, pirmajā pieteikšanās reizē. Vēlāka maiņa neskar nevienu, kas jau ir šeit."
         },
         "form": {
-          "add": "Pievienot lietotāja veidu",
-          "edit": "Labot «{type}»",
+          "add": "Jauns lietotāja veids",
           "name": "Nosaukums",
+          "namePlaceholder": "Nosaukts pēc darba",
           "for": "Kam tas paredzēts",
+          "forPlaceholder": "Kam tas ir, dažos vārdos",
           "holds": "Ko tas dod",
           "save": "Saglabāt",
           "cancel": "Atcelt"
@@ -343,7 +406,8 @@
         "typeReadsAlike": "Lietotāja veids «{other}» {language} jau saucas «{reads}».",
         "setupBox": "Šī atļauja iestata darbvietu, un to dod tikai atzīme Administrators.",
         "unanswered": "Administrēšanas serviss neatbildēja, tāpēc nekas netika mainīts. Mēģiniet vēlreiz.",
-        "other": "Tas netika izdarīts: {reason}"
+        "other": "Tas netika izdarīts: {reason}",
+        "unreadable": "Tas netika izdarīts: atbildi nevarēja nolasīt. Mēģiniet vēlreiz."
       },
       "inLanguage": {
         "en": "angliski",
@@ -358,17 +422,28 @@
         "who": "Kas",
         "everyone": "Visi"
       },
-      "chips": {
-        "people": "cilvēki"
-      },
+      "operator": "Izvietojuma uzturētājs",
+      "notInList": "Kāds, kura sarakstā nav",
+      "foldOne": "{n} ieraksti par servisu, uz kura darbojas šī darbvieta",
+      "fold": "{n} ieraksti par {m} servisiem, uz kuriem darbojas šī darbvieta",
+      "showThem": "Rādīt tos",
+      "hideThem": "Paslēpt tos",
       "loading": "Nolasa vēsturi…",
       "empty": "Vēl nekas nav mainīts.",
       "emptyFiltered": "Šiem filtriem neatbilst neviena izmaiņa.",
       "showing": "Rādītas jaunākās {n}.",
       "older": "Rādīt vecākas",
-      "notAnswering": "{service} neatbild, tāpēc tā izmaiņu šajā sarakstā nav.",
-      "unread": "{service} izmaiņas neizdevās nolasīt ({reason}), tāpēc to šajā sarakstā nav.",
+      "notAnswering": "Joma «{area}» neatbild, tāpēc tās izmaiņu šajā sarakstā nav.",
+      "unread": "Neizdevās nolasīt jomas «{area}» izmaiņas ({reason}), tāpēc to šajā sarakstā nav.",
+      "status": {
+        "forbidden": "jums nav tiesību tās lasīt",
+        "notFound": "serviss tās neatrada",
+        "failed": "servisā radās kļūda",
+        "other": "serviss atbildēja ar statusu {status}"
+      },
       "lines": {
+        "unworded": "mainīja kaut ko, ko šis saraksts vēl nespēj aprakstīt",
+        "boxUnnamed": "atļauju, ko neviens serviss vairs nepiedāvā",
         "exported": "eksportēja konfigurāciju",
         "imported": "importēja konfigurācijas failu: mainīti {changed}, nemainīti {unchanged}",
         "importedNothing": "importēja konfigurācijas failu: nekas nemainījās",
@@ -382,8 +457,10 @@
         "userRevoked": "atņēma {person} visu piekļuvi",
         "administratorOn": "padarīja {person} par administratoru",
         "administratorOff": "atcēla {person} no administratora",
-        "serviceRoleGranted": "piešķīra {person} {role} servisā {service}",
-        "serviceRoleRevoked": "atņēma {person} {role} servisā {service}",
+        "serviceRoleGranted": "piešķīra {person} «{group} · {level}» servisā {service}",
+        "serviceRoleGrantedElsewhere": "piešķīra {person} «{group} · {level}» citā servisā",
+        "serviceRoleRevoked": "atņēma {person} «{group} · {level}» servisā {service}",
+        "serviceRoleRevokedElsewhere": "atņēma {person} «{group} · {level}» citā servisā",
         "administratorByOperator": "tika iecelts par administratoru — to izdarīja izvietojuma uzturētājs",
         "administratorOffByOperator": "vairs nav administrators — to izdarīja izvietojuma uzturētājs",
         "administratorSeeded": "tika iecelts par darbvietas pirmo administratoru",
@@ -415,14 +492,22 @@
         "positionRemoved": "noņēma amatu «{position}»",
         "positionRemovedUnnamed": "noņēma amatu no shēmas",
         "positionSees": "mainīja, ko redz amats «{position}»",
+        "positionSeesAdded": "mainīja, ko «{position}» redz zemāk: pievienoja {boxes}",
+        "positionSeesRemoved": "mainīja, ko «{position}» redz zemāk: noņēma {boxes}",
+        "positionSeesBoth": "mainīja, ko «{position}» redz zemāk: pievienoja {added}; noņēma {removed}",
         "positionGivesType": "noteica, ka amats «{position}» piešķir lietotāja veidu «{type}»",
         "positionGivesNoType": "noteica, ka amats «{position}» nepiešķir lietotāja veidu",
         "personPlaced": "iecēla {person} amatā «{position}»",
         "personUnplaced": "atcēla {person} no amata «{position}»",
-        "directoryAttached": "pievienoja uzņēmuma pieteikšanos {issuer}",
-        "directoryDetached": "atvienoja uzņēmuma pieteikšanos {issuer}",
-        "entitled": "piešķīra darbvietai «{what}»",
-        "entitlementRevoked": "atņēma darbvietai «{what}»"
+        "directoryAttached": "pievienoja uzņēmuma pieteikšanos",
+        "directoryAttachedNamed": "pievienoja uzņēmuma pieteikšanos {name}",
+        "directoryDetached": "atvienoja uzņēmuma pieteikšanos",
+        "directoryDetachedNamed": "atvienoja uzņēmuma pieteikšanos {name}",
+        "address": "{address}",
+        "entitled": "piešķīra darbvietai {what}",
+        "entitledUnnamed": "piešķīra darbvietai kaut ko, ko šis saraksts nespēj nosaukt",
+        "entitlementRevoked": "atņēma darbvietai {what}",
+        "entitlementRevokedUnnamed": "atņēma darbvietai kaut ko, ko šis saraksts nespēj nosaukt"
       }
     }
   }

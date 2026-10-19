@@ -207,20 +207,56 @@
     },
     "people": {
       "title": "People & access",
-      "lead": "Who is in this workspace, and what each person holds across it.",
       "loading": "Reading who is in the workspace…",
       "failed": "The people of this workspace could not be read: {reason}",
+      "failedPlain": "The people of this workspace could not be read. Try again.",
+      "failedUnanswered": "The admin service did not answer, so the people of this workspace could not be read. Try again.",
+      "boxUndeclared": "a box no service declares",
+      "head": {
+        "people": "{n} person | {n} people",
+        "administrators": "{n} administrator | {n} administrators",
+        "services": "{n} service | {n} services"
+      },
       "tabs": {
         "users": "Users",
         "roles": "Roles",
         "types": "User types"
       },
       "users": {
+        "lead": "Who is in this workspace, and what each person holds across it.",
         "arrivals": {
-          "heading": "Signed in, given nothing yet ({n})",
-          "lead": "They can sign in and see nothing until you give them a role or a user type that holds something."
+          "heading": "Nothing across the workspace yet ({n})",
+          "lead": "They hold no role, no user type box and no position in the chart. They may still have been given something inside a product: this list cannot see that.",
+          "more": "+ {n} more"
+        },
+        "show": {
+          "label": "Show people",
+          "everyone": "Everyone",
+          "administrators": "Administrators",
+          "nothing": "Nothing across the workspace",
+          "invited": "Has not signed in yet",
+          "away": "Not signed in for 30 days"
+        },
+        "filters": {
+          "userType": "User type: any",
+          "userTypeLabel": "Filter by user type",
+          "role": "Role: any",
+          "roleLabel": "Filter by role"
+        },
+        "find": "Find a person",
+        "noMatch": "Nobody matches.",
+        "showEveryone": "Show everyone",
+        "chartGives": "given by their position in the chart",
+        "administratorYes": "✓ Administrator",
+        "pager": {
+          "range": "{from}–{to} of {total}",
+          "label": "Pages",
+          "previous": "Previous page",
+          "next": "Next page",
+          "page": "Page {n}"
         },
         "views": {
+          "label": "View",
           "people": "People",
           "access": "By access"
         },
@@ -234,7 +270,8 @@
         },
         "marks": {
           "invited": "has not signed in yet",
-          "revoked": "no access any more"
+          "revoked": "no access any more",
+          "away": "{n} days away"
         },
         "state": {
           "arrival": "signed in, given nothing yet",
@@ -249,14 +286,19 @@
         "access": {
           "role": "role · {n}",
           "type": "user type · {n}",
-          "typeHoldsNothing": "holds nothing"
+          "typeHoldsNothing": "holds nothing",
+          "more": "+ {n} more",
+          "nobody": "nobody"
         },
         "panel": {
           "last": "last signed in {when}",
           "gone": "Their history stays. Giving access back is a new invitation.",
+          "history": "See what {name} did, in History →",
           "userType": "User type",
           "userTypeNote": "Every person has one. It holds workspace-wide boxes only.",
-          "chartType": "Their position in the chart of authority gives «{type}», which is the one in force while they sit there.",
+          "chartType": "Their position «{position}» in the chart of authority gives «{type}», which is the one in force while they sit there. «{own}», set here, applies again when they leave it.",
+          "chartTypeNoPosition": "Their position in the chart of authority gives «{type}», which is the one in force while they sit there. «{own}», set here, applies again when they leave it.",
+          "chartNoType": "In the chart of authority: «{position}», which gives no user type, so the one set here is in force.",
           "roles": "Roles across the workspace",
           "none": "None.",
           "give": "Give a role…",
@@ -264,16 +306,36 @@
           "rolesNote": "A role given here holds across the whole workspace.",
           "administratorNote": "Holds every box of everything this workspace has, without a role, and sets up the workspace. Only an administrator makes an administrator.",
           "takeAll": "Take away all access",
+          "takeAllAsk": "Take away all access from {name}?",
           "takeAllLead": "{name} can no longer sign in to this workspace, and loses every role here. What they did stays in the history.",
           "takeAllDo": "Take it away",
           "cancel": "Cancel"
         }
       },
       "roles": {
-        "new": "+ New role",
+        "lead": "What a person may do, box by box. A role is given to someone across the workspace on Users, or placed inside a part of a product by whoever runs it there.",
+        "new": "New role",
         "name": "Role name",
-        "shipped": "Shipped with every workspace; its ticks can be changed.",
-        "made": "Made in this workspace.",
+        "namePlaceholder": "What you call it",
+        "for": "What it is for",
+        "forHint": "Shown beside the role wherever it is given",
+        "forPlaceholder": "Who holds it, in a few words",
+        "noDescription": "no description yet",
+        "columns": {
+          "role": "Role",
+          "boxes": "Boxes"
+        },
+        "boxesOf": "{n} of {m} boxes",
+        "pill": {
+          "shipped": "shipped",
+          "made": "made here"
+        },
+        "shipped": "Shipped with every workspace: rename it and change its boxes; it cannot be deleted",
+        "made": "Made in this workspace",
+        "pending": "● {n} change not saved yet. Nothing changes for anyone until you press Save. | ● {n} changes not saved yet. Nothing changes for anyone until you press Save.",
+        "reading": "Reading…",
+        "settingNone": "No role chosen",
+        "settingUnread": "This could not be read just now, so it cannot be changed here.",
         "administrators": "Administrators hold every box, these included, without a role. They are set in People & access › Users.",
         "noSetup": "Setting up the workspace is never a role's: it comes only with the Administrator checkbox.",
         "noVocabulary": "The boxes the services declare could not be read, so a role's boxes cannot be changed here just now.",
@@ -289,27 +351,28 @@
         "lead": "The one thing every person holds, named after the job. A user type carries workspace-wide boxes only.",
         "columns": {
           "type": "User type",
-          "holds": "What it holds",
-          "people": "People",
-          "acts": "Acts"
+          "holds": "What it holds"
         },
         "marks": {
           "default": "new people get this",
-          "corporate": "the corporate login gives this"
+          "corporate": "your corporate login gives this",
+          "chart": "the chart gives it: {positions}"
         },
+        "chartGives": "The chart of authority gives it through: {positions}",
+        "defaultKeeps": "New people get this, on every way in, so it stays: it cannot be deleted.",
         "nothing": "nothing",
-        "edit": "Edit",
-        "delete": "Delete",
+        "delete": "Delete this user type",
         "corporate": {
           "label": "People who arrive through your corporate login get:",
           "default": "{type} (what new people get)",
           "note": "Applied once, at their first sign-in. Changing it later changes nobody who is already here."
         },
         "form": {
-          "add": "Add a user type",
-          "edit": "Edit «{type}»",
+          "add": "New user type",
           "name": "Name",
+          "namePlaceholder": "Named after the job",
           "for": "What it is for",
+          "forPlaceholder": "Who holds it, in a few words",
           "holds": "What it holds",
           "save": "Save",
           "cancel": "Cancel"
@@ -343,7 +406,8 @@
         "typeReadsAlike": "«{reads}» is how the user type «{other}» reads {language}.",
         "setupBox": "That box sets up the workspace, and only the Administrator checkbox holds it.",
         "unanswered": "The admin service did not answer, so nothing was changed. Try again.",
-        "other": "That was not done: {reason}"
+        "other": "That was not done: {reason}",
+        "unreadable": "That was not done: the answer could not be read. Try again."
       },
       "inLanguage": {
         "en": "in English",
@@ -358,17 +422,28 @@
         "who": "Who",
         "everyone": "Everyone"
       },
-      "chips": {
-        "people": "people"
-      },
+      "operator": "Whoever runs the deployment",
+      "notInList": "Someone not in the list",
+      "foldOne": "{n} lines about a service this workspace runs on",
+      "fold": "{n} lines about the {m} services this workspace runs on",
+      "showThem": "Show them",
+      "hideThem": "Hide them",
       "loading": "Reading the history…",
       "empty": "Nothing has changed yet.",
       "emptyFiltered": "No change matches these filters.",
       "showing": "Showing the newest {n}.",
       "older": "Show older",
-      "notAnswering": "{service} is not answering, so its changes are missing from this list.",
-      "unread": "{service}'s changes could not be read ({reason}), so they are missing from this list.",
+      "notAnswering": "{area} is not answering, so its changes are missing from this list.",
+      "unread": "Could not read the changes in {area} ({reason}), so they are missing from this list.",
+      "status": {
+        "forbidden": "you may not read them",
+        "notFound": "the service could not find them",
+        "failed": "the service failed",
+        "other": "the service answered with status {status}"
+      },
       "lines": {
+        "unworded": "changed something this list has no words for yet",
+        "boxUnnamed": "a box no service declares now",
         "exported": "exported the configuration",
         "imported": "imported a configuration file: {changed} changed, {unchanged} unchanged",
         "importedNothing": "imported a configuration file: nothing changed",
@@ -382,8 +457,10 @@
         "userRevoked": "took all access from {person}",
         "administratorOn": "made {person} an administrator",
         "administratorOff": "made {person} no longer an administrator",
-        "serviceRoleGranted": "gave {person} {role} in {service}",
-        "serviceRoleRevoked": "took {role} in {service} from {person}",
+        "serviceRoleGranted": "gave {person} «{group} · {level}» in {service}",
+        "serviceRoleGrantedElsewhere": "gave {person} «{group} · {level}» in another service",
+        "serviceRoleRevoked": "took «{group} · {level}» in {service} from {person}",
+        "serviceRoleRevokedElsewhere": "took «{group} · {level}» in another service from {person}",
         "administratorByOperator": "was made an administrator by whoever runs the deployment",
         "administratorOffByOperator": "stopped being an administrator, by whoever runs the deployment",
         "administratorSeeded": "was made the workspace's first administrator",
@@ -415,14 +492,22 @@
         "positionRemoved": "removed the position «{position}»",
         "positionRemovedUnnamed": "removed a position from the chart",
         "positionSees": "changed what the position «{position}» sees",
+        "positionSeesAdded": "changed what «{position}» sees below: added {boxes}",
+        "positionSeesRemoved": "changed what «{position}» sees below: took away {boxes}",
+        "positionSeesBoth": "changed what «{position}» sees below: added {added}; took away {removed}",
         "positionGivesType": "made the position «{position}» give the user type «{type}»",
         "positionGivesNoType": "made the position «{position}» give no user type",
         "personPlaced": "placed {person} in «{position}»",
         "personUnplaced": "took {person} out of «{position}»",
-        "directoryAttached": "attached the corporate login {issuer}",
-        "directoryDetached": "detached the corporate login {issuer}",
-        "entitled": "gave the workspace «{what}»",
-        "entitlementRevoked": "took «{what}» away from the workspace"
+        "directoryAttached": "attached a corporate login",
+        "directoryAttachedNamed": "attached the corporate login {name}",
+        "directoryDetached": "detached a corporate login",
+        "directoryDetachedNamed": "detached the corporate login {name}",
+        "address": "{address}",
+        "entitled": "gave the workspace {what}",
+        "entitledUnnamed": "gave the workspace something this list cannot name",
+        "entitlementRevoked": "took {what} away from the workspace",
+        "entitlementRevokedUnnamed": "took something away from the workspace that this list cannot name"
       }
     }
   }

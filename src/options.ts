@@ -83,8 +83,41 @@ export interface GuardWords {
   values?: Record<string, string>
 }
 
+/**
+ * A setting of the host's that names one of the workspace's roles, such as the
+ * role someone receives when they make something. The Roles screen lists it
+ * under the roles, as a choice among them.
+ */
+export interface RoleSetting {
+  /** Tells it apart from the host's other settings. */
+  key: string
+  /** The key of its name, drawn before the choice. */
+  word: string
+  /** The key of a quiet line under it. */
+  note?: string
+  /** The id of the role chosen now; empty for none. */
+  read(): Promise<string>
+  /** Choose a role. Throws the screens' `ApiError` when it is refused, so the refusal is said in words. */
+  write(roleId: string): Promise<void>
+  /** The key of the sentence said once a choice was saved, given `{role}`: the role's name. */
+  saved: string
+  /**
+   * The key of the sentence said when the setting's owner refuses the role chosen
+   * (a 400), given `{role}`: the role's name. Absent: the refusal is said in the
+   * screens' own words.
+   */
+  refused?: string
+  /**
+   * The key of the sentence said when deleting a role is refused because this
+   * setting holds it, given `{role}`: the role's name.
+   */
+  holds: string
+}
+
 /** How the Roles screen shows the boxes the services declare. */
 export interface RoleBoxOptions {
+  /** The settings listed under the roles, each a choice of one of the workspace's roles. */
+  settings?: RoleSetting[]
   /** The groups, in the order the screen lists them. */
   groups?: BoxGroup[]
   /**
@@ -107,8 +140,11 @@ export interface HistorySource {
   query?: string
   /** The key of the filter that shows or hides it. */
   filter: string
-  /** The key of the short word that names its service on each line. */
-  chip: string
+  /**
+   * Whether this workspace lacks what the source reads. A locked source is never
+   * read, and a filter whose sources are all locked is not offered.
+   */
+  locked?: () => boolean
 }
 
 /** The words of one history line, already chosen by the host. */
@@ -125,20 +161,52 @@ export interface HistoryLine {
   actor: string
   kind: string
   payload: Record<string, unknown>
+  /** The member the line is about, by the register's id; only the register's lines carry it. */
+  userId?: string
+}
+
+/** What the History screen already knows, handed to the host's sentences so it reads nothing twice. */
+export interface HistoryNames {
+  /** A member's name by the key the services attribute work to; empty when the workspace's list does not hold them. */
+  member(subjectKey: string): string
 }
 
 /** How the History screen reads the host's own services. */
 export interface HistoryOptions {
-  /** The filters beside the shared one, in order: each a key and the key of its word. */
+  /**
+   * The filters beside the shared one, in order: each a key and the key of its word.
+   * A filter is an area of the list: its word names the area on each line, in the
+   * ticks, and in the sentence that says the area could not be read. The register's
+   * own area has the key `people`.
+   */
   filters: { key: string; word: string }[]
   /** The streams it reads. The membership register's is the shared screens' own and is not listed. */
   sources: HistorySource[]
   /**
-   * The sentence for a line of the host's own services. `null` leaves the line
-   * as its kind; the lines every owner writes for an export and an import are
+   * The sentence for a line of the host's own services, given the names the screen
+   * already holds. `null` leaves the line to the screen's own words for a change it
+   * cannot describe; the lines every owner writes for an export and an import are
    * worded by the screen itself.
    */
-  describe?: (line: HistoryLine) => LineWords | null
+  describe?: (line: HistoryLine, names: HistoryNames) => LineWords | null
+  /**
+   * The host's word for what a workspace was given or lost, by the service
+   * (`orders`) or by the service and its feature (`orders/export`): the key of the
+   * word, said as the object of the sentence (*gave the workspace {word}*). What it
+   * does not name is said by the service's own name in the register, else not named.
+   */
+  entitlements?: Record<string, string>
+  /**
+   * The host's word for a box in a line about what a position sees, by the
+   * permission as it travels. A box it does not name is said in the register's own label for it.
+   */
+  boxes?: Record<string, string>
+  /**
+   * Called with the keys of the areas the list reads, when it opens and again when a
+   * tick turns on, before their lines are drawn, so the host can read what its own
+   * sentences name. A host that already holds it reads nothing.
+   */
+  prepare?: (areas: string[]) => void | Promise<void>
 }
 
 export interface AdminOptions {
