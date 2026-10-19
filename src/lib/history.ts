@@ -14,12 +14,23 @@ export interface Stream {
   section: string
   query: string
   filter: string
-  /** The key of the word that names its service on each line. */
-  chip: string
   lines: HistoryLine[]
   more: boolean
-  /** Why the stream could not be read: `unanswered`, or the reason given. Empty means it was. */
-  failed: string
+  /** Whether its first page was asked for since it was last restarted. */
+  started: boolean
+  /** Counts restarts, so a page that answers after one is let go. */
+  epoch: number
+  /** How it could not be read: not answering, or refused. Empty means it was read. */
+  failed: '' | 'unanswered' | 'refused'
+  /** The words the refusal came with, for a person; empty when it came with none. */
+  reason: string
+  /** The status of the refusal; zero when there was none. */
+  status: number
+}
+
+/** A new stream, not read yet. */
+export function newStream(input: { key: string; section: string; query: string; filter: string }): Stream {
+  return { ...input, lines: [], more: false, started: false, epoch: 0, failed: '', reason: '', status: 0 }
 }
 
 /** A line placed in the merged list. */
@@ -53,9 +64,14 @@ export function merge(streams: Stream[]): { lines: Placed[]; more: boolean } {
   return { lines, more: streams.some((s) => s.more) }
 }
 
-/** A long hash cut to what a person compares by eye. */
+/**
+ * A long hash cut to what a person compares by eye: the digits only, the name of
+ * the algorithm in front of them (`sha256:`) left off, since it is the same on every line.
+ */
 export function shortHash(hash: string): string {
-  return hash.length > 12 ? `${hash.slice(0, 4)}…${hash.slice(-4)}` : hash
+  const digits = hash.replace(/^[a-z][a-z0-9-]*:/i, '')
+
+  return digits.length > 12 ? `${digits.slice(0, 4)}…${digits.slice(-4)}` : digits
 }
 
 /** The names a register line needs, looked up from the register's own lists. */
@@ -67,6 +83,48 @@ export interface Names {
   position(id: string): string
   /** A box's words, by the permission as it travels. */
   box(permission: string): string
+  /** What a workspace was given or lost, in words: the host's, else its service's name; empty when neither names it. */
+  entitlement(service: string, feature: string): string
+  /** A service by the name the register lists it under, or the screens' own title when it is the register; empty when unknown. */
+  service(key: string): string
+}
+
+/** Corporate login issuers a person knows by name, by the host of the issuer's address. */
+const KNOWN_LOGINS: Record<string, string> = {
+  'login.microsoftonline.com': 'Microsoft',
+  'sts.windows.net': 'Microsoft',
+  'accounts.google.com': 'Google',
+}
+
+/** The name a corporate login's issuer goes by, when it is one a person knows; empty otherwise. */
+export function loginName(issuer: string): string {
+  try {
+    const host = new URL(issuer).host.toLowerCase()
+
+    return Object.prototype.hasOwnProperty.call(KNOWN_LOGINS, host) ? KNOWN_LOGINS[host]! : ''
+  } catch {
+    return ''
+  }
+}
+
+/** An address as a person reads it: without the scheme. */
+const withoutScheme = (address: string) => address.replace(/^https?:\/\//i, '')
+
+/**
+ * Drops the line of an administrator being made or unmade by whoever runs the
+ * deployment when the register also wrote the role line that says the same,
+ * at the same moment, by the same actor, about the same member: one act, one line.
+ */
+export function withoutPairedAdministratorLines<T extends { line: HistoryLine }>(lines: T[]): T[] {
+  const same = (a: HistoryLine, b: HistoryLine) => a.at === b.at && a.actor === b.actor && (a.userId ?? '') === (b.userId ?? '')
+  const says = (l: HistoryLine, kind: string) => l.kind === kind && isAdministrator(l.payload ?? {})
+  const partner: Record<string, string> = { administratorSetByOperator: 'roleGranted', administratorUnsetByOperator: 'roleRevoked' }
+
+  return lines.filter((d) => {
+    const want = partner[d.line.kind]
+
+    return !want || !lines.some((o) => o !== d && same(o.line, d.line) && says(o.line, want))
+  })
 }
 
 /** A line as the screen draws it: whose act, the sentence, and what to show beneath. */
@@ -124,7 +182,7 @@ const isAdministrator = (p: Record<string, unknown>) => p.group === 'membership'
  * someone arrives are about the person who arrived; every other line is about
  * the person who acted. A kind this screen does not know answers null.
  */
-export function registerWords(line: HistoryLine & { userId?: string }, names: Names): Worded | null {
+export function registerWords(line: HistoryLine, names: Names): Worded | null {
   const transport = transportWords(line)
   if (transport) return transport
 
@@ -151,13 +209,14 @@ export function registerWords(line: HistoryLine & { userId?: string }, names: Na
     case 'userRevoked':
       return by('userRevoked', { person })
     case 'roleGranted':
-      return isAdministrator(p)
-        ? by('administratorOn', { person })
-        : by('serviceRoleGranted', { person, role: `${asText(p.group)}:${asText(p.level)}`, service: asText(p.service) })
-    case 'roleRevoked':
-      return isAdministrator(p)
-        ? by('administratorOff', { person })
-        : by('serviceRoleRevoked', { person, role: `${asText(p.group)}:${asText(p.level)}`, service: asText(p.service) })
+    case 'roleRevoked': {
+      const given = line.kind === 'roleGranted'
+      if (isAdministrator(p)) return by(given ? 'administratorOn' : 'administratorOff', { person })
+      const service = names.service(asText(p.service))
+      const key = `serviceRole${given ? 'Granted' : 'Revoked'}${service ? '' : 'Elsewhere'}`
+
+      return by(key, { person, group: asText(p.group), level: asText(p.level), service })
+    }
     case 'administratorSetByOperator':
       return about('administratorByOperator')
     case 'administratorUnsetByOperator':
@@ -215,8 +274,19 @@ export function registerWords(line: HistoryLine & { userId?: string }, names: Na
       return by('positionMoved', { position })
     case 'chartPositionRemoved':
       return by(position ? 'positionRemoved' : 'positionRemovedUnnamed', { position })
-    case 'chartPositionPermissionsSet':
-      return by('positionSees', { position })
+    case 'chartPositionPermissionsSet': {
+      // The line carries the boxes before and after; one that carries only the
+      // result cannot say what changed.
+      if (!Array.isArray(p.from) || !Array.isArray(p.permissions)) return by('positionSees', { position })
+      const before = asList(p.from)
+      const after = asList(p.permissions)
+      const added = after.filter((b) => !before.includes(b)).map((b) => names.box(b))
+      const removed = before.filter((b) => !after.includes(b)).map((b) => names.box(b))
+      if (!added.length && !removed.length) return by('positionSees', { position })
+      const key = added.length && removed.length ? 'positionSeesBoth' : added.length ? 'positionSeesAdded' : 'positionSeesRemoved'
+
+      return by(key, { position, boxes: (added.length ? added : removed).join(', '), added: added.join(', '), removed: removed.join(', ') })
+    }
     case 'chartPositionUserTypeSet':
       return asText(p.userTypeId) ? by('positionGivesType', { position, type }) : by('positionGivesNoType', { position })
     case 'chartPersonPlaced':
@@ -224,13 +294,21 @@ export function registerWords(line: HistoryLine & { userId?: string }, names: Na
     case 'chartPersonRemoved':
       return by('personUnplaced', { person, position: names.position(asText(p.positionId)) })
     case 'directoryAttached':
-      return by('directoryAttached', { issuer: asText(p.issuer) })
-    case 'directoryDetached':
-      return by('directoryDetached', { issuer: asText(p.issuer) })
+    case 'directoryDetached': {
+      const issuer = asText(p.issuer)
+      const name = loginName(issuer)
+      const key = `${line.kind}${name ? 'Named' : ''}`
+      const worded = by(key, { name })
+
+      return issuer ? { ...worded, detail: { key: `${W}.address`, values: { address: withoutScheme(issuer) } } } : worded
+    }
     case 'tenantEntitled':
-      return by('entitled', { what: asText(p.feature) || asText(p.service) })
-    case 'tenantEntitlementRevoked':
-      return by('entitlementRevoked', { what: asText(p.feature) || asText(p.service) })
+    case 'tenantEntitlementRevoked': {
+      const what = names.entitlement(asText(p.service), asText(p.feature))
+      const gained = line.kind === 'tenantEntitled'
+
+      return by(`${gained ? 'entitled' : 'entitlementRevoked'}${what ? '' : 'Unnamed'}`, { what })
+    }
     default:
       return null
   }

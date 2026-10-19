@@ -58,13 +58,38 @@ workspace lacks can be shown locked, marked *not included*, and does not open.
 made: a screen, an import, this app. Each service keeps its own history; the screen reads the membership register's
 and each stream the host names, a page at a time, each with its own place, and keeps no copy. Pages are laid side by
 side only as far as every stream has been read, since a stream with older lines unread may still hold a line newer
-than another stream's oldest; *Show older* reads the next page of each stream that has more. The register's lines,
-and the lines every owner writes for an export and an import of its part (with the part's and the file's hash), are
-worded by the screens; the host words its own services' lines, and a line nobody words shows its kind. A role's or a
-position's rename line whose name stayed records a change of its names in other languages alone, and is said that
-way, never as a rename to the same name. People are named from the register's list. A filter per stream the host
-names, one for the register, and a person filter over what has been read; a service that does not answer is named in
-a sentence above the list.
+than another stream's oldest; *Show older* reads the next page of each stream that has more.
+
+- **The address holds what is shown.** `show` is the ticked areas' keys, comma-separated, absent when every area is
+  ticked (a `show` naming none of the areas on screen means all of them); `who` is a member's id, or `operator`,
+  absent for everyone (an id the people list does not hold means everyone, and the address is rewritten without it).
+  The screen reads both on open and whenever the query changes, and writes them back with `router.replace`, so a
+  link, a refresh and *Back* keep them. The register's own area has the key `people`: `/history?show=people`.
+  The last ticked area stays ticked, since an address cannot say none.
+- **Only a ticked area is read**, and ticking one reads its first page then; unticking keeps what was read. A host
+  source may be `locked`: it is never read, and an area whose sources are all locked has no tick.
+- **Who** lists everyone, then the workspace's people by name (every status), then whoever runs the deployment.
+  Choosing one restarts every ticked stream with `actor=` the person's key (or `operator`), so an old act is found
+  however many lines came since. A line is shown only when it begins with the chosen one: the register also answers the
+  deployment's acts on a person, which begin with *Whoever runs the deployment* and show under that choice instead.
+- **A line begins with** the member's name; an actor that is not a typed key (`sub:…`, `svc:…`) reads as *Whoever runs
+  the deployment*; a typed key the list does not hold reads as *Someone not in the list*. A key is never printed.
+- **Names, not keys.** What the workspace was given or lost is the host's word (`entitlements`), else its service's name
+  in the register's list, else *something this list cannot name*. A service's role says its group and level and the
+  service by name (the register by the screens' own *People & access*). A corporate login is named when it is one a
+  person knows (Microsoft, Google), with its address under the line. What a position sees says the boxes added and
+  taken away, in the host's word for each (`boxes`), else the register's label.
+- **The services' own lines fold.** Two or more lines in a row on one day about a member that is a service are drawn
+  as one, *{n} lines about the {m} services this workspace runs on*, opened with *Show them*. A lone one is a line.
+  When the operator makes someone an administrator the register writes two lines; one is drawn.
+- **The area** each line belongs to closes the line in the word of its tick. A service that does not answer is named
+  by its area, once, with the words of the refusal when it gave any, never its code.
+
+The register's lines, and the lines every owner writes for an export and an import of its part (with the part's and
+the file's hash), are worded by the screens; the host words its own services' lines, and a line nobody words shows its
+kind. A role's or a position's rename line whose name stayed records a change of its names in other languages alone,
+and is said that way, never as a rename to the same name. The screen's root is a size container, and the day list
+folds the area under the sentence when it is narrow.
 
 **People & access** reads and writes the membership register, in three tabs:
 
@@ -177,6 +202,11 @@ stay where they happened.
 **A host that offers the language elsewhere too** sets it the way the globe does, so both always show the same:
 `useAdminSession().setLanguage(code)`, or `null` to clear the person's own.
 
+**A host whose History sentences name members** takes them from the list these screens already hold: `describe`
+receives, beside the line, `names.member(subjectKey)` — the member's name, or empty when the workspace's list does not
+hold them — so the workspace's people are read once, not once per screen. The list itself is not exported: everything
+the package exports reaches every app that imports it, the everyday app included.
+
 ### What the host hands over
 
 Every text is a **message key in the host's own translator**, so it reads in the person's language.
@@ -190,7 +220,7 @@ Every text is a **message key in the host's own translator**, so it reads in the
 | `entries` | the host's own admin screens: a label, the route it opens, the section whose owner serves it, and optionally the `group` it sits in, its `icon`, and `locked` for a subject the workspace lacks |
 | `register` | the section of the membership register; People & access and its History filter show only when the coordinator found it |
 | `roles` | how the Roles screen shows boxes: its `groups` (each a word and the starts of the permission names it gathers), the restricted `fields` the host reads from their owners, and the `guard` sentence for a ticked field's box |
-| `history` | History's `filters` and `sources` (a section, the query that keeps its lines, its filter and its service's short word), and `describe`, the sentence for a line of the host's own services |
+| `history` | History: its `filters` (each an area: a key and the key of its word) and `sources` (a section, the query that keeps its lines, its filter, and optionally `locked`); `describe`, the sentence for a line of the host's own services; `entitlements` and `boxes`, the host's words (message keys) for what a workspace was given, by service or `service/feature`, and for a box a position sees, by permission; and `prepare(areas)`, called with the ticked areas' keys when History opens and when a tick turns on, so the host can read what its sentences name |
 | `words` | replacements for any of the screens' own words, per language, for the sentences better said in the host's own terms |
 | `onApplied` | called after an import that may have changed something (`applied`, `partial`, `rolledBack`), so the host re-reads what it shows |
 

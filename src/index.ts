@@ -2,7 +2,17 @@
 export { default as AdminFrame } from './AdminFrame.vue'
 export { configbyteScreens, messages, type HostTranslator } from './plugin'
 export { adminRoutes, EXPORT_IMPORT } from './routes'
-export type { AdminEntry, AdminOptions, PartWord, SectionWords } from './options'
+export type {
+  AdminEntry,
+  AdminOptions,
+  HistoryLine,
+  HistoryNames,
+  HistoryOptions,
+  HistorySource,
+  LineWords,
+  PartWord,
+  SectionWords,
+} from './options'
 export { useAdminSession, type Identity } from './stores/session'
 
 // The one sign-in page, for every app of a deployment, and what it reads.

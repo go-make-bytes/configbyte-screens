@@ -1,17 +1,30 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 
-import { merge, registerWords, transportWords, type Names, type Stream } from './history'
+import {
+  loginName,
+  merge,
+  newStream,
+  registerWords,
+  shortHash,
+  transportWords,
+  withoutPairedAdministratorLines,
+  type Names,
+  type Stream,
+} from './history'
+
+describe('a hash as a person compares it', () => {
+  it('shows the digits of a long hash, first four and last four, without the algorithm in front of them', () => {
+    expect(shortHash('sha256:9b1e0000000000000000000000000000000000000000000000000000000f04a')).toBe('9b1e…f04a')
+    expect(shortHash('3f2a00000000000007c1')).toBe('3f2a…07c1')
+    expect(shortHash('sha256:abc')).toBe('abc')
+  })
+})
 
 const stream = (key: string, ats: string[], more: boolean): Stream => ({
-  key,
-  section: key,
-  query: '',
-  filter: key,
-  chip: key,
+  ...newStream({ key, section: key, query: '', filter: key }),
   lines: ats.map((at, i) => ({ section: key, id: `${key}-${i}`, at, actor: 'sub:A', kind: 'k', payload: {} })),
   more,
-  failed: '',
 })
 
 describe('merging pages of several histories', () => {
@@ -51,7 +64,9 @@ const names: Names = {
   role: (id) => ({ r1: 'Meistars' })[id] ?? '',
   type: (id) => ({ t1: 'Birojs' })[id] ?? '',
   position: (id) => ({ p1: 'Ražošanas vadītājs' })[id] ?? '',
-  box: (p) => ({ 'orders/order:view': 'See orders' })[p] ?? p,
+  box: (p) => ({ 'orders/order:view': 'See orders', 'orders/order:edit': 'Change orders' })[p] ?? p,
+  entitlement: (service) => ({ orders: 'Orders' })[service] ?? '',
+  service: (key) => ({ orders: 'Order register' })[key] ?? '',
 }
 const line = (kind: string, payload: Record<string, unknown>, userId = '') => ({ section: 'members', id: 'e1', at: '2026-10-03T11:40:00Z', actor: 'sub:A', kind, payload, userId })
 
@@ -139,5 +154,67 @@ describe('the membership register’s lines', () => {
 
   it('answers nothing for a kind it does not know', () => {
     expect(registerWords(line('somethingNew', {}), names)).toBeNull()
+  })
+
+  it('says a service’s role as its group and level, in the service it names, or in another one', () => {
+    expect(registerWords(line('roleGranted', { service: 'orders', group: 'orders', level: 'clerk' }, 'm1'), names)!.words).toEqual({
+      key: 'configbyte.history.lines.serviceRoleGranted',
+      values: { person: 'Jānis Ozols', group: 'orders', level: 'clerk', service: 'Order register' },
+    })
+    expect(registerWords(line('roleRevoked', { service: 'unlisted', group: 'orders', level: 'clerk' }, 'm1'), names)!.words.key).toBe(
+      'configbyte.history.lines.serviceRoleRevokedElsewhere',
+    )
+  })
+
+  it('names what the workspace was given, or says it cannot, and never prints the key', () => {
+    expect(registerWords(line('tenantEntitled', { service: 'orders', feature: '' }), names)!.words).toEqual({
+      key: 'configbyte.history.lines.entitled',
+      values: { what: 'Orders' },
+    })
+    expect(registerWords(line('tenantEntitlementRevoked', { service: 'unlisted', feature: 'x' }), names)!.words.key).toBe(
+      'configbyte.history.lines.entitlementRevokedUnnamed',
+    )
+  })
+
+  it('names a corporate login a person knows, and puts its address under the line without the scheme', () => {
+    const w = registerWords(line('directoryAttached', { issuer: 'https://login.microsoftonline.com/3c1d/v2.0' }), names)!
+    expect(w.words).toEqual({ key: 'configbyte.history.lines.directoryAttachedNamed', values: { name: 'Microsoft' } })
+    expect(w.detail).toEqual({ key: 'configbyte.history.lines.address', values: { address: 'login.microsoftonline.com/3c1d/v2.0' } })
+    const other = registerWords(line('directoryDetached', { issuer: 'https://idp.example.org/realm' }), names)!
+    expect(other.words.key).toBe('configbyte.history.lines.directoryDetached')
+    expect(other.detail?.values).toEqual({ address: 'idp.example.org/realm' })
+    expect(loginName('https://accounts.google.com')).toBe('Google')
+    expect(loginName('not an address')).toBe('')
+  })
+
+  it('says what a position sees from the boxes before and after, and keeps the plain line when it cannot', () => {
+    const sees = (p: Record<string, unknown>) => registerWords(line('chartPositionPermissionsSet', { name: 'CEO', ...p }), names)!.words
+    expect(sees({ from: [], permissions: ['orders/order:view'] })).toMatchObject({ key: 'configbyte.history.lines.positionSeesAdded', values: { boxes: 'See orders' } })
+    expect(sees({ from: ['orders/order:view'], permissions: [] })).toMatchObject({ key: 'configbyte.history.lines.positionSeesRemoved', values: { boxes: 'See orders' } })
+    expect(sees({ from: ['orders/order:view'], permissions: ['orders/order:edit'] })).toMatchObject({
+      key: 'configbyte.history.lines.positionSeesBoth',
+      values: { added: 'Change orders', removed: 'See orders' },
+    })
+    expect(sees({ permissions: ['orders/order:view'] }).key).toBe('configbyte.history.lines.positionSees')
+  })
+})
+
+describe('one act, one line', () => {
+  const at = (id: string, kind: string, payload: Record<string, unknown>, actor = 'operator', when = '2026-10-03T11:58:00Z') => ({
+    line: { section: 'members', id, at: when, actor, kind, payload, userId: 'm1' },
+  })
+  const admin = { service: 'members', group: 'membership', level: 'admin' }
+
+  it('drops the operator’s administrator line beside the role line that says the same', () => {
+    const lines = [at('a', 'roleGranted', admin), at('b', 'administratorSetByOperator', {}), at('c', 'administratorUnsetByOperator', {}), at('d', 'roleRevoked', admin)]
+    expect(withoutPairedAdministratorLines(lines).map((l) => l.line.id)).toEqual(['a', 'd'])
+  })
+
+  it('keeps it when the role line is not there, or is another moment’s, or another actor’s', () => {
+    const lonely = at('b', 'administratorSetByOperator', {})
+    expect(withoutPairedAdministratorLines([lonely])).toHaveLength(1)
+    expect(withoutPairedAdministratorLines([lonely, at('a', 'roleGranted', admin, 'operator', '2026-10-03T11:59:00Z')])).toHaveLength(2)
+    expect(withoutPairedAdministratorLines([lonely, at('a', 'roleGranted', admin, 'sub:A')])).toHaveLength(2)
+    expect(withoutPairedAdministratorLines([lonely, at('a', 'roleGranted', { service: 'orders', group: 'orders', level: 'clerk' })])).toHaveLength(2)
   })
 })

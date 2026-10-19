@@ -829,14 +829,16 @@ describe('the admin app, when the sign-in ends', () => {
   })
 
   it.each([
-    ['refused as not allowed', { status: 403, body: { code: 'err:request:forbidden' } } as Reply, 'could not be read (err:request:forbidden)'],
-    ['failing', { status: 500, body: {} } as Reply, 'could not be read'],
-    ['not answered', 'unanswered' as Reply, 'is not answering'],
+    ['refused as not allowed', { status: 403, body: { code: 'err:request:forbidden' } } as Reply, 'Could not read the changes in People & access (you may not read them)'],
+    ['failing', { status: 500, body: {} } as Reply, 'Could not read the changes in People & access (the service failed)'],
+    ['not answered', 'unanswered' as Reply, 'People & access is not answering'],
   ])('keeps a read %s on its own screen, inside the frame', async (_case, reply, said) => {
     signedIn({ [history]: reply })
     const { wrapper } = await open('/history')
 
     expect(wrapper.text()).toContain(said)
+    // Said in words: the refusal's code never reaches the page.
+    expect(wrapper.text()).not.toContain('err:')
     expect(wrapper.text()).toContain('Anna Example')
     expect(wrapper.find('[data-page="sign-in"]').exists()).toBe(false)
   })
@@ -879,7 +881,7 @@ describe('the admin app, when the sign-in ends', () => {
 
     expect(wrapper.text()).toContain('Anna Example')
     expect(router.currentRoute.value.name).toBe('configbyte-history')
-    expect(wrapper.text()).not.toContain('could not be read')
+    expect(wrapper.text()).not.toContain('Could not read the changes')
   })
 
   // The session it was about is gone; saying it failed after the next sign-in would be false.

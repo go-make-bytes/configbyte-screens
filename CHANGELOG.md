@@ -3,6 +3,52 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.8.0
+
+History opens from its address, asks each service for one person's lines, and says names where it printed keys.
+
+### Added
+
+- **The address holds History's filters.** `/history?show=people,configuration&who=<member id>`: `show` the ticked
+  areas' keys (absent when every area is ticked; one naming none of the areas on screen means all of them), `who` a
+  member's id or `operator`. History reads them on open and when the query changes, and writes ticks and *Who* back
+  with `router.replace`. `vue-router` is already a peer; the screen now reads the route.
+- **Only a ticked area is read**, when it is ticked. A history source may say `locked: () => boolean`: it is never
+  read, and an area whose sources are all locked has no tick.
+- **Who** lists the workspace's people from the people list, plus *Whoever runs the deployment*, and restarts every
+  ticked stream with `actor=` the person's key (or `operator`). A line shows only when it begins with the one chosen.
+- **Names where keys were.** An actor that is not a typed key reads as *Whoever runs the deployment*, a typed key the
+  list does not hold as *Someone not in the list*; a service's role, a corporate login (named when it is Microsoft or
+  Google, its address under the line) and what a position sees (the boxes added and taken away) are said in words.
+- **The services' own lines fold** into one line per run, and the operator making someone an administrator is one line.
+- **Host options** `history.entitlements`, `history.boxes` (message keys, by service or `service/feature`, and by
+  permission) and `history.prepare(areas)`, called with the ticked areas' keys on open and when a tick turns on:
+
+  ```ts
+  history: {
+    filters, sources, describe,
+    entitlements: { orders: 'admin.history.entitled.orders' },
+    boxes: { 'orders/order:edit': 'admin.history.boxes.edit' },
+    prepare: (areas) => areas.includes('orders') ? readOrderNames() : undefined,
+  }
+  ```
+- `describe` receives a second argument, `names.member(subjectKey)`: a member's name from the list the screens already
+  hold (empty when it does not hold them), so a host's sentence names a member without reading the list again.
+
+### Changed
+
+- The register's area key is `people` (it was `configbyte-people`), so `/history?show=people` opens the register alone.
+- The area closing each line is the word of its tick, and a service that does not answer is named by its area:
+  *{area} is not answering…* and *Could not read the changes in {area} ({reason})…*, with the refusal's words, never its
+  code. The words' placeholder is `{area}` (it was `{service}`).
+- The register's section is called *People & access* in History and on Export & import whenever the host gives it no
+  title.
+- The list is drawn with the kit's page header, day list and state block.
+
+### Removed
+
+- `HistorySource.chip` and the `configbyte.history.chips` words: a line's area is its tick's word.
+
 ## v0.7.5
 
 Built on `uibyte` `v0.16.0`, so a host that also uses the kit's newer options (a split view sized to its list; a

@@ -358,17 +358,28 @@
         "who": "Who",
         "everyone": "Everyone"
       },
-      "chips": {
-        "people": "people"
-      },
+      "operator": "Whoever runs the deployment",
+      "notInList": "Someone not in the list",
+      "foldOne": "{n} lines about a service this workspace runs on",
+      "fold": "{n} lines about the {m} services this workspace runs on",
+      "showThem": "Show them",
+      "hideThem": "Hide them",
       "loading": "Reading the history…",
       "empty": "Nothing has changed yet.",
       "emptyFiltered": "No change matches these filters.",
       "showing": "Showing the newest {n}.",
       "older": "Show older",
-      "notAnswering": "{service} is not answering, so its changes are missing from this list.",
-      "unread": "{service}'s changes could not be read ({reason}), so they are missing from this list.",
+      "notAnswering": "{area} is not answering, so its changes are missing from this list.",
+      "unread": "Could not read the changes in {area} ({reason}), so they are missing from this list.",
+      "status": {
+        "forbidden": "you may not read them",
+        "notFound": "the service could not find them",
+        "failed": "the service failed",
+        "other": "the service answered with status {status}"
+      },
       "lines": {
+        "unworded": "changed something this list has no words for yet",
+        "boxUnnamed": "a box no service declares now",
         "exported": "exported the configuration",
         "imported": "imported a configuration file: {changed} changed, {unchanged} unchanged",
         "importedNothing": "imported a configuration file: nothing changed",
@@ -382,8 +393,10 @@
         "userRevoked": "took all access from {person}",
         "administratorOn": "made {person} an administrator",
         "administratorOff": "made {person} no longer an administrator",
-        "serviceRoleGranted": "gave {person} {role} in {service}",
-        "serviceRoleRevoked": "took {role} in {service} from {person}",
+        "serviceRoleGranted": "gave {person} «{group} · {level}» in {service}",
+        "serviceRoleGrantedElsewhere": "gave {person} «{group} · {level}» in another service",
+        "serviceRoleRevoked": "took «{group} · {level}» in {service} from {person}",
+        "serviceRoleRevokedElsewhere": "took «{group} · {level}» in another service from {person}",
         "administratorByOperator": "was made an administrator by whoever runs the deployment",
         "administratorOffByOperator": "stopped being an administrator, by whoever runs the deployment",
         "administratorSeeded": "was made the workspace's first administrator",
@@ -415,14 +428,22 @@
         "positionRemoved": "removed the position «{position}»",
         "positionRemovedUnnamed": "removed a position from the chart",
         "positionSees": "changed what the position «{position}» sees",
+        "positionSeesAdded": "changed what «{position}» sees below: added {boxes}",
+        "positionSeesRemoved": "changed what «{position}» sees below: took away {boxes}",
+        "positionSeesBoth": "changed what «{position}» sees below: added {added}; took away {removed}",
         "positionGivesType": "made the position «{position}» give the user type «{type}»",
         "positionGivesNoType": "made the position «{position}» give no user type",
         "personPlaced": "placed {person} in «{position}»",
         "personUnplaced": "took {person} out of «{position}»",
-        "directoryAttached": "attached the corporate login {issuer}",
-        "directoryDetached": "detached the corporate login {issuer}",
-        "entitled": "gave the workspace «{what}»",
-        "entitlementRevoked": "took «{what}» away from the workspace"
+        "directoryAttached": "attached a corporate login",
+        "directoryAttachedNamed": "attached the corporate login {name}",
+        "directoryDetached": "detached a corporate login",
+        "directoryDetachedNamed": "detached the corporate login {name}",
+        "address": "{address}",
+        "entitled": "gave the workspace {what}",
+        "entitledUnnamed": "gave the workspace something this list cannot name",
+        "entitlementRevoked": "took {what} away from the workspace",
+        "entitlementRevokedUnnamed": "took something away from the workspace that this list cannot name"
       }
     }
   }

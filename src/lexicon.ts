@@ -19,6 +19,9 @@ export function useLexicon(): ComputedRef<Lexicon> {
       if (words.title) titles[name] = t(words.title)
       parts[name] = (words.parts ?? []).map((p) => ({ key: p.key, word: t(p.word) }))
     }
+    // The register is these screens' own section: it is called what they call it
+    // unless the host chose another name.
+    if (options.register && !titles[options.register]) titles[options.register] = t('configbyte.people.title')
 
     return { order: session.order, titles, parts }
   })

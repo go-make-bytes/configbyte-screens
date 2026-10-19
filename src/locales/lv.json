@@ -358,17 +358,28 @@
         "who": "Kas",
         "everyone": "Visi"
       },
-      "chips": {
-        "people": "cilvēki"
-      },
+      "operator": "Izvietojuma uzturētājs",
+      "notInList": "Kāds, kura sarakstā nav",
+      "foldOne": "{n} ieraksti par servisu, uz kura darbojas šī darbvieta",
+      "fold": "{n} ieraksti par {m} servisiem, uz kuriem darbojas šī darbvieta",
+      "showThem": "Rādīt tos",
+      "hideThem": "Paslēpt tos",
       "loading": "Nolasa vēsturi…",
       "empty": "Vēl nekas nav mainīts.",
       "emptyFiltered": "Šiem filtriem neatbilst neviena izmaiņa.",
       "showing": "Rādītas jaunākās {n}.",
       "older": "Rādīt vecākas",
-      "notAnswering": "{service} neatbild, tāpēc tā izmaiņu šajā sarakstā nav.",
-      "unread": "{service} izmaiņas neizdevās nolasīt ({reason}), tāpēc to šajā sarakstā nav.",
+      "notAnswering": "Joma «{area}» neatbild, tāpēc tās izmaiņu šajā sarakstā nav.",
+      "unread": "Neizdevās nolasīt jomas «{area}» izmaiņas ({reason}), tāpēc to šajā sarakstā nav.",
+      "status": {
+        "forbidden": "jums nav tiesību tās lasīt",
+        "notFound": "serviss tās neatrada",
+        "failed": "servisā radās kļūda",
+        "other": "serviss atbildēja ar statusu {status}"
+      },
       "lines": {
+        "unworded": "mainīja kaut ko, ko šis saraksts vēl nespēj aprakstīt",
+        "boxUnnamed": "atļauju, ko neviens serviss vairs nepiedāvā",
         "exported": "eksportēja konfigurāciju",
         "imported": "importēja konfigurācijas failu: mainīti {changed}, nemainīti {unchanged}",
         "importedNothing": "importēja konfigurācijas failu: nekas nemainījās",
@@ -382,8 +393,10 @@
         "userRevoked": "atņēma {person} visu piekļuvi",
         "administratorOn": "padarīja {person} par administratoru",
         "administratorOff": "atcēla {person} no administratora",
-        "serviceRoleGranted": "piešķīra {person} {role} servisā {service}",
-        "serviceRoleRevoked": "atņēma {person} {role} servisā {service}",
+        "serviceRoleGranted": "piešķīra {person} «{group} · {level}» servisā {service}",
+        "serviceRoleGrantedElsewhere": "piešķīra {person} «{group} · {level}» citā servisā",
+        "serviceRoleRevoked": "atņēma {person} «{group} · {level}» servisā {service}",
+        "serviceRoleRevokedElsewhere": "atņēma {person} «{group} · {level}» citā servisā",
         "administratorByOperator": "tika iecelts par administratoru — to izdarīja izvietojuma uzturētājs",
         "administratorOffByOperator": "vairs nav administrators — to izdarīja izvietojuma uzturētājs",
         "administratorSeeded": "tika iecelts par darbvietas pirmo administratoru",
@@ -415,14 +428,22 @@
         "positionRemoved": "noņēma amatu «{position}»",
         "positionRemovedUnnamed": "noņēma amatu no shēmas",
         "positionSees": "mainīja, ko redz amats «{position}»",
+        "positionSeesAdded": "mainīja, ko «{position}» redz zemāk: pievienoja {boxes}",
+        "positionSeesRemoved": "mainīja, ko «{position}» redz zemāk: noņēma {boxes}",
+        "positionSeesBoth": "mainīja, ko «{position}» redz zemāk: pievienoja {added}; noņēma {removed}",
         "positionGivesType": "noteica, ka amats «{position}» piešķir lietotāja veidu «{type}»",
         "positionGivesNoType": "noteica, ka amats «{position}» nepiešķir lietotāja veidu",
         "personPlaced": "iecēla {person} amatā «{position}»",
         "personUnplaced": "atcēla {person} no amata «{position}»",
-        "directoryAttached": "pievienoja uzņēmuma pieteikšanos {issuer}",
-        "directoryDetached": "atvienoja uzņēmuma pieteikšanos {issuer}",
-        "entitled": "piešķīra darbvietai «{what}»",
-        "entitlementRevoked": "atņēma darbvietai «{what}»"
+        "directoryAttached": "pievienoja uzņēmuma pieteikšanos",
+        "directoryAttachedNamed": "pievienoja uzņēmuma pieteikšanos {name}",
+        "directoryDetached": "atvienoja uzņēmuma pieteikšanos",
+        "directoryDetachedNamed": "atvienoja uzņēmuma pieteikšanos {name}",
+        "address": "{address}",
+        "entitled": "piešķīra darbvietai {what}",
+        "entitledUnnamed": "piešķīra darbvietai kaut ko, ko šis saraksts nespēj nosaukt",
+        "entitlementRevoked": "atņēma darbvietai {what}",
+        "entitlementRevokedUnnamed": "atņēma darbvietai kaut ko, ko šis saraksts nespēj nosaukt"
       }
     }
   }
