@@ -175,7 +175,7 @@ language. When the list cannot tell, the first.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.8.0",
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.9.0",
 "uibyte": "github:gmb-lib/uibyte#v0.17.0"
 ```
 
