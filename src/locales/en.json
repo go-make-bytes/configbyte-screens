@@ -506,6 +506,15 @@
         "failed": "the service failed",
         "other": "the service answered with status {status}"
       },
+      "levels": {
+        "membership": {
+          "admin": "administer the workspace",
+          "chart": "see the Chart of authority",
+          "definitions": "see the workspace's roles",
+          "placements": "report where it uses the roles",
+          "resolve": "see who is in the workspace"
+        }
+      },
       "lines": {
         "unworded": "changed something this list has no words for yet",
         "boxUnnamed": "a box no service declares now",
@@ -518,14 +527,15 @@
         "tenantRenamed": "renamed the workspace «{from}» to «{to}»",
         "userInvited": "invited {person}",
         "claimAttached": "accepted the invitation",
+        "serviceConnected": "was connected to this workspace",
         "directoryAdmitted": "joined through the corporate login",
         "userRevoked": "took all access from {person}",
         "administratorOn": "made {person} an administrator",
         "administratorOff": "made {person} no longer an administrator",
-        "serviceRoleGranted": "gave {person} «{group} · {level}» in {service}",
-        "serviceRoleGrantedElsewhere": "gave {person} «{group} · {level}» in another service",
-        "serviceRoleRevoked": "took «{group} · {level}» in {service} from {person}",
-        "serviceRoleRevokedElsewhere": "took «{group} · {level}» in another service from {person}",
+        "serviceRoleGranted": "gave {person} «{what}» in {service}",
+        "serviceRoleGrantedElsewhere": "gave {person} «{what}» in another service",
+        "serviceRoleRevoked": "took «{what}» in {service} from {person}",
+        "serviceRoleRevokedElsewhere": "took «{what}» in another service from {person}",
         "administratorByOperator": "was made an administrator by whoever runs the deployment",
         "administratorOffByOperator": "stopped being an administrator, by whoever runs the deployment",
         "administratorSeeded": "was made the workspace's first administrator",

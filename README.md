@@ -104,10 +104,16 @@ than another stream's oldest; *Show older* reads the next page of each stream th
 - **A line begins with** the member's name; an actor that is not a typed key (`sub:…`, `svc:…`) reads as *Whoever runs
   the deployment*; a typed key the list does not hold reads as *Someone not in the list*. A key is never printed.
 - **Names, not keys.** What the workspace was given or lost is the host's word (`entitlements`), else its service's name
-  in the register's list, else *something this list cannot name*. A service's role says its group and level and the
-  service by name (the register by the screens' own *People & access*). A corporate login is named when it is one a
-  person knows (Microsoft, Google), with its address under the line. What a position sees says the boxes added and
-  taken away, in the host's word for each (`boxes`), else the register's label.
+  in the register's list, else *something this list cannot name*. A service's role says what it lets the holder do —
+  the host's word for the group and level (`grants`, keyed `group/level`), the screens' own for the register's levels
+  (*see who is in the workspace*, *see the Chart of authority*, …), else its group and level — and the service by name
+  (the register by the screens' own *People & access*). A corporate login is named when it is one a person knows
+  (Microsoft, Google), with its address under the line. What a position sees says the boxes added and taken away, in
+  the host's word for each (`boxes`), else the register's label.
+- **A service is named and spoken of as a service.** A member that is a service, and a service a role is given in, take
+  the host's word for it where it gives one (`services`, keyed by the member's key `svc:…` or by the service's key),
+  else the name the register holds. A service *was connected to this workspace* rather than accepting an invitation,
+  and the user type every arrival receives is not drawn for a service.
 - **The services' own lines fold.** Two or more lines in a row on one day about a member that is a service are drawn
   as one, *{n} lines about the {m} services this workspace runs on*, opened with *Show them*. A lone one is a line.
   When the operator makes someone an administrator the register writes two lines; one is drawn.
@@ -175,8 +181,8 @@ language. When the list cannot tell, the first.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.8.0",
-"uibyte": "github:gmb-lib/uibyte#v0.17.0"
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.10.0",
+"uibyte": "github:gmb-lib/uibyte#v0.18.0"
 ```
 
 Move both pins together, then read the result back with `npm ls uibyte`: one copy.

@@ -5,7 +5,7 @@
 // does not answer named by its area.
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
@@ -385,7 +385,7 @@ describe('History', () => {
     expect(out[2]).toContain('Whoever runs the deployment changed what «CEO» sees below: added change orders')
     expect(out[3]).toContain('changed what «CEO» sees below: added See orders')
     expect(out[4]).toContain('Whoever runs the deployment gave Jānis Ozols «stock · clerk» in Stock modules')
-    expect(out[5]).toContain('Whoever runs the deployment gave Jānis Ozols «membership · chart» in People & access')
+    expect(out[5]).toContain('Whoever runs the deployment gave Jānis Ozols «see the Chart of authority» in People & access')
     expect(out[6]).toContain('Whoever runs the deployment gave the workspace something this list cannot name')
     expect(out[7]).toContain('Whoever runs the deployment gave the workspace Stock modules')
     expect(out[8]).toContain('Whoever runs the deployment gave the workspace Orders')
@@ -599,5 +599,72 @@ describe('History', () => {
     stub({ [`${S}/members/history`]: noneRegister, [`${S}/orders/history?family=setup`]: none, [`${S}/stock/history?family=setup`]: none })
     const { wrapper } = await render()
     expect(wrapper.get('[data-state="empty"]').text()).toBe('Nothing has changed yet.')
+  })
+})
+
+describe('a workspace’s opening, its services in their own words', () => {
+  // The lines a workspace's opening writes for a service it runs on, and the same
+  // kinds of line for a person, on another day so the services' run stands alone.
+  const opening = registerOnly([
+    ev('n5', '2026-10-03T10:05:00Z', 'svc:orders', 'claimAttached', { subjectKey: 'svc:orders' }, 'm5'),
+    ev('n4', '2026-10-03T10:04:00Z', 'operator', 'roleGranted', { group: 'stock', level: 'clerk', service: 'stock' }, 'm5'),
+    ev('n3', '2026-10-03T10:03:00Z', 'operator', 'roleGranted', { group: 'membership', level: 'chart', service: 'members' }, 'm5'),
+    ev('n2', '2026-10-03T10:02:00Z', 'operator', 'userTypeAssigned', { source: 'workspaceDefault', userTypeId: 't1', name: 'Member' }, 'm5'),
+    ev('n1', '2026-10-03T10:01:00Z', 'operator', 'userInvited', { subjectKey: 'svc:orders', displayName: 'Order register' }, 'm5'),
+    ev('p2', '2026-10-02T09:02:00Z', 'sub:J', 'claimAttached', { subjectKey: 'sub:J' }, 'm2'),
+    ev('p1', '2026-10-02T09:01:00Z', 'operator', 'userTypeAssigned', { source: 'workspaceDefault', userTypeId: 't1', name: 'Member' }, 'm2'),
+  ])
+  const named: AdminOptions = {
+    ...options,
+    history: {
+      ...options.history!,
+      services: { 'svc:orders': 'host.svc.orders', stock: 'host.stock' },
+      grants: { 'stock/clerk': 'host.grant.stockClerk' },
+    },
+  }
+  beforeEach(() => {
+    words.en.host = { ...words.en.host, svc: { orders: 'Orders service' }, grant: { stockClerk: 'count the stock' } } as typeof words.en.host
+    words.lv.host = { ...words.lv.host, svc: { orders: 'Pasūtījumu serviss' }, stock: 'Krājumi', grant: { stockClerk: 'skaitīt krājumus' } } as typeof words.lv.host
+  })
+
+  it('names a service by the host’s word, says it was connected, and draws no newcomer line for it (en)', async () => {
+    stub(opening)
+    const { wrapper } = await render({ options: named })
+    expect(lines(wrapper)[0]).toContain('4 lines about a service this workspace runs on: Orders service')
+    await wrapper.get('[data-act="fold"]').trigger('click')
+    const out = lines(wrapper).join(' | ')
+
+    expect(out).toContain('Whoever runs the deployment invited Orders service')
+    expect(out).toContain('Whoever runs the deployment gave Orders service «see the Chart of authority» in People & access')
+    expect(out).toContain('Whoever runs the deployment gave Orders service «count the stock» in Stock')
+    expect(out).toContain('Orders service was connected to this workspace')
+    expect(out).not.toMatch(/Order register|membership · chart|stock · clerk/)
+    // A person's opening keeps a person's words.
+    expect(out).toContain('Jānis Ozols accepted the invitation')
+    expect(out).toContain('was given the user type «Member», as everyone new is')
+    expect(out.match(/as everyone new is/g)).toHaveLength(1)
+  })
+
+  it('says the same in Latvian', async () => {
+    stub(opening)
+    const { wrapper } = await render({ locale: 'lv', options: named })
+    await wrapper.get('[data-act="fold"]').trigger('click')
+    const out = lines(wrapper).join(' | ')
+
+    expect(out).toContain('Pasūtījumu serviss tika pievienots šai darbvietai')
+    expect(out).toContain('«redzēt Pilnvaru shēmu» servisā Cilvēki un piekļuve')
+    expect(out).toContain('«skaitīt krājumus» servisā Krājumi')
+    expect(out).not.toMatch(/Order register|membership · chart|stock · clerk|pieņēma uzaicinājumu.*Pasūtījumu/)
+  })
+
+  it('keeps a service’s own name and the grant’s keys where the host names neither', async () => {
+    stub(opening)
+    const { wrapper } = await render()
+    await wrapper.get('[data-act="fold"]').trigger('click')
+    const out = lines(wrapper).join(' | ')
+
+    expect(out).toContain('Order register was connected to this workspace')
+    expect(out).toContain('«see the Chart of authority» in People & access')
+    expect(out).toContain('«stock · clerk» in Stock modules')
   })
 })

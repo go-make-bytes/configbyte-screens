@@ -3,6 +3,31 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.10.0
+
+History speaks of a workspace's services as services, in the reader's language.
+
+Built on `uibyte` `v0.18.0`, so People & access's tabs take the kit's new look (one underline under the chosen tab, a
+strip that scrolls within itself instead of wrapping): move the `uibyte` pin together with this one, then
+`npm ls uibyte` reads one copy.
+
+### Added
+
+- **`history.services`** — the host's word for a service, by the key it is a member under (`svc:orders`) or by the
+  service key a role names (`orders`). History names the service by it — in its lines, where a run of its lines folds,
+  and in the service a role is given in — and by the name the register holds where the host gives none.
+- **`history.grants`** — the host's word for what a level of a service's ladder lets its holder do, keyed `group/level`
+  (`stock/clerk`). The register's own levels are named by the screens in both languages (*see who is in the
+  workspace*, *see the Chart of authority*, *see the workspace's roles*, *report where it uses the roles*, *administer
+  the workspace*).
+
+### Changed
+
+- A line giving or taking a service's role says what the level lets it do — *gave Order service «see the Chart of
+  authority» in People & access* — and its group and level only where nothing names them.
+- A service **was connected to this workspace** where a person *accepted the invitation*.
+- The *was given the user type «…», as everyone new is* line is no longer drawn for a service; a person's stays.
+
 ## v0.9.0
 
 Export & import says what a file carries, area by area, and what an import would do to each item, in words.
