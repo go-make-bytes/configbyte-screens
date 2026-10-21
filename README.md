@@ -147,6 +147,20 @@ marked on every one of them.
   alone with a way back when there is no room: their user type, with what the chart of authority says of it, their
   roles across the workspace, the Administrator checkbox, a link to History at that person, and taking away all access
   (after a question asked in place). Every act saves at once and says what it did.
+- **How people sign in, and notes.** Under each name the list says what names the person: their email, or *personal
+  code · LV* and the code masked (one bullet for each character it has, never more than sixteen), or *no sign-in
+  behind them*; the first words of the note follow, cut with an ellipsis. When the register could not read how people
+  sign in, the list says so once above it and draws no way. An open person starts with the same: their email, or
+  their personal code with its country, masked, and **Show personal code**, which asks the register for it and shows
+  it until **Hide**, until another person opens or the panel closes; the screen keeps it nowhere else, and says that
+  the access audit service records each showing. A code the register will not show, because the showing could not be
+  recorded or because there is none, is not shown, and the reason is said in words; a person invited and not yet
+  signed in has the code masked and no **Show personal code**. Names, emails and notes are each drawn isolated,
+  deciding their own direction. Under it, a **Note** an
+  administrator writes about the person (up to 1,000 characters, line breaks kept), saved with **Save note**.
+  **Invite a person**, at the top right of Users, takes a name and a personal code with the country that issued it
+  (Latvia, Estonia or Lithuania), the code in the kit's identity-code field; the person's row then reads *invited,
+  not signed in yet* until their first card sign-in.
 - **Roles**: a list, each row opening the role's page: what it is for, how many of the boxes it can be given it holds,
   and whether it shipped or was made here. The role's page has its name and what it is for (both are sent), and its
   boxes in the groups the host names and the rest under their service's own name, each in the words the service
@@ -181,7 +195,7 @@ language. When the list cannot tell, the first.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.10.0",
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.11.0",
 "uibyte": "github:gmb-lib/uibyte#v0.18.0"
 ```
 
@@ -382,7 +396,7 @@ Everything goes to the coordinator, same-origin, under `/api/configbyte/v1`, wit
 | `POST` | `/logout` | ends the session; answers where to go next |
 | `GET` | `/config/export` | the whole configuration as one file |
 | `POST` | `/config/import?dryRun=true` · `/config/import` | what a file would do, then applying exactly that |
-| any | `/sections/{section}/{path}` | relayed to that section's owner: People & access calls the register's `tenants/{id}/access`, `…/roles`, `…/user-types`, `…/corporate-login-default`, `…/administrators/{user}`, `…/chart/positions`, `users/{user}` and `config`; History calls `history` on the register and on each stream's owner |
+| any | `/sections/{section}/{path}` | relayed to that section's owner: People & access calls the register's `tenants/{id}/access`, `…/roles`, `…/user-types`, `…/corporate-login-default`, `…/administrators/{user}`, `…/chart/positions`, `users/{user}`, `…/users/{user}/note`, `…/users/{user}/identity-code`, `…/people` and `config`; History calls `history` on the register and on each stream's owner |
 
 An Apply sends the file's own text with the versions its preview answered added as its last member, so what lands is
 exactly what the person read, or nothing.

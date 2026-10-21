@@ -54,7 +54,7 @@ const more = (hidden: number) => t(w('access.more'), { n: hidden })
       <h4 class="font-semibold">{{ card.title }} <small class="font-normal text-faint">{{ card.meta }}</small></h4>
       <div class="mt-1 text-[13px] leading-relaxed text-ink">
         <FoldMore v-if="card.holders.length" :items="card.holders" :more-label="more">
-          <template #default="{ item }">{{ item.displayName }}</template>
+          <template #default="{ item }"><bdi>{{ item.displayName }}</bdi></template>
         </FoldMore>
         <span v-else class="text-faint">{{ t(w('access.nobody')) }}</span>
       </div>

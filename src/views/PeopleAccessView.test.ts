@@ -436,7 +436,7 @@ describe('People & access › Users', () => {
     expect(rows[1]).toContain('Anna Bērziņa')
     expect(rows[1]).toContain('3 days ago')
     expect(rows[2]).toContain('Ilze Invited')
-    expect(rows[2]).toContain('has not signed in yet')
+    expect(rows[2]).toContain('invited, not signed in yet')
     expect(rows[3]).toContain('Jānis New')
     expect(rows[3]).toContain('yesterday')
     // The user type in force is the chart position's while the person sits in one.
@@ -616,6 +616,8 @@ describe('People & access › Users', () => {
     await go(s, '/people/users/m5')
     expect(s.wrapper.get('[data-panel]').text()).toContain('Their history stays. Giving access back is a new invitation.')
     expect(s.wrapper.get('[data-panel] a[data-link="history"]').attributes('href')).toBe('/history?who=m5')
+    // Their note went with their access, and none is offered to write on them again.
+    expect(s.wrapper.find('[data-block="note"]').exists()).toBe(false)
   })
 
   it('gives a person a user type at once, says so, and reads only the people again', async () => {
@@ -1159,6 +1161,385 @@ describe('People & access › User types', () => {
     expect(writes()).toEqual([{ method: 'PUT', url: `${T}/corporate-login-default`, body: { userTypeId: 't-floor' }, csrf: 'tok-1' }])
     expect(wrapper.get('[data-said="said"]').text()).toBe('Saved: people arriving through the corporate login get this from now on.')
     expect([reads('/access'), reads('/roles'), reads('/user-types')]).toEqual([1, 1, 2])
+  })
+})
+
+// A personal code is built here from parts, so no source line holds one whole.
+const digits = Array.from({ length: 11 }, (_, i) => String((i * 7 + 3) % 10)).join('')
+const shownCode = `${digits.slice(0, 6)}-${digits.slice(6)}`
+/** The code in either spelling, with or without the hyphen it is shown with. */
+const anySpelling = new RegExp(`${digits.slice(0, 6)}-?${digits.slice(6)}`)
+
+/** People by how they sign in: an email, a personal code (invited, with a note), a long one, none, and nothing said. */
+/** Everything a storage holds, values included: spreading a Storage does not list what it holds. */
+const stored = (storage: Storage) =>
+  Array.from({ length: storage.length }, (_, i) => `${storage.key(i)}=${storage.getItem(storage.key(i)!)}`).join(' ')
+
+const signers = (): Record<string, unknown>[] => [
+  member({ id: 'e1', subjectKey: 'sub:E', displayName: 'Ella Email', lastSignedInOn: dayAgo(0), signIn: { signsIn: true, email: 'ella@mail.example' }, note: '' }),
+  member({
+    id: 'c1',
+    subjectKey: 'sub:C',
+    displayName: 'Karl Card',
+    lastSignedInOn: dayAgo(0),
+    signIn: { signsIn: true, country: 'LV', length: 12 },
+    note: 'Not him.\nDo not give this one access.',
+  }),
+  // Invited and not yet signed in: the register sends the mask of the code and nothing else.
+  member({ id: 'i1', subjectKey: 'sub:V', displayName: 'Ivo Invited', status: 'invited', signIn: { country: 'LV', length: 12 }, note: '' }),
+  member({ id: 'c2', subjectKey: 'sub:L', displayName: 'Long Code', lastSignedInOn: dayAgo(0), signIn: { signsIn: true, country: 'EE', length: 40 }, note: '' }),
+  member({
+    id: 'n1',
+    subjectKey: 'sub:N',
+    displayName: 'Nina None',
+    lastSignedInOn: dayAgo(2),
+    signIn: { signsIn: false },
+    note: 'Left over from the first import, nobody signs in as this one',
+  }),
+  member({ id: 's1', subjectKey: 'sub:S', displayName: 'Sam Silent', lastSignedInOn: dayAgo(0), signIn: { signsIn: true }, note: '' }),
+]
+
+describe('People & access › how people sign in, and what is noted about them', () => {
+  const shownIn = (wrapper: W) => wrapper.get('[data-way="code"]').text()
+
+  it('says on each row what names the person: the email, the personal code masked, or that nothing signs in as them', async () => {
+    stub({}, signers())
+    const { wrapper } = await render()
+    expect(norm(rowOf(wrapper, 'Ella Email').text())).toContain('ella@mail.example')
+    expect(norm(rowOf(wrapper, 'Karl Card').text())).toContain(`personal code · LV ${'•'.repeat(12)}`)
+    expect(norm(rowOf(wrapper, 'Nina None').text())).toContain('no sign-in behind them')
+    // A person the register says only signs in has nothing to say, and nothing is invented.
+    const silent = norm(rowOf(wrapper, 'Sam Silent').text())
+    expect(silent).not.toContain('personal code')
+    expect(silent).not.toContain('no sign-in')
+    expect(silent).not.toContain('@')
+  })
+
+  it('draws one bullet for each character of the code, never more than sixteen', async () => {
+    stub({}, signers())
+    const { wrapper } = await render()
+    const row = norm(rowOf(wrapper, 'Long Code').text())
+    expect(row).toContain(`personal code · EE ${'•'.repeat(16)}`)
+    expect(row).not.toContain('•'.repeat(17))
+  })
+
+  it('shows the first words of a note beside the way, cut with an ellipsis, a line break read as a space', async () => {
+    stub({}, signers())
+    const { wrapper } = await render()
+    expect(norm(rowOf(wrapper, 'Nina None').text())).toContain('no sign-in behind them · Left over from the first import, n…')
+    expect(norm(rowOf(wrapper, 'Karl Card').text())).toContain(`${'•'.repeat(12)} · Not him. Do not give this one acce…`)
+    // A person with no note has no note after the way.
+    expect(norm(rowOf(wrapper, 'Ella Email').text())).not.toContain(' · ')
+  })
+
+  it('says once, above the list, that how people sign in could not be read, and draws no way for anyone', async () => {
+    const unread = signers().map(({ signIn: _gone, ...rest }) => rest)
+    stub({ [`GET ${T}/access`]: { status: 200, body: { members: unread, signInRead: false } } })
+    const { wrapper } = await render()
+    expect(wrapper.findAll('[data-note="sign-in-unread"]')).toHaveLength(1)
+    expect(wrapper.get('[data-note="sign-in-unread"]').text()).toBe('How each person signs in could not be read just now, so it is not shown here.')
+    expect(norm(rowOf(wrapper, 'Ella Email').text())).not.toContain('ella@mail.example')
+
+    stub({ [`GET ${T}/access`]: { status: 200, body: { members: signers(), signInRead: true } } })
+    const read = await render()
+    expect(read.wrapper.find('[data-note="sign-in-unread"]').exists()).toBe(false)
+  })
+
+  it('opens a person with their email, or their code masked and shown only on a press, recorded by the audit', async () => {
+    stub({ [`POST ${T}/users/c1/identity-code`]: { status: 200, body: { code: shownCode, country: 'LV' } } }, signers())
+    const email = await render({ url: '/people/users/e1' })
+    expect(email.wrapper.get('[data-way="email"]').text()).toBe('ella@mail.example')
+    expect(email.wrapper.get('[data-block="way"]').text()).toContain('Email')
+    expect(email.wrapper.find('[data-act="reveal-code"]').exists()).toBe(false)
+
+    const s = await render({ url: '/people/users/c1' })
+    const block = s.wrapper.get('[data-block="way"]')
+    expect(block.text()).toContain('Personal code · Latvia')
+    expect(shownIn(s.wrapper)).toBe('•'.repeat(12))
+    expect(s.wrapper.get('[data-act="reveal-code"]').text()).toBe('Show personal code')
+    expect(block.text()).toContain('Showing it is recorded by the access audit service.')
+    // Nothing was asked for the code until it was pressed.
+    expect(writes()).toEqual([])
+
+    await s.wrapper.get('[data-act="reveal-code"]').trigger('click')
+    await settle(s.wrapper)
+    expect(writes()).toEqual([{ method: 'POST', url: `${T}/users/c1/identity-code`, body: undefined, csrf: 'tok-1' }])
+    expect(shownIn(s.wrapper)).toBe(shownCode)
+    expect(s.wrapper.get('[data-act="reveal-code"]').text()).toBe('Hide')
+    expect(s.wrapper.get('[data-block="way"]').text()).toContain('Showing it is recorded by the access audit service.')
+
+    await s.wrapper.get('[data-act="reveal-code"]').trigger('click')
+    await settle(s.wrapper)
+    expect(shownIn(s.wrapper)).toBe('•'.repeat(12))
+    expect(s.wrapper.text()).not.toContain(shownCode)
+    expect(writes()).toHaveLength(1)
+  })
+
+  it('forgets a shown code when another person opens and when the person closes, and keeps it nowhere else', async () => {
+    stub({ [`POST ${T}/users/c1/identity-code`]: { status: 200, body: { code: shownCode, country: 'LV' } } }, signers())
+    const s = await render({ url: '/people/users/c1' })
+    await s.wrapper.get('[data-act="reveal-code"]').trigger('click')
+    await settle(s.wrapper)
+    expect(shownIn(s.wrapper)).toBe(shownCode)
+
+    // While it is shown it is in the panel and in no store, no storage and no address.
+    const store = usePeople(s.pinia)
+    expect(JSON.stringify(store.$state)).not.toMatch(anySpelling)
+    expect(JSON.stringify(store.said)).not.toMatch(anySpelling)
+    expect(stored(localStorage)).not.toMatch(anySpelling)
+    expect(stored(sessionStorage)).not.toMatch(anySpelling)
+    expect(s.router.currentRoute.value.fullPath).not.toMatch(anySpelling)
+
+    await go(s, '/people/users/c2')
+    expect(s.wrapper.get('[data-way="code"]').text()).toBe('•'.repeat(16))
+    expect(s.wrapper.text()).not.toContain(shownCode)
+    await go(s, '/people/users/c1')
+    expect(shownIn(s.wrapper)).toBe('•'.repeat(12))
+
+    await s.wrapper.get('[data-act="reveal-code"]').trigger('click')
+    await settle(s.wrapper)
+    expect(shownIn(s.wrapper)).toBe(shownCode)
+    await go(s, '/people/roles')
+    await go(s, '/people/users/c1')
+    expect(shownIn(s.wrapper)).toBe('•'.repeat(12))
+    expect(JSON.stringify(store.$state)).not.toMatch(anySpelling)
+    expect(stored(localStorage)).not.toMatch(anySpelling)
+  })
+
+  it('shows no code when its showing could not be recorded, and says why in words', async () => {
+    stub({ [`POST ${T}/users/c1/identity-code`]: { status: 503, body: { code: 'err:membership:audit_unavailable', detail: 'audit sink down' } } }, signers())
+    const { wrapper } = await render({ url: '/people/users/c1' })
+    await wrapper.get('[data-act="reveal-code"]').trigger('click')
+    await settle(wrapper)
+    expect(wrapper.get('[data-note="code-refused"]').text()).toBe('The personal code is not shown: its showing could not be recorded.')
+    expect(wrapper.get('[data-way="code"]').text()).toBe('•'.repeat(12))
+    expect(wrapper.get('[data-act="reveal-code"]').text()).toBe('Show personal code')
+    expect(wrapper.text()).not.toContain('audit sink down')
+  })
+
+  it('says there is no personal code behind a person the register finds none for', async () => {
+    stub({ [`POST ${T}/users/c1/identity-code`]: { status: 404, body: { code: 'err:membership:no_identity_code' } } }, signers())
+    const { wrapper } = await render({ url: '/people/users/c1' })
+    await wrapper.get('[data-act="reveal-code"]').trigger('click')
+    await settle(wrapper)
+    expect(wrapper.get('[data-note="code-refused"]').text()).toBe('There is no personal code behind this person.')
+  })
+
+  it('draws an invited person’s code hidden and offers no way to show it: only an active member has it shown', async () => {
+    stub({}, signers())
+    const { wrapper } = await render({ url: '/people/users/i1' })
+    const block = wrapper.get('[data-block="way"]')
+    expect(block.text()).toContain('Personal code · Latvia')
+    expect(shownIn(wrapper)).toBe('•'.repeat(12))
+    expect(wrapper.find('[data-act="reveal-code"]').exists()).toBe(false)
+    expect(block.text()).not.toContain('Showing it is recorded by the access audit service.')
+    expect(wrapper.get('[data-panel]').text()).toContain('invited, not signed in yet')
+    expect(norm(rowOf(wrapper, 'Ivo Invited').text())).toContain(`personal code · LV ${'•'.repeat(12)}`)
+    expect(writes()).toEqual([])
+  })
+
+  it('keeps a person’s own words — the name, the email, the note — apart from the text around them', async () => {
+    const tricky = '\u202eanna@evil.example'
+    stub({}, [
+      ...signers(),
+      member({ id: 'm9', subjectKey: 'sub:M', displayName: 'Mika\u202eNew', arrival: true, lastSignedInOn: dayAgo(1), signIn: { signsIn: true, email: tricky }, note: 'see \u202eabove' }),
+    ])
+    const s = await render()
+    const isolated = (el: { findAll: (s: string) => { text: () => string }[] }) => el.findAll('bdi').map((b) => b.text())
+    // In the list: the name, the way it signs in and the note's first words, each on its own.
+    expect(isolated(rowOf(s.wrapper, 'Ella Email'))).toEqual(['Ella Email', 'ella@mail.example'])
+    expect(isolated(rowOf(s.wrapper, 'Mika'))).toEqual(['Mika\u202eNew', tricky, 'see \u202eabove'])
+    // A new arrival's chip, and the list by access.
+    expect(isolated(s.wrapper.get('[data-block="arrivals"]'))).toContain('Mika\u202eNew')
+    await choice(s.wrapper, 'By access').trigger('click')
+    await settle(s.wrapper)
+    expect(isolated(s.wrapper.get('[data-view="access"]'))).toContain('Mika\u202eNew')
+    await choice(s.wrapper, 'People').trigger('click')
+    await settle(s.wrapper)
+    // On the person: the name, the email and the note decide their own direction.
+    await go(s, '/people/users/m9')
+    expect(s.wrapper.get('[data-panel] h3').attributes('dir')).toBe('auto')
+    expect(s.wrapper.get('[data-way="email"]').attributes('dir')).toBe('auto')
+    expect(s.wrapper.get('textarea[data-field="note"]').attributes('dir')).toBe('auto')
+  })
+
+  it('says a person with no sign-in behind them has none, and offers no code', async () => {
+    stub({}, signers())
+    const { wrapper } = await render({ url: '/people/users/n1' })
+    const block = wrapper.get('[data-block="way"]')
+    expect(block.text()).toContain('No sign-in behind this person')
+    expect(block.text()).toContain('Nobody can sign in as them. They were added without one.')
+    expect(wrapper.find('[data-act="reveal-code"]').exists()).toBe(false)
+    expect(wrapper.get('[data-panel]').text()).toContain('no sign-in behind them')
+  })
+
+  it('shows a note, saves it with the person’s own words, says so, and reads the people again', async () => {
+    const saved = signers().map((m) => (m.id === 'n1' ? { ...m, note: 'Gone from the list.' } : m))
+    stub(
+      {
+        [`PUT ${T}/users/n1/note`]: { status: 200, body: { userId: 'n1', changed: true } },
+        [`GET ${T}/access`]: [
+          { status: 200, body: { members: signers(), signInRead: true } },
+          { status: 200, body: { members: saved, signInRead: true } },
+        ],
+      },
+      signers(),
+    )
+    const { wrapper } = await render({ url: '/people/users/n1' })
+    const area = wrapper.get('textarea[data-field="note"]')
+    expect((area.element as HTMLTextAreaElement).value).toBe('Left over from the first import, nobody signs in as this one')
+    expect(area.attributes('maxlength')).toBe('1000')
+    expect(area.attributes('placeholder')).toBe('Anything you want to remember about this person')
+    expect(wrapper.get('[data-block="note"]').text()).toContain('Written by an administrator and kept on the person.')
+    // Nothing changed, nothing to save.
+    expect(wrapper.get('[data-act="save-note"]').attributes('disabled')).toBeDefined()
+
+    await area.setValue('Gone from the list.\nSecond line.')
+    expect(wrapper.get('[data-act="save-note"]').attributes('disabled')).toBeUndefined()
+    await area.setValue('Left over from the first import, nobody signs in as this one')
+    expect(wrapper.get('[data-act="save-note"]').attributes('disabled')).toBeDefined()
+    await area.setValue('Gone from the list.')
+    await wrapper.get('[data-act="save-note"]').trigger('click')
+    await settle(wrapper)
+    expect(writes()).toEqual([{ method: 'PUT', url: `${T}/users/n1/note`, body: { note: 'Gone from the list.' }, csrf: 'tok-1' }])
+    // Said once, under the note, and not again at the foot of the panel.
+    expect(wrapper.findAll('[data-said]')).toHaveLength(1)
+    expect(wrapper.get('[data-block="note"] [data-said="said"]').text()).toBe('The note was saved.')
+    expect([reads('/access'), reads('/roles'), reads('/user-types')]).toEqual([2, 1, 1])
+    expect(wrapper.get('[data-act="save-note"]').attributes('disabled')).toBeDefined()
+    expect(norm(rowOf(wrapper, 'Nina None').text())).toContain('Gone from the list.')
+  })
+
+  it('sends a line break as it was written, and says in words when the note is refused', async () => {
+    stub({ [`PUT ${T}/users/n1/note`]: { status: 422, body: { code: 'err:membership:invalid', detail: 'note too long' } } }, signers())
+    const { wrapper } = await render({ url: '/people/users/n1' })
+    await wrapper.get('textarea[data-field="note"]').setValue('One\nTwo')
+    await wrapper.get('[data-act="save-note"]').trigger('click')
+    await settle(wrapper)
+    expect(writes()[0]!.body).toEqual({ note: 'One\nTwo' })
+    expect(wrapper.get('[data-block="note"] [data-said="refused"]').text()).toBe('The note was not saved: it may be at most 1,000 characters.')
+    expect(wrapper.text()).not.toContain('note too long')
+    // Editing takes the sentence away.
+    await wrapper.get('textarea[data-field="note"]').setValue('One')
+    expect(wrapper.find('[data-said]').exists()).toBe(false)
+  })
+
+  it('opens the invitation from the top right of Users, and asks for a name and then a code before anything is sent', async () => {
+    stub({}, signers())
+    const { wrapper } = await render()
+    expect(wrapper.find('[data-block="invite"]').exists()).toBe(false)
+    await wrapper.get('[data-act="invite-open"]').trigger('click')
+    await settle(wrapper)
+    const panel = wrapper.get('[data-block="invite"]')
+    expect(panel.text()).toContain('Invite a person')
+    expect(panel.text()).toContain('A name and a personal code with its country.')
+    expect(panel.text()).toContain('Name')
+    expect(panel.text()).toContain('To tell people apart. If they ever sign in with an ID card, this record is theirs.')
+    expect((panel.get('select').element as HTMLSelectElement).value).toBe('LV')
+    expect(panel.findAll('option').map((o) => o.text())).toEqual(['LV · Latvia', 'EE · Estonia', 'LT · Lithuania'])
+
+    await button(wrapper, 'Invite').trigger('click')
+    expect(wrapper.get('[data-note="invite-problem"]').text()).toBe('A name is needed.')
+    await wrapper.get('#invite-name').setValue('Ilmārs Tests')
+    await button(wrapper, 'Invite').trigger('click')
+    expect(wrapper.get('[data-note="invite-problem"]').text()).toBe('A personal code is needed.')
+    expect(writes()).toEqual([])
+
+    await button(wrapper, 'Cancel').trigger('click')
+    await settle(wrapper)
+    expect(wrapper.find('[data-block="invite"]').exists()).toBe(false)
+    // What was typed went with the form.
+    await wrapper.get('[data-act="invite-open"]').trigger('click')
+    await settle(wrapper)
+    expect((wrapper.get('#invite-name').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('invites a person by name, code and country, says what the row will read, and keeps the code nowhere', async () => {
+    stub({ [`POST ${T}/people`]: { status: 201, body: { id: 'new-1' } } }, signers())
+    const s = await render()
+    await s.wrapper.get('[data-act="invite-open"]').trigger('click')
+    await settle(s.wrapper)
+    await s.wrapper.get('#invite-name').setValue('Ilmārs Tests')
+    await s.wrapper.get('#invite-code').setValue(shownCode)
+    await button(s.wrapper, 'Invite').trigger('click')
+    await settle(s.wrapper)
+    expect(writes()).toEqual([{ method: 'POST', url: `${T}/people`, body: { displayName: 'Ilmārs Tests', identityCode: shownCode, country: 'LV' }, csrf: 'tok-1' }])
+    expect(s.wrapper.get('[data-said="said"]').text()).toBe('Invited. Ilmārs Tests’s row says invited, not signed in yet until their first card sign-in.')
+    expect(s.wrapper.find('[data-block="invite"]').exists()).toBe(false)
+    expect(reads('/access')).toBe(2)
+    const store = usePeople(s.pinia)
+    expect(JSON.stringify(store.$state)).not.toMatch(anySpelling)
+    expect(stored(localStorage)).not.toMatch(anySpelling)
+    expect(stored(sessionStorage)).not.toMatch(anySpelling)
+  })
+
+  it('sends the country that was chosen', async () => {
+    stub({ [`POST ${T}/people`]: { status: 201, body: { id: 'new-2' } } }, signers())
+    const { wrapper } = await render()
+    await wrapper.get('[data-act="invite-open"]').trigger('click')
+    await settle(wrapper)
+    await wrapper.get('#invite-name').setValue('Mari Test')
+    await wrapper.get('[data-block="invite"] select').setValue('EE')
+    await wrapper.get('#invite-code').setValue(digits)
+    await button(wrapper, 'Invite').trigger('click')
+    await settle(wrapper)
+    expect(writes()[0]!.body).toMatchObject({ displayName: 'Mari Test', country: 'EE' })
+  })
+
+  it.each([
+    [409, 'err:membership:conflict', 'A person with that personal code is already in this workspace.'],
+    [422, 'err:membership:invalid', 'That name or personal code was not accepted. Check them and try again.'],
+    [503, 'err:membership:unavailable', 'This deployment cannot register people just now, so nobody was invited.'],
+  ])('says an invitation refused with %s in words, and keeps the form for another try', async (status, code, words) => {
+    stub({ [`POST ${T}/people`]: { status, body: { code, detail: 'the register’s own text' } } }, signers())
+    const { wrapper } = await render()
+    await wrapper.get('[data-act="invite-open"]').trigger('click')
+    await settle(wrapper)
+    await wrapper.get('#invite-name').setValue('Ilmārs Tests')
+    await wrapper.get('#invite-code').setValue(shownCode)
+    await button(wrapper, 'Invite').trigger('click')
+    await settle(wrapper)
+    expect(wrapper.get('[data-block="invite"] [data-said="refused"]').text()).toBe(words)
+    expect(wrapper.text()).not.toContain('the register’s own text')
+    expect((wrapper.get('#invite-name').element as HTMLInputElement).value).toBe('Ilmārs Tests')
+    expect(reads('/access')).toBe(1)
+  })
+
+  it('does not send a code that cannot be used', async () => {
+    stub({}, signers())
+    const { wrapper } = await render()
+    await wrapper.get('[data-act="invite-open"]').trigger('click')
+    await settle(wrapper)
+    await wrapper.get('#invite-name').setValue('Ilmārs Tests')
+    await wrapper.get('#invite-code').setValue('1234')
+    await button(wrapper, 'Invite').trigger('click')
+    await settle(wrapper)
+    expect(writes()).toEqual([])
+    expect(wrapper.text()).toContain('a personal code has 11 digits')
+  })
+
+  it('says the sign-in, the personal code, the note and the invitation in Latvian', async () => {
+    stub({}, signers())
+    const s = await render({ url: '/people/users/c1', locale: 'lv' })
+    expect(s.wrapper.get('[data-block="way"]').text()).toContain('Personas kods · Latvija')
+    expect(s.wrapper.get('[data-act="reveal-code"]').text()).toBe('Parādīt personas kodu')
+    expect(s.wrapper.get('[data-block="way"]').text()).toContain('Tā parādīšana tiek ierakstīta piekļuves auditā.')
+    expect(s.wrapper.get('[data-block="note"]').text()).toContain('Piezīme')
+    expect(s.wrapper.get('[data-act="save-note"]').text()).toBe('Saglabāt piezīmi')
+    await go(s, '/people/users/i1')
+    expect(s.wrapper.get('[data-panel]').text()).toContain('uzaicināts, vēl nav pieslēdzies')
+    await go(s, '/people/users/n1')
+    expect(s.wrapper.get('[data-block="way"]').text()).toContain('Aiz šīs personas nav pieslēgšanās')
+    await go(s, '/people')
+    // The list is named in the reader's language too.
+    const karl = s.wrapper.findAll('ul[aria-label="Cilvēki"] > li').find((r) => r.text().includes('Karl Card'))!
+    expect(norm(karl.text())).toContain('personas kods · LV')
+    await s.wrapper.get('[data-act="invite-open"]').trigger('click')
+    await settle(s.wrapper)
+    expect(s.wrapper.get('[data-block="invite"]').text()).toContain('Uzaicināt cilvēku')
+    expect(s.wrapper.get('[data-block="invite"]').text()).toContain('Vārds un personas kods ar valsti.')
+    expect(s.wrapper.get('[data-block="invite"] select').findAll('option').map((o) => o.text())).toEqual(['LV · Latvija', 'EE · Igaunija', 'LT · Lietuva'])
+    expect(s.wrapper.text()).not.toContain('configbyte.')
   })
 })
 

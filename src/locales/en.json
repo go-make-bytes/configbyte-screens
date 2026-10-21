@@ -333,9 +333,60 @@
           "last": "Last signed in"
         },
         "marks": {
-          "invited": "has not signed in yet",
+          "invited": "invited, not signed in yet",
           "revoked": "no access any more",
           "away": "{n} days away"
+        },
+        "signInUnread": "How each person signs in could not be read just now, so it is not shown here.",
+        "way": {
+          "email": "Email",
+          "codeOf": "Personal code · {country}",
+          "cardShort": "personal code",
+          "noneShort": "no sign-in behind them",
+          "none": "No sign-in behind this person",
+          "noneN": "Nobody can sign in as them. They were added without one.",
+          "reveal": "Show personal code",
+          "hide": "Hide",
+          "audit": "Showing it is recorded by the access audit service.",
+          "country": {
+            "LV": "Latvia",
+            "EE": "Estonia",
+            "LT": "Lithuania"
+          },
+          "refused": {
+            "audit": "The personal code is not shown: its showing could not be recorded.",
+            "none": "There is no personal code behind this person.",
+            "other": "The personal code could not be shown."
+          }
+        },
+        "note": {
+          "label": "Note",
+          "placeholder": "Anything you want to remember about this person",
+          "save": "Save note",
+          "hint": "Written by an administrator and kept on the person."
+        },
+        "invite": {
+          "open": "Invite a person",
+          "lead": "A name and a personal code with its country.",
+          "name": "Name",
+          "code": "Personal code",
+          "country": "Country",
+          "placeholder": "as on their ID card",
+          "note": "To tell people apart. If they ever sign in with an ID card, this record is theirs.",
+          "submit": "Invite",
+          "cancel": "Cancel",
+          "errName": "A name is needed.",
+          "errCode": "A personal code is needed.",
+          "refused": {
+            "empty": "Enter the person’s code.",
+            "malformed": "A code is written in letters and digits only.",
+            "unknownType": "“{type}” is not an identity type these screens know. Enter the code itself and choose the country beside it.",
+            "notAPerson": "“{type}” identifies an organisation, not a person. Enter the person’s own code.",
+            "ambiguous": "This starts like an identity type but carries none. Enter the code itself and choose the country beside it.",
+            "countryMissing": "Choose the country that issued the code.",
+            "length": "{country}: a personal code has {want} digits — this one has {got}.",
+            "digits": "{country}: a personal code is written in digits only."
+          }
         },
         "state": {
           "arrival": "signed in, given nothing yet",
@@ -453,7 +504,9 @@
         "roleDeleted": "The role was deleted.",
         "typeSaved": "The user type was saved.",
         "typeDeleted": "The user type was deleted.",
-        "corporateLogin": "Saved: people arriving through the corporate login get this from now on."
+        "corporateLogin": "Saved: people arriving through the corporate login get this from now on.",
+        "noteSaved": "The note was saved.",
+        "invited": "Invited. {name}’s row says invited, not signed in yet until their first card sign-in."
       },
       "refused": {
         "lastAdministrator": "{name} is this workspace's last administrator. Make someone else an administrator first.",
@@ -470,6 +523,11 @@
         "typeNameTaken": "Another user type is already called «{name}».",
         "typeReadsAlike": "«{reads}» is how the user type «{other}» reads {language}.",
         "setupBox": "That box sets up the workspace, and only the Administrator checkbox holds it.",
+        "noteInvalid": "The note was not saved: it may be at most 1,000 characters.",
+        "personGone": "This person is not in the workspace any more, so the note was not saved.",
+        "inviteConflict": "A person with that personal code is already in this workspace.",
+        "inviteInvalid": "That name or personal code was not accepted. Check them and try again.",
+        "inviteUnavailable": "This deployment cannot register people just now, so nobody was invited.",
         "unanswered": "The admin service did not answer, so nothing was changed. Try again.",
         "other": "That was not done: {reason}",
         "unreadable": "That was not done: the answer could not be read. Try again."
@@ -530,6 +588,8 @@
         "serviceConnected": "was connected to this workspace",
         "directoryAdmitted": "joined through the corporate login",
         "userRevoked": "took all access from {person}",
+        "noteChanged": "changed the note on {person}",
+        "noteCleared": "cleared the note on {person}",
         "administratorOn": "made {person} an administrator",
         "administratorOff": "made {person} no longer an administrator",
         "serviceRoleGranted": "gave {person} «{what}» in {service}",

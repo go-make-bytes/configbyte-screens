@@ -38,7 +38,27 @@ export interface Member {
   chartUserType: { id: string; name: string; labels?: Labels } | null
   /** The day the register last gave the member access, `YYYY-MM-DD`. */
   lastSignedInOn: string | null
+  /** What an administrator wrote about the member; empty when nothing was. */
+  note: string
+  /** How a person signs in; absent for a service, and for everyone when the register could not read it. */
+  signIn?: SignIn
 }
+
+/** How a person signs in: by an email, by a personal code, or in no way at all. */
+export interface SignIn {
+  /** Whether they can sign in; not said for a member who is not active, whose row carries only the code's mask. */
+  signsIn?: boolean
+  email?: string
+  /** The country that issued the personal code, such as `LV`. */
+  country?: string
+  /** How many characters the personal code has: all the screen ever knows of it until it is shown. */
+  length?: number
+}
+
+/** What showing a personal code answered: the code itself, or why it was not shown. */
+export type Revealed =
+  | { ok: true; code: string; country: string }
+  | { ok: false; why: 'audit' | 'none' | 'notAdministrator' | 'unanswered' | 'unreadable' | 'other' }
 
 /** One of the workspace's own roles, with every box it holds. */
 export interface Role {
@@ -92,6 +112,8 @@ export interface Said {
   language?: string
   /** The host's own sentence, a key of its translator. */
   hostKey?: string
+  /** Where on the screen the words belong, when not in the line every act shares. */
+  place?: 'note' | 'invite'
 }
 
 /** The acts whose refusals read differently. */
@@ -107,9 +129,17 @@ type Act =
   | 'deleteUserType'
   | 'corporateLogin'
   | 'setting'
+  | 'saveNote'
+  | 'invite'
 
 /** The three lists the register keeps for a workspace. */
 type List = 'access' | 'roles' | 'user-types'
+
+/** What the register answers for the people: the members, and whether it could read how each signs in. */
+interface Access {
+  members: Member[]
+  signInRead?: boolean
+}
 
 function unanswered(e: unknown): boolean {
   if (e instanceof ApiError) return e.status === 502 || e.status === 503 || e.status === 504
@@ -123,6 +153,8 @@ export const usePeople = defineStore('configbyte-people', {
     section: '',
     tenant: '',
     members: [] as Member[],
+    /** Whether the register could read how each person signs in; when not, nobody carries it. */
+    signInRead: true,
     roles: [] as Role[],
     userTypes: [] as UserType[],
     services: [] as DeclaringService[],
@@ -202,7 +234,7 @@ export const usePeople = defineStore('configbyte-people', {
       this.settings = {}
       this.settingsRead = false
       const [access, roles, types, vocabulary] = await Promise.allSettled([
-        get<{ members: Member[] }>(this.tenantPath('access')),
+        get<Access>(this.tenantPath('access')),
         get<{ roles: Role[] }>(this.tenantPath('roles')),
         get<{ userTypes: UserType[] }>(this.tenantPath('user-types')),
         get<{ services: DeclaringService[] }>(this.path('config')),
@@ -223,6 +255,7 @@ export const usePeople = defineStore('configbyte-people', {
         return
       }
       this.members = access.value.members ?? []
+      this.signInRead = access.value.signInRead !== false
       this.roles = roles.value.roles ?? []
       this.userTypes = types.value.userTypes ?? []
       this.services = vocabulary.status === 'fulfilled' ? (vocabulary.value.services ?? []) : []
@@ -288,11 +321,14 @@ export const usePeople = defineStore('configbyte-people', {
     async reread(which: List[]) {
       try {
         const [access, roles, types] = await Promise.all([
-          which.includes('access') ? get<{ members: Member[] }>(this.tenantPath('access')) : undefined,
+          which.includes('access') ? get<Access>(this.tenantPath('access')) : undefined,
           which.includes('roles') ? get<{ roles: Role[] }>(this.tenantPath('roles')) : undefined,
           which.includes('user-types') ? get<{ userTypes: UserType[] }>(this.tenantPath('user-types')) : undefined,
         ])
-        if (access) this.members = access.members ?? []
+        if (access) {
+          this.members = access.members ?? []
+          this.signInRead = access.signInRead !== false
+        }
         if (roles) this.roles = roles.roles ?? []
         if (types) this.userTypes = types.userTypes ?? []
       } catch {
@@ -309,17 +345,18 @@ export const usePeople = defineStore('configbyte-people', {
       call: () => Promise<unknown>,
       said: Said['key'],
       values: Said['values'],
-      extra: { reread: List[]; about?: Record<string, string | number>; naming?: Named },
+      extra: { reread: List[]; about?: Record<string, string | number>; naming?: Named; place?: Said['place'] },
     ) {
       this.said = null
+      const place = extra.place ? { place: extra.place } : {}
       try {
         await call()
       } catch (e) {
-        this.said = this.refusal(act, e, { ...values, ...(extra.about ?? {}) }, extra.naming)
+        this.said = { ...this.refusal(act, e, { ...values, ...(extra.about ?? {}) }, extra.naming), ...place }
 
         return false
       }
-      this.said = { kind: 'said', key: said, values }
+      this.said = { kind: 'said', key: said, values, ...place }
       await this.reread(extra.reread)
 
       return true
@@ -340,11 +377,22 @@ export const usePeople = defineStore('configbyte-people', {
 
         return found ? { ...refused(alike, { other: found.other.name, reads: found.reads }), language: found.language } : refused(plain)
       }
+      // A deployment that cannot register people answers 503 to an invitation:
+      // that is its answer, not a service that did not answer.
+      if (act === 'invite' && e instanceof ApiError && e.status === 503) return refused('inviteUnavailable')
       if (unanswered(e)) return refused('unanswered')
       if (!(e instanceof ApiError)) return refused('unreadable')
       // The register, or the coordinator before it, no longer counts this person
       // as an administrator of the workspace.
       if (e.status === 403) return refused('notAdministrator')
+      if (act === 'saveNote') {
+        if (e.status === 422) return refused('noteInvalid')
+        if (e.status === 404) return refused('personGone')
+      }
+      if (act === 'invite') {
+        if (e.status === 422) return refused('inviteInvalid')
+        if (e.status === 409) return refused('inviteConflict')
+      }
       if (e.status === 409) {
         switch (act) {
           case 'administrator':
@@ -528,6 +576,53 @@ export const usePeople = defineStore('configbyte-people', {
           corporateLogin: type.corporateLoginDefault ? 1 : 0,
         },
       })
+    },
+
+    /** Save what an administrator wrote about a person; the people are read again so the list shows it. */
+    setNote(member: Member, note: string) {
+      return this.act(
+        'saveNote',
+        () => put(this.tenantPath(`users/${segment(member.id)}/note`), { note }),
+        'noteSaved',
+        { name: member.displayName },
+        { reread: ['access'], place: 'note' },
+      )
+    },
+
+    /**
+     * Invite a person by name and personal code. The code goes to the register and
+     * nowhere else: it is in no said line, no refusal and nothing this store keeps.
+     */
+    invite(input: { displayName: string; identityCode: string; country: string }) {
+      return this.act(
+        'invite',
+        () => post(this.tenantPath('people'), input),
+        'invited',
+        { name: input.displayName },
+        { reread: ['access'], place: 'invite' },
+      )
+    },
+
+    /**
+     * Ask the register to show a person's personal code. Answers the code for the
+     * panel that asked to hold while it is shown; this store keeps nothing of it. The
+     * register records the showing before it answers, so a showing it could not
+     * record is a code not shown.
+     */
+    async revealCode(member: Member): Promise<Revealed> {
+      try {
+        const shown = await post<{ code: string; country: string }>(this.tenantPath(`users/${segment(member.id)}/identity-code`))
+
+        return { ok: true, code: shown.code, country: shown.country }
+      } catch (e) {
+        if (!(e instanceof ApiError)) return { ok: false, why: unanswered(e) ? 'unanswered' : 'unreadable' }
+        if (e.status === 403) return { ok: false, why: 'notAdministrator' }
+        if (e.status === 404) return { ok: false, why: 'none' }
+        if (e.status === 503) return { ok: false, why: 'audit' }
+        if (e.status === 502 || e.status === 504) return { ok: false, why: 'unanswered' }
+
+        return { ok: false, why: 'other' }
+      }
     },
 
     setCorporateLogin(typeId: string) {

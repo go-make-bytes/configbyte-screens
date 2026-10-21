@@ -7,10 +7,10 @@
 // What is open lives in the address: a tab, and a person, a role or a user type
 // within it, so a link, a refresh and Back keep it. The lists are read once a
 // visit, and an act reads again only the list it changed.
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { PageHeader, Tabs, type TabItem } from 'uibyte'
+import { Button, PageHeader, Tabs, type TabItem } from 'uibyte'
 
 import { useAdminOptions } from '../options'
 import {
@@ -79,9 +79,20 @@ const tabs = computed<TabItem[]>(() => [
 
 const lists: Record<Tab, string> = { users: PEOPLE_ACCESS, roles: PEOPLE_ROLES, types: PEOPLE_USER_TYPES }
 
+/** Whether the invitation form is open. */
+const inviting = ref(false)
+
 function choose(key: string) {
   people.said = null
+  inviting.value = false
   void router.push({ name: lists[key as Tab] })
+}
+
+/** Open the invitation form, on the list: a person open beside it gives way. */
+function invite() {
+  people.said = null
+  inviting.value = true
+  if (place.value === 'user') void router.push({ name: PEOPLE_ACCESS })
 }
 
 /**
@@ -120,6 +131,11 @@ const counts = computed(() => {
   ].join(' · ')
 })
 
+// A person opened takes the form's place; what was typed in it goes with it.
+watch(place, (now) => {
+  if (now !== 'users') inviting.value = false
+})
+
 // An address naming something the lists do not hold opens the list it belongs to.
 watch(
   [() => people.loaded, place, id],
@@ -148,7 +164,11 @@ onMounted(() => {
       :eyebrow="t('configbyte.frame.shell.workspace')"
       :title="t(w('title'))"
       :subtitle="people.loaded && !people.failed ? counts : undefined"
-    />
+    >
+      <template v-if="tab === 'users' && people.loaded && !people.failed" #actions>
+        <Button size="sm" data-act="invite-open" @click="invite">{{ t(w('users.invite.open')) }}</Button>
+      </template>
+    </PageHeader>
 
     <Tabs class="mt-5" :tabs="tabs" :model-value="tab" :label="t(w('title'))" @update:model-value="choose" @click="pressed" />
 
@@ -157,7 +177,12 @@ onMounted(() => {
       {{ failure }}
     </p>
     <template v-else-if="people.loaded">
-      <UsersList v-if="place === 'users' || place === 'user'" :open-id="place === 'user' ? id : ''" />
+      <UsersList
+        v-if="place === 'users' || place === 'user'"
+        :open-id="place === 'user' ? id : ''"
+        :inviting="inviting"
+        @close-invite="inviting = false"
+      />
       <RolesList v-else-if="place === 'roles'" />
       <RolePage v-else-if="place === 'role'" :role-id="route.name === PEOPLE_ROLE ? id : ''" />
       <UserTypesList v-else-if="place === 'types'" />

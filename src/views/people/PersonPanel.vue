@@ -7,8 +7,11 @@ import { RouterLink } from 'vue-router'
 import { Button, Chip, ConfirmAsk, SelectField, type SelectOption } from 'uibyte'
 
 import SaidLine from '../../components/SaidLine.vue'
+import { wayOf } from '../../lib/people'
 import { HISTORY } from '../../routes'
 import { usePeople, type Member } from '../../stores/people'
+import PersonNote from './PersonNote.vue'
+import PersonWay from './PersonWay.vue'
 import { useLast } from './useLast'
 
 const props = defineProps<{ member: Member }>()
@@ -36,8 +39,12 @@ onMounted(() => void people.ensurePositions())
 const revoked = computed(() => props.member.status === 'revoked')
 const firstName = computed(() => props.member.displayName.split(/\s+/)[0] ?? props.member.displayName)
 
+/** What the last act said, unless it was the note's, which says it under the note. */
+const saidHere = computed(() => (people.said && people.said.place !== 'note' ? people.said : null))
+
 function stateOf(m: Member): string {
   if (m.status === 'invited') return t(w('marks.invited'))
+  if (wayOf(m)?.kind === 'none') return t(w('way.noneShort'))
   if (m.status === 'revoked') return t(w('marks.revoked'))
   if (m.arrival) return t(w('state.arrival'))
 
@@ -99,11 +106,15 @@ const link =
 <template>
   <div data-panel>
     <div class="px-[18px] pb-3 pt-3.5">
-      <h3 class="text-[18px] font-semibold tracking-tight">{{ member.displayName }}</h3>
+      <h3 class="text-[18px] font-semibold tracking-tight" dir="auto">{{ member.displayName }}</h3>
       <p class="mt-0.5 text-[12.5px] text-muted-strong">
         {{ stateOf(member) }}<template v-if="member.lastSignedInOn"> · {{ t(w('panel.last'), { when: lastSignedIn(member) }) }}</template>
       </p>
     </div>
+
+    <PersonWay :member="member" />
+    <!-- A revoked person's note went with their access; none is written on them again. -->
+    <PersonNote v-if="!revoked" :member="member" />
 
     <div v-if="revoked" :class="section">
       <p class="text-[12.5px] text-muted-strong">{{ t(w('panel.gone')) }}</p>
@@ -112,7 +123,7 @@ const link =
           {{ t(w('panel.history'), { name: firstName }) }}
         </RouterLink>
       </p>
-      <SaidLine v-if="people.said" :said="people.said" class="mt-3" />
+      <SaidLine v-if="saidHere" :said="saidHere" class="mt-3" />
     </div>
 
     <template v-else>
@@ -170,7 +181,7 @@ const link =
         </label>
       </div>
 
-      <SaidLine v-if="people.said" :said="people.said" class="mx-[18px] mb-1 mt-1" />
+      <SaidLine v-if="saidHere" :said="saidHere" class="mx-[18px] mb-1 mt-1" />
 
       <div :class="section">
         <ConfirmAsk

@@ -333,9 +333,60 @@
           "last": "Pēdējoreiz pieslēdzies"
         },
         "marks": {
-          "invited": "vēl nav pieslēdzies",
+          "invited": "uzaicināts, vēl nav pieslēdzies",
           "revoked": "vairs nav piekļuves",
           "away": "nav pieslēdzies {n} dienas"
+        },
+        "signInUnread": "Šobrīd neizdevās nolasīt, kā katrs cilvēks pieslēdzas, tāpēc tas šeit netiek rādīts.",
+        "way": {
+          "email": "E-pasts",
+          "codeOf": "Personas kods · {country}",
+          "cardShort": "personas kods",
+          "noneShort": "nav pieslēgšanās",
+          "none": "Aiz šīs personas nav pieslēgšanās",
+          "noneN": "Neviens nevar pieslēgties kā viņš. Pievienots bez pieslēgšanās.",
+          "reveal": "Parādīt personas kodu",
+          "hide": "Slēpt",
+          "audit": "Tā parādīšana tiek ierakstīta piekļuves auditā.",
+          "country": {
+            "LV": "Latvija",
+            "EE": "Igaunija",
+            "LT": "Lietuva"
+          },
+          "refused": {
+            "audit": "Personas kods netiek rādīts: tā parādīšanu neizdevās ierakstīt.",
+            "none": "Aiz šīs personas nav personas koda.",
+            "other": "Personas kodu neizdevās parādīt."
+          }
+        },
+        "note": {
+          "label": "Piezīme",
+          "placeholder": "Viss, ko vēlaties atcerēties par šo cilvēku",
+          "save": "Saglabāt piezīmi",
+          "hint": "Administratora rakstīta, glabājas pie cilvēka."
+        },
+        "invite": {
+          "open": "Uzaicināt cilvēku",
+          "lead": "Vārds un personas kods ar valsti.",
+          "name": "Vārds",
+          "code": "Personas kods",
+          "country": "Valsts",
+          "placeholder": "kā ID kartē",
+          "note": "Lai cilvēkus atšķirtu. Ja viņi kādreiz pieslēgsies ar ID karti, šis ieraksts būs viņu.",
+          "submit": "Uzaicināt",
+          "cancel": "Atcelt",
+          "errName": "Vajadzīgs vārds.",
+          "errCode": "Vajadzīgs personas kods.",
+          "refused": {
+            "empty": "Ievadiet personas kodu.",
+            "malformed": "Kods rakstāms tikai ar burtiem un cipariem.",
+            "unknownType": "“{type}” nav šiem ekrāniem zināms identitātes veids. Ievadiet pašu kodu un izvēlieties valsti blakus.",
+            "notAPerson": "“{type}” apzīmē organizāciju, nevis personu. Ievadiet pašas personas kodu.",
+            "ambiguous": "Šis sākas kā identitātes veids, bet tādu nesatur. Ievadiet pašu kodu un izvēlieties valsti blakus.",
+            "countryMissing": "Izvēlieties valsti, kas izsniegusi kodu.",
+            "length": "{country}: personas kodam ir {want} cipari — šim ir {got}.",
+            "digits": "{country}: personas kods rakstāms tikai ar cipariem."
+          }
         },
         "state": {
           "arrival": "pieslēdzies, vēl nekas nav piešķirts",
@@ -453,7 +504,9 @@
         "roleDeleted": "Loma izdzēsta.",
         "typeSaved": "Lietotāja veids saglabāts.",
         "typeDeleted": "Lietotāja veids izdzēsts.",
-        "corporateLogin": "Saglabāts: no šī brīža to saņem cilvēki, kas ienāk ar uzņēmuma pieteikšanos."
+        "corporateLogin": "Saglabāts: no šī brīža to saņem cilvēki, kas ienāk ar uzņēmuma pieteikšanos.",
+        "noteSaved": "Piezīme saglabāta.",
+        "invited": "{name} uzaicināts. Rindā rakstīts: uzaicināts, vēl nav pieslēdzies, līdz pirmajai pieslēgšanās reizei ar karti."
       },
       "refused": {
         "lastAdministrator": "{name} ir šīs darbvietas pēdējais administrators. Vispirms padariet par administratoru kādu citu.",
@@ -470,6 +523,11 @@
         "typeNameTaken": "Cits lietotāja veids jau saucas «{name}».",
         "typeReadsAlike": "Lietotāja veids «{other}» {language} jau saucas «{reads}».",
         "setupBox": "Šī atļauja iestata darbvietu, un to dod tikai atzīme Administrators.",
+        "noteInvalid": "Piezīme netika saglabāta: tā drīkst būt ne garāka par 1000 rakstzīmēm.",
+        "personGone": "Šī persona vairs nav darbvietā, tāpēc piezīme netika saglabāta.",
+        "inviteConflict": "Cilvēks ar šo personas kodu jau ir šajā darbvietā.",
+        "inviteInvalid": "Šis vārds vai personas kods netika pieņemts. Pārbaudiet tos un mēģiniet vēlreiz.",
+        "inviteUnavailable": "Šī izvietošana šobrīd nevar reģistrēt cilvēkus, tāpēc neviens netika uzaicināts.",
         "unanswered": "Administrēšanas serviss neatbildēja, tāpēc nekas netika mainīts. Mēģiniet vēlreiz.",
         "other": "Tas netika izdarīts: {reason}",
         "unreadable": "Tas netika izdarīts: atbildi nevarēja nolasīt. Mēģiniet vēlreiz."
@@ -530,6 +588,8 @@
         "serviceConnected": "tika pievienots šai darbvietai",
         "directoryAdmitted": "pievienojās ar uzņēmuma pieteikšanos",
         "userRevoked": "atņēma {person} visu piekļuvi",
+        "noteChanged": "mainīja piezīmi par {person}",
+        "noteCleared": "notīrīja piezīmi par {person}",
         "administratorOn": "padarīja {person} par administratoru",
         "administratorOff": "atcēla {person} no administratora",
         "serviceRoleGranted": "piešķīra {person} «{what}» servisā {service}",

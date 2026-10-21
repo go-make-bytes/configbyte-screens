@@ -668,3 +668,28 @@ describe('a workspace’s opening, its services in their own words', () => {
     expect(out).toContain('«stock · clerk» in Stock modules')
   })
 })
+
+describe('History › notes on people', () => {
+  const written = registerOnly([
+    ev('n2', '2026-10-03T10:02:00Z', 'sub:L', 'noteChanged', { cleared: true }, 'm2'),
+    ev('n1', '2026-10-03T10:01:00Z', 'sub:L', 'noteChanged', { cleared: false }, 'm2'),
+  ])
+
+  it('says a note changed, and a note cleared, under the administrator, about the person', async () => {
+    stub(written)
+    const { wrapper } = await render()
+    const out = lines(wrapper)
+    expect(out).toHaveLength(2)
+    expect(out[0]).toContain('Laura Zariņa cleared the note on Jānis Ozols')
+    expect(out[1]).toContain('Laura Zariņa changed the note on Jānis Ozols')
+    expect(out.join(' ')).not.toContain('has no words for yet')
+  })
+
+  it('says both in Latvian', async () => {
+    stub(written)
+    const { wrapper } = await render({ locale: 'lv' })
+    const out = lines(wrapper)
+    expect(out[0]).toContain('notīrīja piezīmi par Jānis Ozols')
+    expect(out[1]).toContain('mainīja piezīmi par Jānis Ozols')
+  })
+})

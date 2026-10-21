@@ -213,6 +213,8 @@ export function registerWords(line: HistoryLine, names: Names): Worded | null {
       return about('directoryAdmitted')
     case 'userRevoked':
       return by('userRevoked', { person })
+    case 'noteChanged':
+      return by(p.cleared === true ? 'noteCleared' : 'noteChanged', { person })
     case 'roleGranted':
     case 'roleRevoked': {
       const given = line.kind === 'roleGranted'
