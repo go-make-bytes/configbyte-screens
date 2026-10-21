@@ -3,6 +3,59 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.11.0
+
+People & access says how each person signs in, keeps a note about each person, and can invite a person.
+
+Built on `uibyte` `v0.18.0`, unchanged. It needs the membership register to answer what is listed below under
+*What the register must answer*; against a register that does not yet, the screens still work, and simply have
+nothing to say about how people sign in.
+
+### Added
+
+- **How each person signs in, under their name.** The Users list says what names the person: their email, or
+  *personal code · LV* and the code masked (one bullet for each character it has, never more than sixteen), or *no
+  sign-in behind them*. When the register could not read it, the list says so once above it and shows none.
+- **Showing a personal code.** An open person starts with the same, and an active person who signs in with a card
+  has **Show personal code**: pressed, the code is shown with its country until **Hide**, until another person opens or
+  the panel closes. It is never kept anywhere but the open panel. The panel says, always, that showing it is recorded
+  by the access audit service; a code the register would not show (it could not record the showing, or there is
+  none) is not shown, and the reason is said in words. A person invited and not yet signed in has their code drawn
+  masked with no way to show it: an invitation is anyone's to send, so their code is shown to nobody.
+- **A note about each person.** Written by an administrator under the person's sign-in, up to 1,000 characters with
+  line breaks kept, saved with **Save note** (not offered while it is unchanged). The first words follow the name on
+  the list. A revoked person has no note: it went with their access, and none is offered to write.
+- **Invite a person**, at the top right of Users: a name and a personal code with its country (Latvia first, then
+  Estonia and Lithuania), the code in the kit's identity-code field. A name or a code left out is said before
+  anything is sent, and so is a code that cannot be used. The invited person's row reads *invited, not signed in yet*.
+- **History** says *changed the note on …* and *cleared the note on …*, in both languages.
+- Words for all of it in English and Latvian.
+- **A person's own words stay apart from the text around them.** A name, an email and a note are each drawn
+  isolated, deciding their own direction, so a character that turns text right to left inside one cannot carry the
+  words beside it along.
+
+### Changed
+
+- A person invited and not yet signed in reads *invited, not signed in yet* where it read *has not signed in yet*, in
+  the list and on the person. The filter that counts them keeps its name.
+
+### What the register must answer
+
+- `GET tenants/{id}/access` answers `{"members": […], "signInRead": true}`. Each member carries `"note"` (text, empty
+  when none), and each person `"signIn"`: `{"signsIn": true, "email": "…"}`, or `{"signsIn": true, "country": "LV",
+  "length": 11}` for a personal code, or `{"signsIn": false}`; for a person invited and not yet signed in, only
+  `{"country": "LV", "length": 11}`, or `{}`. When `signInRead` is `false`, no member carries `signIn`. An answer without `signInRead` is read as `true`.
+- `PUT tenants/{id}/users/{user}/note` with `{"note": "…"}`: `200` when saved; `422` when refused; `404` when the
+  person is not there.
+- `POST tenants/{id}/people` with `{"displayName": "…", "identityCode": "…", "country": "LV"}`: `201` when invited;
+  `422` when refused; `409` when the person is already in the workspace; `503` when the deployment cannot register
+  people.
+- `POST tenants/{id}/users/{user}/identity-code`, answering `{"code": "…", "country": "LV"}`: `404` when there is
+  none; `409` for a person not active here; `503` when the showing could not be recorded, in which case nothing is
+  shown.
+- The register's history may carry `noteChanged` lines with `{"cleared": true|false}`, written under the
+  administrator, about the person.
+
 ## v0.10.0
 
 History speaks of a workspace's services as services, in the reader's language.

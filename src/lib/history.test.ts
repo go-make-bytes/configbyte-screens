@@ -230,3 +230,16 @@ describe('one act, one line', () => {
     expect(withoutPairedAdministratorLines([lonely, at('a', 'roleGranted', { service: 'orders', group: 'orders', level: 'clerk' })])).toHaveLength(2)
   })
 })
+
+describe('the lines about a person’s note', () => {
+  it('says a changed note and a cleared one, by the administrator, naming the person', () => {
+    expect(registerWords(line('noteChanged', { cleared: false }, 'm1'), names)).toEqual({
+      who: { actor: 'sub:A' },
+      words: { key: 'configbyte.history.lines.noteChanged', values: { person: 'Jānis Ozols' } },
+    })
+    expect(registerWords(line('noteChanged', { cleared: true }, 'm1'), names)).toEqual({
+      who: { actor: 'sub:A' },
+      words: { key: 'configbyte.history.lines.noteCleared', values: { person: 'Jānis Ozols' } },
+    })
+  })
+})

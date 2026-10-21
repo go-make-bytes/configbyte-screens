@@ -26,14 +26,17 @@ import {
   type StatusRole,
 } from 'uibyte'
 
-import { belongs, counts, daysAway, isAway, PAGE_SIZE, SHOWS, typeInForce, type Show } from '../../lib/people'
+import { belongs, counts, daysAway, isAway, noteStart, PAGE_SIZE, SHOWS, typeInForce, wayOf, type Show } from '../../lib/people'
 import { PEOPLE_ACCESS, PEOPLE_USER } from '../../routes'
 import { usePeople, type Member } from '../../stores/people'
+import SaidLine from '../../components/SaidLine.vue'
 import ByAccess from './ByAccess.vue'
+import InvitePanel from './InvitePanel.vue'
 import PersonPanel from './PersonPanel.vue'
 import { useLast } from './useLast'
 
-const props = defineProps<{ openId: string }>()
+const props = defineProps<{ openId: string; inviting?: boolean }>()
+const emit = defineEmits<{ closeInvite: [] }>()
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -141,6 +144,16 @@ function mark(m: Member): { status: StatusRole; label: string } | null {
   return null
 }
 
+/** The words under a name that say what names the person: their email, or their personal code masked, or that nothing signs in as them. */
+function wayWords(m: Member): string {
+  const way = wayOf(m)
+  if (!way) return ''
+  if (way.kind === 'email') return way.email
+  if (way.kind === 'none') return t(w('way.noneShort'))
+
+  return `${t(w('way.cardShort'))} · ${way.country}${way.mask ? ` ${way.mask}` : ''}`
+}
+
 const link = (m: Member) => ({ to: { name: PEOPLE_USER, params: { id: m.id } } })
 const more = (n: number) => t(w('arrivals.more'), { n })
 </script>
@@ -150,6 +163,10 @@ const more = (n: number) => t(w('arrivals.more'), { n })
     <!-- With a person open and no room, the person takes the whole place, with a way back. -->
     <div :class="member ? '@max-[760px]:hidden' : ''">
       <p class="max-w-[92ch] text-[13.5px] text-muted-strong">{{ t(w('lead')) }}</p>
+      <p v-if="!people.signInRead" class="mt-2 max-w-[92ch] text-[12.5px] text-muted-strong" data-note="sign-in-unread">{{ t(w('signInUnread')) }}</p>
+
+      <InvitePanel v-if="inviting && !member" @close="emit('closeInvite')" />
+      <SaidLine v-else-if="people.said?.place === 'invite' && people.said.kind === 'said'" :said="people.said" class="mt-3" />
 
       <section
         v-if="arrivals.length"
@@ -165,8 +182,7 @@ const more = (n: number) => t(w('arrivals.more'), { n })
               class="rounded-chip focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
               @click="open(m)"
             >
-              {{ m.displayName }}
-              <small class="ml-1 text-[12px] text-muted">{{ lastSignedIn(m) }}</small>
+              <bdi>{{ m.displayName }}</bdi> <small class="ml-1 text-[12px] text-muted">{{ lastSignedIn(m) }}</small>
             </button>
           </Chip>
           <button
@@ -236,9 +252,19 @@ const more = (n: number) => t(w('arrivals.more'), { n })
           :current="openId || undefined"
         >
           <template #cell-name="{ row }">
-            <span class="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1" :class="row.status === 'revoked' ? 'text-faint' : ''">
-              <b class="font-semibold">{{ row.displayName }}</b>
-              <StatusPill v-if="mark(row)" size="sm" :status="mark(row)!.status" :label="mark(row)!.label" />
+            <span class="flex min-w-0 flex-col" :class="row.status === 'revoked' ? 'text-faint' : ''">
+              <span class="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <b class="font-semibold"><bdi>{{ row.displayName }}</bdi></b>
+                <StatusPill v-if="mark(row)" size="sm" :status="mark(row)!.status" :label="mark(row)!.label" />
+              </span>
+              <small v-if="wayWords(row) || noteStart(row.note ?? '')" class="truncate text-[12px] text-muted" data-line="way">
+                <span v-if="wayWords(row)" :class="wayOf(row)?.kind === 'none' ? 'font-sans text-status-blocked-fg' : 'font-mono'">
+                  <bdi v-if="wayOf(row)?.kind === 'email'">{{ wayWords(row) }}</bdi>
+                  <template v-else>{{ wayWords(row) }}</template>
+                </span>
+                <template v-if="wayWords(row) && noteStart(row.note ?? '')"> · </template>
+                <i v-if="noteStart(row.note ?? '')" class="not-italic text-muted-strong" data-line="note"><bdi>{{ noteStart(row.note ?? '') }}</bdi></i>
+              </small>
             </span>
           </template>
           <!-- A cell always draws an element: a slot that draws nothing falls back to the raw value. -->
