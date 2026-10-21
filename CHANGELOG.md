@@ -7,6 +7,10 @@ and the package is consumed as a pinned git tag.
 
 History speaks of a workspace's services as services, in the reader's language.
 
+Built on `uibyte` `v0.18.0`, so People & access's tabs take the kit's new look (one underline under the chosen tab, a
+strip that scrolls within itself instead of wrapping): move the `uibyte` pin together with this one, then
+`npm ls uibyte` reads one copy.
+
 ### Added
 
 - **`history.services`** — the host's word for a service, by the key it is a member under (`svc:orders`) or by the
