@@ -245,6 +245,19 @@ export interface HistoryOptions {
    */
   boxes?: Record<string, string>
   /**
+   * The host's word for a service the workspace runs on, by the key it is a member
+   * under (`svc:orders`) or by the service key a grant names (`orders`). A service it
+   * does not name keeps the name the register holds.
+   */
+  services?: Record<string, string>
+  /**
+   * The host's word for what a level of a service's ladder lets its holder do, by
+   * group and level (`stock/clerk`), said in a line that gives or takes it. The
+   * register's own levels are named by the screens; a level neither names is said by
+   * its group and level.
+   */
+  grants?: Record<string, string>
+  /**
    * Called with the keys of the areas the list reads, when it opens and again when a
    * tick turns on, before their lines are drawn, so the host can read what its own
    * sentences name. A host that already holds it reads nothing.

@@ -67,6 +67,8 @@ const names: Names = {
   box: (p) => ({ 'orders/order:view': 'See orders', 'orders/order:edit': 'Change orders' })[p] ?? p,
   entitlement: (service) => ({ orders: 'Orders' })[service] ?? '',
   service: (key) => ({ orders: 'Order register' })[key] ?? '',
+  grant: (group, level) => ({ 'membership/chart': 'see the Chart of authority' } as Record<string, string>)[`${group}/${level}`] ?? '',
+  isService: (id) => id === 'm5',
 }
 const line = (kind: string, payload: Record<string, unknown>, userId = '') => ({ section: 'members', id: 'e1', at: '2026-10-03T11:40:00Z', actor: 'sub:A', kind, payload, userId })
 
@@ -152,14 +154,24 @@ describe('the membership register’s lines', () => {
     })
   })
 
+  it('says a service was connected to the workspace where a person accepted the invitation', () => {
+    expect(registerWords(line('claimAttached', {}, 'm5'), names)!.words.key).toBe('configbyte.history.lines.serviceConnected')
+    expect(registerWords(line('claimAttached', {}, 'm1'), names)!.words.key).toBe('configbyte.history.lines.claimAttached')
+  })
+
   it('answers nothing for a kind it does not know', () => {
     expect(registerWords(line('somethingNew', {}), names)).toBeNull()
   })
 
-  it('says a service’s role as its group and level, in the service it names, or in another one', () => {
+  it('says a service’s role in words where they are known, else as its group and level, in the service it names, or in another one', () => {
     expect(registerWords(line('roleGranted', { service: 'orders', group: 'orders', level: 'clerk' }, 'm1'), names)!.words).toEqual({
       key: 'configbyte.history.lines.serviceRoleGranted',
-      values: { person: 'Jānis Ozols', group: 'orders', level: 'clerk', service: 'Order register' },
+      values: { person: 'Jānis Ozols', what: 'orders · clerk', service: 'Order register' },
+    })
+    expect(registerWords(line('roleGranted', { service: 'orders', group: 'membership', level: 'chart' }, 'm1'), names)!.words.values).toEqual({
+      person: 'Jānis Ozols',
+      what: 'see the Chart of authority',
+      service: 'Order register',
     })
     expect(registerWords(line('roleRevoked', { service: 'unlisted', group: 'orders', level: 'clerk' }, 'm1'), names)!.words.key).toBe(
       'configbyte.history.lines.serviceRoleRevokedElsewhere',

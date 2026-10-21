@@ -506,6 +506,15 @@
         "failed": "servisā radās kļūda",
         "other": "serviss atbildēja ar statusu {status}"
       },
+      "levels": {
+        "membership": {
+          "admin": "administrēt darbvietu",
+          "chart": "redzēt Pilnvaru shēmu",
+          "definitions": "redzēt darbvietas lomas",
+          "placements": "ziņot, kur tas izmanto lomas",
+          "resolve": "redzēt, kas ir darbvietā"
+        }
+      },
       "lines": {
         "unworded": "mainīja kaut ko, ko šis saraksts vēl nespēj aprakstīt",
         "boxUnnamed": "atļauju, ko neviens serviss vairs nepiedāvā",
@@ -518,14 +527,15 @@
         "tenantRenamed": "pārdēvēja darbvietu «{from}» par «{to}»",
         "userInvited": "uzaicināja {person}",
         "claimAttached": "pieņēma uzaicinājumu",
+        "serviceConnected": "tika pievienots šai darbvietai",
         "directoryAdmitted": "pievienojās ar uzņēmuma pieteikšanos",
         "userRevoked": "atņēma {person} visu piekļuvi",
         "administratorOn": "padarīja {person} par administratoru",
         "administratorOff": "atcēla {person} no administratora",
-        "serviceRoleGranted": "piešķīra {person} «{group} · {level}» servisā {service}",
-        "serviceRoleGrantedElsewhere": "piešķīra {person} «{group} · {level}» citā servisā",
-        "serviceRoleRevoked": "atņēma {person} «{group} · {level}» servisā {service}",
-        "serviceRoleRevokedElsewhere": "atņēma {person} «{group} · {level}» citā servisā",
+        "serviceRoleGranted": "piešķīra {person} «{what}» servisā {service}",
+        "serviceRoleGrantedElsewhere": "piešķīra {person} «{what}» citā servisā",
+        "serviceRoleRevoked": "atņēma {person} «{what}» servisā {service}",
+        "serviceRoleRevokedElsewhere": "atņēma {person} «{what}» citā servisā",
         "administratorByOperator": "tika iecelts par administratoru — to izdarīja izvietojuma uzturētājs",
         "administratorOffByOperator": "vairs nav administrators — to izdarīja izvietojuma uzturētājs",
         "administratorSeeded": "tika iecelts par darbvietas pirmo administratoru",

@@ -32,7 +32,7 @@ import { useAdminSession } from '../stores/session'
 /** What `who` holds for the lines of whoever runs the deployment. */
 const OPERATOR = 'operator'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const options = useAdminOptions()
 const session = useAdminSession()
 const people = usePeople()
@@ -160,9 +160,19 @@ const boxWords = computed(() => {
 /** A host's word for a key a line carries: only a word the host gave, never something every object has. */
 const ownWord = (words: Record<string, string> | undefined, key: string): string =>
   words && Object.prototype.hasOwnProperty.call(words, key) && typeof words[key] === 'string' ? words[key]! : ''
+/** A member by the name a reader knows it by: a service in the host's words where it gives some, else as the register holds it. */
+function memberName(m: { subjectKey: string; displayName: string; kind?: string }): string {
+  const word = m.kind === 'service' ? ownWord(options.history?.services, m.subjectKey) : ''
+
+  return word ? t(word) : m.displayName
+}
 
 const names: Names = {
-  member: (id) => people.byId(id)?.displayName ?? '',
+  member: (id) => {
+    const m = people.byId(id)
+
+    return m ? memberName(m) : ''
+  },
   role: (id) => people.roles.find((r) => r.id === id)?.name ?? '',
   type: (id) => people.userTypes.find((u) => u.id === id)?.name ?? learnt.value.types.get(id) ?? '',
   position: (id) => people.positions.find((p) => p.id === id)?.name ?? learnt.value.positions.get(id) ?? '',
@@ -180,9 +190,19 @@ const names: Names = {
   service: (key) => {
     if (!key) return ''
     if (key === options.register) return lexicon.value.titles[key] ?? ''
+    const word = ownWord(options.history?.services, key)
 
-    return people.services.find((s) => s.key === key)?.displayName ?? ''
+    return word ? t(word) : (people.services.find((s) => s.key === key)?.displayName ?? '')
   },
+  grant: (group, level) => {
+    const word = ownWord(options.history?.grants, `${group}/${level}`)
+    if (word) return t(word)
+    // The register's own ladder is named by these screens.
+    const own = w(`levels.${group}.${level}`)
+
+    return te(own) ? t(own) : ''
+  },
+  isService: (id) => people.byId(id)?.kind === 'service',
 }
 
 /** The names the host's sentences may use, from the lists this screen already holds. */
@@ -219,11 +239,11 @@ function beginsWith(worded: Worded | null, line: HistoryLine): { key: string; na
   if (worded?.who.member) {
     const m = people.byId(worded.who.member)
 
-    return m ? { key: m.subjectKey, name: m.displayName } : { key: '', name: t(w('notInList')) }
+    return m ? { key: m.subjectKey, name: memberName(m) } : { key: '', name: t(w('notInList')) }
   }
   const actorKey = worded?.who.actor ?? line.actor
   const m = people.bySubject(actorKey)
-  if (m) return { key: m.subjectKey, name: m.displayName }
+  if (m) return { key: m.subjectKey, name: memberName(m) }
   // An actor that is not a typed key is a tool or the deployment itself.
   if (!/^(sub|svc):/.test(actorKey)) return { key: OPERATOR, name: t(w('operator')) }
 
@@ -257,12 +277,15 @@ function draw(p: Placed): Drawn {
     kind: line.kind,
     ...(worded?.detail ? { detail: worded.detail } : {}),
     area: areaWord.value.get(p.stream.filter) ?? '',
-    ...(about ? { service: { id: line.userId || subject, name: member?.displayName ?? '' } } : {}),
+    ...(about ? { service: { id: line.userId || subject, name: member ? memberName(member) : '' } } : {}),
   }
 }
 
 const merged = computed(() => merge(history.streams.filter(isShown)))
-const drawn = computed(() => merged.value.lines.map(draw))
+// A service is no newcomer: the user type every arrival receives is not drawn for one.
+const drawn = computed(() =>
+  merged.value.lines.map(draw).filter((d) => !(d.service && d.kind === 'userTypeAssigned' && d.line.payload?.source === 'workspaceDefault')),
+)
 /** A person's lines are the lines that begin with their name. */
 const begun = computed(() => drawn.value.filter((d) => !actor.value || d.begins === actor.value))
 const lines = computed(() => withoutPairedAdministratorLines(begun.value))

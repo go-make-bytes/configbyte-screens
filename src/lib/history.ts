@@ -87,6 +87,10 @@ export interface Names {
   entitlement(service: string, feature: string): string
   /** A service by the name the register lists it under, or the screens' own title when it is the register; empty when unknown. */
   service(key: string): string
+  /** What a level of a service's ladder lets its holder do, in words; empty when nobody names it. */
+  grant(group: string, level: string): string
+  /** Whether a member is a service the workspace runs on rather than a person. */
+  isService(id: string): boolean
 }
 
 /** Corporate login issuers a person knows by name, by the host of the issuer's address. */
@@ -203,7 +207,8 @@ export function registerWords(line: HistoryLine, names: Names): Worded | null {
     case 'userInvited':
       return by('userInvited', { person: person || asText(p.displayName) })
     case 'claimAttached':
-      return about('claimAttached')
+      // A service takes up no invitation: it is connected to the workspace.
+      return about(names.isService(member) ? 'serviceConnected' : 'claimAttached')
     case 'directoryAdmitted':
       return about('directoryAdmitted')
     case 'userRevoked':
@@ -214,8 +219,9 @@ export function registerWords(line: HistoryLine, names: Names): Worded | null {
       if (isAdministrator(p)) return by(given ? 'administratorOn' : 'administratorOff', { person })
       const service = names.service(asText(p.service))
       const key = `serviceRole${given ? 'Granted' : 'Revoked'}${service ? '' : 'Elsewhere'}`
+      const what = names.grant(asText(p.group), asText(p.level)) || `${asText(p.group)} · ${asText(p.level)}`
 
-      return by(key, { person, group: asText(p.group), level: asText(p.level), service })
+      return by(key, { person, what, service })
     }
     case 'administratorSetByOperator':
       return about('administratorByOperator')
