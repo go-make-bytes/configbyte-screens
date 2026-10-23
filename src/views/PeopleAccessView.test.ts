@@ -1489,7 +1489,7 @@ describe('People & access › how people sign in, and what is noted about them',
   it.each([
     [409, 'err:membership:conflict', 'A person with that personal code is already in this workspace.'],
     [422, 'err:membership:invalid', 'That name or personal code was not accepted. Check them and try again.'],
-    [503, 'err:membership:unavailable', 'This deployment cannot register people just now, so nobody was invited.'],
+    [503, 'err:membership:unavailable', 'This deployment cannot add people just now, so nobody was invited.'],
   ])('says an invitation refused with %s in words, and keeps the form for another try', async (status, code, words) => {
     stub({ [`POST ${T}/people`]: { status, body: { code, detail: 'the register’s own text' } } }, signers())
     const { wrapper } = await render()

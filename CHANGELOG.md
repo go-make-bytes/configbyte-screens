@@ -3,6 +3,15 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.11.1
+
+Built on `uibyte` `v0.18.0`, unchanged.
+
+### Changed
+
+- When a deployment cannot take an invitation just now, People & access says *"This deployment cannot add people just
+  now, so nobody was invited."*, where it said *register*.
+
 ## v0.11.0
 
 People & access says how each person signs in, keeps a note about each person, and can invite a person.

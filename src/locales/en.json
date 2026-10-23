@@ -527,7 +527,7 @@
         "personGone": "This person is not in the workspace any more, so the note was not saved.",
         "inviteConflict": "A person with that personal code is already in this workspace.",
         "inviteInvalid": "That name or personal code was not accepted. Check them and try again.",
-        "inviteUnavailable": "This deployment cannot register people just now, so nobody was invited.",
+        "inviteUnavailable": "This deployment cannot add people just now, so nobody was invited.",
         "unanswered": "The admin service did not answer, so nothing was changed. Try again.",
         "other": "That was not done: {reason}",
         "unreadable": "That was not done: the answer could not be read. Try again."
