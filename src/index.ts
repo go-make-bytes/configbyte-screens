@@ -47,4 +47,3 @@ export {
   type SignInMessage,
   type SignInWay,
 } from './lib/signin'
-export { CARD_SOFTWARE_URL, CardError, isCardSoftwareMissing, signChallenge } from './lib/webeid'

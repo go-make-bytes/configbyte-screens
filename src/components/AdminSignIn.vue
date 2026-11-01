@@ -67,7 +67,7 @@ function choose(code: string) {
 /** A way chosen on a closing page starts afresh on the sign-in, which says how it goes. */
 function start(way: SignInWay) {
   if (closed.value) session.reopen()
-  void session.start(way, locale.value)
+  void session.start(way)
 }
 </script>
 
@@ -87,8 +87,6 @@ function start(way: SignInWay) {
     :language="locale"
     :message="closed ? '' : session.message"
     :signed-out-of="w('signedOutOf')"
-    :waiting-for="session.waitingFor"
-    :software-missing="!closed && session.softwareMissing"
     @update:language="choose"
     @start="start"
   >

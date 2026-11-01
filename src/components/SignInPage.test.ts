@@ -49,12 +49,6 @@ describe('the sign-in page', () => {
     expect(w.emitted('start')).toEqual([[ways[1]]])
   })
 
-  it('waits on the card with every way held, saying so on the card’s own button', () => {
-    const w = page({ waitingFor: 'webEid' })
-    expect(wayButtons(w)[0].text()).toBe('Waiting for the card…')
-    for (const b of wayButtons(w)) expect(b.attributes('disabled')).toBeDefined()
-  })
-
   it('draws the host’s mark on the brand’s ink tile, beside the product’s name', () => {
     const w = page()
     const tile = w.get('[data-mark]').element.parentElement!
@@ -80,7 +74,6 @@ describe('the sign-in page', () => {
     ['unmatched', 'alert', 'That sign-in could not be matched to the one that started. Start a fresh one.'],
     ['failed', 'alert', 'The sign-in could not be completed. Try again.'],
     ['unknown', 'alert', 'The sign-in did not complete. Try again.'],
-    ['cardFailed', 'alert', 'That did not complete. Check the card is in the reader and try again.'],
     ['ended', 'status', 'Your sign-in has ended. Sign in again.'],
   ])('says %s in its own words, announced as %s', (message, role, words) => {
     const w = page({ message })
@@ -100,14 +93,6 @@ describe('the sign-in page', () => {
     expect(page({ message: 'notMember' }).get('[data-said]').classes()).toContain('border-l-status-late')
     expect(page({ message: 'signedOut' }).get('[data-said]').classes()).toContain('border-l-status-ontrack')
     expect(page({ message: 'ended' }).get('[data-said]').classes()).toContain('border-l-ink')
-  })
-
-  it('says the card software is missing as a step to take, with where to get it', () => {
-    const w = page({ softwareMissing: true })
-    const box = w.get('[data-said="softwareMissing"]')
-    expect(box.attributes('role')).toBe('alert')
-    expect(box.text()).toContain('The card software is not running')
-    expect(box.get('a').attributes('href')).toMatch(/^https:\/\//)
   })
 
   it('says so when the deployment offers no way to sign in, and draws no button', () => {

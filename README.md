@@ -15,19 +15,16 @@ are called, the lines its Export card lists, and its own admin screens; these sc
 | State | When | What is shown |
 |---|---|---|
 | Signed out | the coordinator answers `401` to `GET /me` | the sign-in page: one button per way the deployment offers (`GET /login/ways`), each by its own name, a sentence saying what each does, the language menu, and a link to everyday work when the deployment names its address |
-| Waiting for the card | an ID-card way was chosen | that way's button says so, and every way is held until the card answers |
-| No card software | the card software or its browser extension is not on this computer | what to install, with a link, above the buttons |
 | Came back unfinished | a sign-in returns with `?error=` and a marker | why, in plain words: cancelled, not a member of this workspace (and to ask its administrator for an invitation), took too long, could not be matched, the identity provider failed, or could not be completed |
-| Not a member | the card's sign-in completes with `403 err:membership:notMember` | the same sentence as a sign-in that came back not a member |
 | Signed in | the person holds a scope the host marks as configuring a section this deployment runs: a setup box, or the administrator's | the frame: the deployment's name, the entries in their groups, the screen opened, and at the foot of the menu the language globe above who is signed in, with the way's own name |
 | Language not kept | a language picked at the globe, and `PUT /me/language` gets no answer or a refusal | the language last kept back, and a sentence under the globe saying so |
 | Nothing to configure | signed in, and no such scope is held | a plain sentence saying so, a link to everyday work, and signing out |
 | Signed out, just now | after *Sign out*, back on the sign-in page | that the person is signed out of this app, and that a company sign-in stays signed in on the computer |
 | Sign-out failed | `POST /logout` gets no answer or a refusal | a sentence saying so; the person stays signed in |
-| Sign-in ended | signed in, and a read is answered `401` (a screen's, the download, or the host's own, which tells the session) | the sign-in page in place of the whole frame, saying *Your sign-in has ended. Sign in again.*, once, however many reads were out; signing in with the card comes back to the screen that was open |
+| Sign-in ended | signed in, and a read is answered `401` (a screen's, the download, or the host's own, which tells the session) | the sign-in page in place of the whole frame, saying *Your sign-in has ended. Sign in again.*, once, however many reads were out |
 | Not answering | `GET /me` gets no answer, `502`, `503` or `504`, or any failure other than not being signed in; or nobody is signed in and `GET /login/ways` fails the same way | a sentence saying nothing was changed, and *Try again*, which asks both again. Someone signed in works on without the ways, missing only the way's name beside their own |
 | Not open from here | the coordinator answers `403 err:configbyte:networkNotAllowed`, or a sign-in comes back with `?error=network` | in the sign-in page's place: a sentence saying the address answers only inside the networks the organisation set, the language menu, no sign-in, and a link to everyday work when the refusal carries its address (`Link: <…>; rel="related"`) |
-| Sign-in not strong enough | a sign-in comes back with `?error=assurance`, or the card's completes with `403 err:session:assuranceTooLow` | in the sign-in page's place: a sentence saying so, every way the deployment offers, and *Back* to the sign-in |
+| Sign-in not strong enough | a sign-in comes back with `?error=assurance` | in the sign-in page's place: a sentence saying so, every way the deployment offers, and *Back* to the sign-in |
 
 **The language before anyone is signed in** is the one chosen on the page in this browser, kept there; else the
 first of the browser's own languages the app carries; else the deployment's (`language` in `GET /login/ways`). Once
@@ -337,9 +334,9 @@ when the plugin is installed, then the host's `words` over them. The frame switc
 
 ### The ID card
 
-Signing in with a card loads the card software's browser library from the host's own origin, at `/web-eid.js`. The
-host serves that file; it is never fetched from elsewhere. A browser that cannot load it is told the card software
-is not there.
+Every way is started the same way: `POST /login/start` naming it, and the browser sent to the authority. The
+authority reads the card on its own sign-in page, with the card software there, and says there when the card or its
+software is not answering. These screens never read the card, and the host serves no card library for them.
 
 ### The sign-in page in another app
 
@@ -356,8 +353,6 @@ from its own backend, the languages it carries, and what to say, and runs the wa
   :languages="[{ code: 'en', name: 'English' }, { code: 'lv', name: 'Latviešu' }]"
   :language="locale"
   :message="message"
-  :waiting-for="waitingFor"
-  :software-missing="softwareMissing"
   @update:language="choose"
   @start="signIn"
 >
@@ -369,16 +364,14 @@ from its own backend, the languages it carries, and what to say, and runs the wa
 |---|---|
 | `product`, `tag` | the name beside the mark, and an optional tag after it |
 | `title`, `lead`, `link` | the heading, the sentence under it, and an optional `{ label, href }` link at its end |
-| `ways` | `{ key, flow: 'card' \| 'redirect', name }` per way, drawn in order, each button carrying `name` exactly |
+| `ways` | `{ key, flow: 'card' \| 'redirect', name }` per way, drawn in order, each button carrying `name` exactly; `flow` says what kind of way it is (the person's ID card, or an authority's own sign-in page), which picks the sentence saying what choosing it does |
 | `languages`, `language` | the language menu's choices, each in its own name, and the one in use |
-| `message` | what to say above the buttons: `cancelled`, `notMember`, `providerError`, `incomplete`, `expired`, `unmatched`, `failed`, `unknown`, `cardFailed`, `signedOut` (with `signed-out-of` naming the app), `ended` |
-| `waiting-for`, `software-missing` | the way waited on, and whether the card software is missing |
+| `message` | what to say above the buttons: `cancelled`, `notMember`, `providerError`, `incomplete`, `expired`, `unmatched`, `failed`, `unknown`, `signedOut` (with `signed-out-of` naming the app), `ended` |
 | `offers`, `explain` | whether a way in is offered at all, and whether the sentence under the buttons says what each does |
 
 What goes with it: `messageOfMarker` turns a `?error=` marker into the message; `languageBeforeSignIn`,
 `keepLanguage` and `keptLanguage` settle the language before sign-in as above; `noteSignedOut` and `takeSignedOut`
-carry the signed-out sentence across a sign-out that ends at the authority; `wayName` finds a way's name by its key;
-`signChallenge`, `isCardSoftwareMissing`, `CardError` and `CARD_SOFTWARE_URL` are the ID card.
+carry the signed-out sentence across a sign-out that ends at the authority; `wayName` finds a way's name by its key.
 
 ## What it calls
 
@@ -394,8 +387,7 @@ with the `__Host-` cookies.
 | `GET` | `/me` | who is signed in, the deployment's name, the person's scopes per section, and in `presentation` the language to speak (`locale`), the person's own (`personLocale`, `null` when none) and the deployment's (`deploymentLocale`) |
 | `PUT` | `/me/language` | keeps the language picked at the globe for the person: `{"language": "lv"}`, answered with the three members above |
 | `GET` | `/sections` | the deployment's sections, in the order an import writes them |
-| `POST` | `/login/start` | the redirect sign-in; answers where to send the browser |
-| `POST` | `/login/webeid/start` · `/login/webeid/complete` | the ID card: a challenge out, the card's signed answer back, unchanged |
+| `POST` | `/login/start` | a sign-in by any way, the card too, `{"method": "<the way's key>"}`; answers where to send the browser |
 | `POST` | `/logout` | ends the session; answers where to go next |
 | `GET` | `/config/export` | the whole configuration as one file |
 | `POST` | `/config/import?dryRun=true` · `/config/import` | what a file would do, then applying exactly that |
