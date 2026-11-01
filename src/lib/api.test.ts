@@ -1,9 +1,10 @@
 // Reading where a refusal points instead, from the Link header it carries; and a read
 // answered "not signed in", the sign-in ending, which whoever listens is told of —
-// not a refusal, not a failure, not a change.
+// not a refusal, not a failure, not a change. And the anti-forgery token a change
+// echoes: the coordinator's own __Host- cookie, never a copy another host planted.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { del, get, post, postText, put, read, relatedLink, whenSignInEnds } from './api'
+import { csrfFrom, del, get, post, postText, put, read, relatedLink, whenSignInEnds } from './api'
 
 function answer(status: number) {
   vi.stubGlobal(
@@ -85,5 +86,21 @@ describe('the address a refusal names as related', () => {
     ['no header', null, ''],
   ])('%s', (_case, header, want) => {
     expect(relatedLink(header)).toBe(want)
+  })
+})
+
+describe('the anti-forgery token a change echoes', () => {
+  it.each([
+    ['over https, the __Host- cookie beside a planted plain one listed first', 'configbyte_csrf=planted; __Host-configbyte_csrf=own', true, 'own'],
+    ['over https, only a planted plain one', 'configbyte_csrf=planted', true, ''],
+    ['over https, only a planted __Secure- one', '__Secure-configbyte_csrf=planted', true, ''],
+    ['over https, a miscapitalised __Host- one', '__host-configbyte_csrf=planted', true, ''],
+    ['over plain http, the plain one a development edge sets', 'configbyte_csrf=tok', false, 'tok'],
+    ['over plain http, the __Host- one before the plain', 'configbyte_csrf=planted; __Host-configbyte_csrf=own', false, 'own'],
+    ['over https, a planted name led by a no-break space, listed first', '\u00a0__Host-configbyte_csrf=planted; __Host-configbyte_csrf=own', true, 'own'],
+    ['over https, only a planted name led by a no-break space', '\u00a0__Host-configbyte_csrf=planted', true, ''],
+    ['no cookie', '', true, ''],
+  ])('%s', (_case, cookies, secure, want) => {
+    expect(csrfFrom(cookies, secure)).toBe(want)
   })
 })

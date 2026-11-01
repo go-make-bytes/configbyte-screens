@@ -195,7 +195,7 @@ language. When the list cannot tell, the first.
 Pin a tag, and the same `uibyte` tag the screens are built on:
 
 ```json
-"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.11.0",
+"configbyte-screens": "github:go-make-bytes/configbyte-screens#v0.12.0",
 "uibyte": "github:gmb-lib/uibyte#v0.18.0"
 ```
 
@@ -383,7 +383,10 @@ carry the signed-out sentence across a sign-out that ends at the authority; `way
 ## What it calls
 
 Everything goes to the coordinator, same-origin, under `/api/configbyte/v1`, with its session cookie. Every
-`POST`, `PUT` and `DELETE` echoes the anti-forgery token from the `configbyte_csrf` cookie in `X-CSRF-Token`.
+`POST`, `PUT` and `DELETE` echoes the anti-forgery token from the coordinator's `__Host-configbyte_csrf` cookie in
+`X-CSRF-Token`; on an https page only that name is read, so a copy another host planted under the plain name is
+never echoed. A page over plain http falls back to `configbyte_csrf` (a development coordinator). Needs configbyte
+with the `__Host-` cookies.
 
 | Method | Path | For |
 |---|---|---|

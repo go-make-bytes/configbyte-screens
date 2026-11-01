@@ -7,13 +7,34 @@ export const API_ROOT = '/api/configbyte/v1'
 const CSRF_COOKIE = 'configbyte_csrf'
 const CSRF_HEADER = 'X-CSRF-Token'
 
-function csrfToken(): string {
-  for (const part of document.cookie.split(';')) {
-    const [name, ...rest] = part.trim().split('=')
-    if (name === CSRF_COOKIE) return decodeURIComponent(rest.join('='))
+function cookie(cookies: string, name: string): string | null {
+  // A page's cookies are joined by "; ", and only that space is dropped: trim() would also drop the Unicode
+  // spaces a browser keeps in a name, and a name that starts with one is not prefixed, so any host could set it.
+  for (const part of cookies.split('; ')) {
+    const [key, ...rest] = part.split('=')
+    if (key === name) return decodeURIComponent(rest.join('='))
   }
 
-  return ''
+  return null
+}
+
+/**
+ * The anti-forgery token in a page's cookies. The coordinator sets every cookie Secure
+ * and so names this one `__Host-`, which only its own host can set; on an https page
+ * only that name is read, so a copy another host planted under the plain name is never
+ * echoed in its place. A page over plain http, where a development edge may use the
+ * plain name, falls back to it.
+ */
+export function csrfFrom(cookies: string, secure: boolean): string {
+  const own = cookie(cookies, `__Host-${CSRF_COOKIE}`)
+  if (own !== null) return own
+  if (secure) return ''
+
+  return cookie(cookies, CSRF_COOKIE) ?? ''
+}
+
+function csrfToken(): string {
+  return csrfFrom(document.cookie, location.protocol === 'https:')
 }
 
 /** A refused or failed call, carrying the stable code the coordinator answered with. */
