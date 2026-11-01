@@ -3,7 +3,6 @@
     "signIn": {
       "self": "Latviešu",
       "language": "Valoda",
-      "waiting": "Gaida karti…",
       "hint": {
         "card": "{name} ir jūsu ID karte, ko nolasa šī datora ID programmatūra; tā prasīs PIN.",
         "redirect": "{name} atver jūsu uzņēmuma pieslēgšanās lapu."
@@ -17,15 +16,9 @@
         "unmatched": "Šo pieslēgšanos neizdevās sasaistīt ar to, kas tika sākta. Sāciet jaunu.",
         "failed": "Pieslēgšanos neizdevās pabeigt. Mēģiniet vēlreiz.",
         "unknown": "Pieslēgšanās netika pabeigta. Mēģiniet vēlreiz.",
-        "cardFailed": "Neizdevās pabeigt. Pārbaudiet, vai karte ir lasītājā, un mēģiniet vēlreiz.",
         "signedOut": "Izeja no {app} pabeigta. Ja izmantojāt sava uzņēmuma pieslēgšanos, tā šajā datorā paliek spēkā — koplietotā datorā izejiet arī no tās.",
         "ended": "Jūsu pieslēgšanās ir beigusies. Pieslēdzieties vēlreiz.",
         "noWays": "Šeit nav iestatīta neviena pieslēgšanās iespēja. Pasakiet to tam, kas uztur šo izvietojumu."
-      },
-      "missing": {
-        "title": "ID programmatūra nedarbojas",
-        "lead": "Pieslēgšanai ar karti nepieciešama ID programmatūra un tās pārlūka paplašinājums šajā datorā. Uzinstalējiet to un mēģiniet vēlreiz — neko no jauna sākt nevajag.",
-        "action": "Iegūt ID programmatūru"
       }
     },
     "frame": {

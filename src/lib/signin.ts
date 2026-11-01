@@ -4,10 +4,15 @@
 //
 // Shared by every app that uses the sign-in page, so each reads them the same way.
 
-/** How a sign-in is started: on the page with the card software, or through the authority. */
+/**
+ * What kind of way it is, which says what choosing it does: "card" is the person's ID
+ * card, read by the card software on the authority's own sign-in page; "redirect" is
+ * an authority's own sign-in page. Every way is started the same way, by sending the
+ * browser to the authority.
+ */
 export type SignInFlow = 'card' | 'redirect'
 
-/** One way a deployment offers to sign in: its key, how it is started, and its exact name. */
+/** One way a deployment offers to sign in: its key, what kind of way it is, and its exact name. */
 export interface SignInWay {
   key: string
   flow: SignInFlow
@@ -26,7 +31,6 @@ export type SignInMessage =
   | 'unmatched'
   | 'failed'
   | 'unknown'
-  | 'cardFailed'
   | 'signedOut'
   | 'ended'
   | 'noWays'

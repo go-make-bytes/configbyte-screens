@@ -5,7 +5,6 @@ import { defineStore } from 'pinia'
 
 import { API_ROOT, ApiError, get, post, put } from '../lib/api'
 import { messageOfMarker, noteSignedOut, type SignInMessage, type SignInWay } from '../lib/signin'
-import { isCardSoftwareMissing, signChallenge } from '../lib/webeid'
 
 export interface Identity {
   /** The person, as the owners name them in their history. */
@@ -58,12 +57,6 @@ interface LoginStart {
   authorizeUrl: string
 }
 
-/** What the card is asked to sign, and the handle the completion is found by. */
-interface CardChallenge {
-  nonce: string
-  state: string
-}
-
 interface Logout {
   next?: string
 }
@@ -76,9 +69,6 @@ interface LoginWays {
   /** The deployment's language. */
   language?: string
 }
-
-/** The authority's answer for a person it knows who is not a member here. */
-const NOT_MEMBER = 'err:membership:notMember'
 
 /**
  * Why the admin app is closed to this person before anyone is signed in: the
@@ -139,10 +129,8 @@ export const useAdminSession = defineStore('configbyte-session', {
     /** Where the everyday app is, and the deployment's language, from the same read. */
     appUrl: '',
     deploymentLanguage: '',
-    /** What the sign-in page says, the way being waited on, and whether the card software is missing. */
+    /** What the sign-in page says. */
     message: '' as SignInMessage,
-    waitingFor: '',
-    softwareMissing: false,
     /** The last sign-out did not complete. */
     signOutFailed: false,
     /** The last language picked could not be kept, and the one last kept is back. */
@@ -287,50 +275,30 @@ export const useAdminSession = defineStore('configbyte-session', {
     },
 
     /**
-     * Sign in the way a person chose. What can go wrong is said on the page: the
-     * card software missing, the card or the account refused, not being a member
-     * here, or the coordinator not answering — each apart from the others.
+     * Sign in the way a person chose. Every way, the card too, is started by sending
+     * the browser to the authority, which reads the card on its own sign-in page; how
+     * a sign-in ended comes back on the address. What can go wrong before the browser
+     * leaves is said on the page: the coordinator not answering, or the sign-in not
+     * starting — each apart from the other.
      */
-    async start(way: SignInWay, lang: string) {
+    async start(way: SignInWay) {
       this.message = ''
-      this.softwareMissing = false
-      this.waitingFor = way.flow === 'card' ? way.key : ''
       try {
-        if (way.flow === 'redirect') await this.login(way.key)
-        else await this.loginWithCard(lang)
+        await this.login(way.key)
       } catch (e) {
         if (this.closeFor(e)) return
-        if (isCardSoftwareMissing(e)) this.softwareMissing = true
-        else if (e instanceof ApiError && e.code === NOT_MEMBER) this.message = 'notMember'
-        else if (unanswered(e)) this.unreachable = true
-        else this.message = way.flow === 'card' ? 'cardFailed' : 'failed'
-      } finally {
-        this.waitingFor = ''
+        if (unanswered(e)) this.unreachable = true
+        else this.message = 'failed'
       }
     },
 
-    // The redirect sign-in: the coordinator starts it and hands the browser to the
-    // authority, naming the way the person chose so the authority goes straight to
-    // it. These screens never see a secret — the exchange secret and the session key
-    // are minted and held on the server.
+    // The coordinator starts the sign-in and hands the browser to the authority,
+    // naming the way the person chose so the authority goes straight to it. These
+    // screens never see a secret — the exchange secret and the session key are
+    // minted and held on the server.
     async login(method: string) {
       const start = await post<LoginStart>(`${API_ROOT}/login/start`, { method })
       window.location.assign(start.authorizeUrl)
-    },
-
-    /**
-     * Sign in with an ID card, without leaving the page: a challenge out, the card's
-     * signed answer back, exchanged for a session. The card's answer is opaque here
-     * and is passed on exactly as the card software produced it.
-     */
-    async loginWithCard(lang: string) {
-      const challenge = await post<CardChallenge>(`${API_ROOT}/login/webeid/start`)
-      const authToken = await signChallenge(challenge.nonce, lang)
-
-      // Turned away for its strength or its network, no session was made, and the
-      // page that says why replaces the sign-in; the caller reads the refusal.
-      await post(`${API_ROOT}/login/webeid/complete`, { state: challenge.state, authToken })
-      await this.resolve()
     },
 
     /**

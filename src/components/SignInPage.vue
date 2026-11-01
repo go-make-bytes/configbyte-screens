@@ -10,8 +10,7 @@
 //
 // Everything a person can meet before using the app is said here, in the page's
 // own words in each language: a sign-in cancelled or refused, not being a member
-// (and what to do about it), the card software missing, having signed out, and a
-// sign-in that has ended. Choosing a way is reported to the host, which runs it.
+// (and what to do about it), having signed out, and a sign-in that has ended. Choosing a way is reported to the host, which runs it.
 //
 // A page that closes the app to a person is drawn in the same place: the host
 // gives its heading and lead, and either offers no way in or adds its own, such
@@ -20,7 +19,6 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BrandMark, Button, LanguageMenu, type LanguageOption } from 'uibyte'
 
-import { CARD_SOFTWARE_URL } from '../lib/webeid'
 import type { SignInMessage, SignInWay } from '../lib/signin'
 
 const props = withDefaults(
@@ -43,10 +41,6 @@ const props = withDefaults(
     message?: SignInMessage
     /** The app's name as the signed-out line reads it, e.g. "the admin app". */
     signedOutOf?: string
-    /** The key of the way being waited on — the card, while the card software asks for the PIN. */
-    waitingFor?: string
-    /** The card software is not running on this computer. */
-    softwareMissing?: boolean
     /**
      * Whether the page offers a way in. A page that closes the app to this person
      * offers none and says nothing about ways; the host's lead says why.
@@ -60,8 +54,6 @@ const props = withDefaults(
     link: undefined,
     message: '',
     signedOutOf: '',
-    waitingFor: '',
-    softwareMissing: false,
     offers: true,
     explain: true,
   },
@@ -71,8 +63,6 @@ const emit = defineEmits<{ start: [way: SignInWay]; 'update:language': [code: st
 
 const { t } = useI18n()
 const s = (key: string, values?: Record<string, unknown>) => t(`configbyte.signIn.${key}`, values ?? {})
-
-const busy = computed(() => props.waitingFor !== '')
 
 /** What the page says, and how it says it: a refusal at once, the rest politely. */
 const said = computed(() => {
@@ -135,18 +125,6 @@ const tones: Record<string, string> = {
         {{ said.text }}
       </p>
 
-      <!-- Missing software is not an error to apologise for; it is a step to take. -->
-      <div
-        v-if="softwareMissing"
-        role="alert"
-        data-said="softwareMissing"
-        class="mt-[18px] rounded-[8px] border-l-[3px] border-l-status-blocked bg-status-blocked-bg px-3 py-2.5 text-[13.5px] text-status-blocked-fg"
-      >
-        <b class="mb-0.5 block">{{ s('missing.title') }}</b>
-        {{ s('missing.lead') }}
-        <a :href="CARD_SOFTWARE_URL" target="_blank" rel="noreferrer noopener" class="underline">{{ s('missing.action') }}</a>
-      </div>
-
       <div v-if="(offers && ways.length) || $slots.actions" class="mt-[22px] flex flex-col gap-2.5">
         <template v-if="offers">
           <Button
@@ -154,11 +132,10 @@ const tones: Record<string, string> = {
             :key="way.key"
             :variant="i === 0 ? 'default' : 'outline'"
             class="w-full"
-            :disabled="busy"
             :data-way="way.key"
             @click="emit('start', way)"
           >
-            {{ waitingFor === way.key ? s('waiting') : way.name }}
+            {{ way.name }}
           </Button>
         </template>
         <!-- Anything else the host offers here, e.g. the way back from a closed page. -->

@@ -166,17 +166,11 @@ const clickButton = async (wrapper: ReturnType<typeof mount>, text: string) => {
   await settle(wrapper)
 }
 
-// The card software, as its browser extension puts it on the page. The screens look
-// it up once and keep it, so every test answers through this one stand-in.
-const card = { authenticate: vi.fn<(nonce: string, options?: { lang?: string }) => Promise<unknown>>() }
-
 beforeEach(() => {
   document.cookie = 'configbyte_csrf=tok-1'
   document.documentElement.lang = ''
   window.history.replaceState({}, '', '/')
   options = baseOptions
-  card.authenticate = vi.fn(async () => ({ signature: 'sig' }))
-  Object.assign(window, { webeid: card })
 })
 afterEach(() => {
   for (const wrapper of drawn) wrapper.unmount()
@@ -210,69 +204,22 @@ describe('the admin app, signed out', () => {
     expect(wrapper.get('[role="alert"]').text()).toBe(words)
   })
 
-  // The card's answer is opaque here and travels exactly as the card software produced it.
-  it('signs in with the card: the challenge out, the signed answer back verbatim, then reads who is signed in', async () => {
-    const signed = { unverifiedCertificate: 'MII…', algorithm: 'ES384', signature: 'sig', format: 'web-eid:1.0' }
-    card.authenticate = vi.fn(async () => signed)
-    stubCoordinator({
-      [`${API}/me`]: [notSignedIn, { status: 200, body: me({ orders: ['orders/setup:import'] }) }],
-      [`${API}/sections`]: { status: 200, body: sectionsOf('orders') },
-      [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } },
-      [`${API}/login/webeid/complete`]: { status: 200, body: {} },
-    })
-    const { wrapper } = await render()
-    await click(wrapper, '[data-way="webEid"]')
-    expect(card.authenticate).toHaveBeenCalledWith('n-1', { lang: 'en' })
-    const complete = calls.find((c) => c.url.endsWith('/login/webeid/complete'))!
-    expect(JSON.parse(complete.body)).toEqual({ state: 's-1', authToken: signed })
-    expect(complete.csrf).toBe('tok-1')
-    expect(wrapper.text()).toContain('Anna Example')
-  })
-
-  // The authority knows the person and refuses them here: something they can act on,
-  // said on the page, never as their card or their computer being at fault.
-  it('tells a person the card lane turns away as not a member what to do, on the sign-in page', async () => {
+  // The card is read on the authority's own sign-in page, so its button starts a
+  // sign-in like every other way, naming the card; nothing on this page reads it.
+  it('starts a sign-in naming the card when its button is pressed, and sends the browser to the authority', async () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { ...window.location, assign })
     stubCoordinator({
       [`${API}/me`]: notSignedIn,
-      [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } },
-      [`${API}/login/webeid/complete`]: { status: 403, body: { code: 'err:membership:notMember' } },
+      [`${API}/login/start`]: { status: 200, body: { authorizeUrl: 'https://auth.example.test/authorize?acr_values=webEid' } },
     })
     const { wrapper } = await render()
     await click(wrapper, '[data-way="webEid"]')
-    expect(wrapper.get('[role="alert"]').text()).toBe(
-      'This account is not a member of this workspace. Ask its administrator to invite you, then sign in again.',
-    )
-    expect(wayButtons(wrapper)).toEqual(['eID', 'Microsoft Entra'])
-  })
-
-  // Missing software is a step to take; anything else the card says is worth trying again.
-  it('says the card software is missing as a step to take, with where to get it', async () => {
-    card.authenticate = vi.fn(async () => {
-      throw Object.assign(new Error('extension unavailable'), { code: 'ERR_WEBEID_EXTENSION_UNAVAILABLE' })
-    })
-    stubCoordinator({
-      [`${API}/me`]: notSignedIn,
-      [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } },
-    })
-    const { wrapper } = await render()
-    await click(wrapper, '[data-way="webEid"]')
-    expect(wrapper.get('[data-said="softwareMissing"]').text()).toContain('The card software is not running')
-    expect(wrapper.find('[data-said="cardFailed"]').exists()).toBe(false)
-    expect(wayButtons(wrapper)).toEqual(['eID', 'Microsoft Entra'])
-  })
-
-  it('says a card that did not answer as something to try again', async () => {
-    card.authenticate = vi.fn(async () => {
-      throw Object.assign(new Error('user cancelled'), { code: 'ERR_WEBEID_USER_CANCELLED' })
-    })
-    stubCoordinator({
-      [`${API}/me`]: notSignedIn,
-      [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } },
-    })
-    const { wrapper } = await render()
-    await click(wrapper, '[data-way="webEid"]')
-    expect(wrapper.get('[role="alert"]').text()).toBe('That did not complete. Check the card is in the reader and try again.')
-    expect(wrapper.find('[data-said="softwareMissing"]').exists()).toBe(false)
+    const start = calls.find((c) => c.url.endsWith('/login/start'))!
+    expect(JSON.parse(start.body)).toEqual({ method: 'webEid' })
+    expect(start.csrf).toBe('tok-1')
+    expect(assign).toHaveBeenCalledWith('https://auth.example.test/authorize?acr_values=webEid')
+    expect(calls.some((c) => c.url.includes('/login/webeid/'))).toBe(false)
   })
 
   it('says a sign-in that could not even start, rather than nothing', async () => {
@@ -492,10 +439,6 @@ describe('the admin app, signed in', () => {
 // — the same on every computer — and never in this browser, where the sign-in page keeps a choice of its own.
 describe("the admin app, the person's own language", () => {
   const language = `${API}/me/language`
-  const cardLane = {
-    [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } } as Reply,
-    [`${API}/login/webeid/complete`]: { status: 200, body: {} } as Reply,
-  }
 
   /** Someone who configures the orders, with a language of their own or none, where everyone here reads `deployment`. */
   const speaking = (own: string | null, deployment: string) => ({
@@ -745,21 +688,22 @@ describe("the admin app, the person's own language", () => {
 
   // The session it was about is gone; on a shared computer the next sign-in may be someone else's.
   it('drops a failed change once the sign-in has ended', async () => {
-    signedIn(null, 'en', { [language]: { status: 500, body: {} }, ...cardLane })
+    signedIn(null, 'en', { [language]: { status: 500, body: {} } })
     const { wrapper } = await render()
     await pick(wrapper, 'lv')
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
 
     useAdminSession().signInEnded()
     await settle(wrapper)
-    await click(wrapper, '[data-way="webEid"]')
+    await useAdminSession().resolve()
+    await settle(wrapper)
     expect(wrapper.text()).toContain('Anna Example')
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
   it('says nothing of a change whose failure arrives after the sign-in ended', async () => {
     const put = held({ status: 500, body: {} })
-    signedIn(null, 'en', { [language]: put.reply, ...cardLane })
+    signedIn(null, 'en', { [language]: put.reply })
     const { wrapper } = await render()
     await pick(wrapper, 'lv')
 
@@ -767,7 +711,8 @@ describe("the admin app, the person's own language", () => {
     await settle(wrapper)
     put.release()
     await settle(wrapper)
-    await click(wrapper, '[data-way="webEid"]')
+    await useAdminSession().resolve()
+    await settle(wrapper)
     expect(wrapper.text()).toContain('Anna Example')
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
@@ -778,10 +723,6 @@ describe("the admin app, the person's own language", () => {
 describe('the admin app, when the sign-in ends', () => {
   const history = `${API}/sections/members/history`
   const ended = 'Your sign-in has ended. Sign in again.'
-  const cardLane = {
-    [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } } as Reply,
-    [`${API}/login/webeid/complete`]: { status: 200, body: {} } as Reply,
-  }
 
   /** An administrator of a deployment with the membership register, whose History reads its lines. */
   function signedIn(answers: Record<string, Reply | Reply[]> = {}) {
@@ -874,12 +815,13 @@ describe('the admin app, when the sign-in ends', () => {
     expect(wrapper.find('[data-state="unreachable"]').exists()).toBe(false)
   })
 
-  // The address never changed, so a sign-in on the page comes back to the screen that was open.
-  it('signs in again with the card and comes back to the screen it left', async () => {
-    signedIn({ [history]: [notSignedIn, { status: 200, body: { events: [] } }], ...cardLane })
+  // The address never changed, so a sign-in found again on the page comes back to the screen that was open.
+  it('comes back to the screen it left once the coordinator says someone is signed in again', async () => {
+    signedIn({ [history]: [notSignedIn, { status: 200, body: { events: [] } }] })
     const { wrapper, router } = await open('/history')
 
-    await click(wrapper, '[data-way="webEid"]')
+    await useAdminSession().resolve()
+    await settle(wrapper)
 
     expect(wrapper.text()).toContain('Anna Example')
     expect(router.currentRoute.value.name).toBe('configbyte-history')
@@ -888,14 +830,15 @@ describe('the admin app, when the sign-in ends', () => {
 
   // The session it was about is gone; saying it failed after the next sign-in would be false.
   it('drops a sign-out that did not complete, once the sign-in has ended', async () => {
-    signedIn({ [`${API}/logout`]: { status: 500, body: {} }, [history]: [notSignedIn, { status: 200, body: { events: [] } }], ...cardLane })
+    signedIn({ [`${API}/logout`]: { status: 500, body: {} }, [history]: [notSignedIn, { status: 200, body: { events: [] } }] })
     const { wrapper, router } = await render()
     await clickButton(wrapper, 'Sign out')
     expect(wrapper.text()).toContain('Signing out did not complete. Try again.')
 
     await router.push('/history')
     await settle(wrapper)
-    await click(wrapper, '[data-way="webEid"]')
+    await useAdminSession().resolve()
+    await settle(wrapper)
 
     expect(wrapper.text()).toContain('Anna Example')
     expect(wrapper.text()).not.toContain('Signing out did not complete. Try again.')
@@ -1034,29 +977,17 @@ describe('the admin app, closed to this person', () => {
 
   it('signs in afresh from the not-strong-enough page with the way chosen there', async () => {
     window.history.replaceState({}, '', '/?error=assurance')
-    stubCoordinator({
-      [`${API}/me`]: [notSignedIn, { status: 200, body: me({ orders: ['orders/setup:import'] }) }],
-      [`${API}/sections`]: { status: 200, body: sectionsOf('orders') },
-      [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } },
-      [`${API}/login/webeid/complete`]: { status: 200, body: {} },
-    })
-    const { wrapper } = await render()
-    await clickButton(wrapper, 'eID')
-    expect(card.authenticate).toHaveBeenCalledOnce()
-    expect(calls.filter((c) => c.method === 'POST').map((c) => c.url)).toEqual([`${API}/login/webeid/start`, `${API}/login/webeid/complete`])
-    expect(window.location.search).toBe('')
-    expect(wrapper.text()).toContain('Anna Example')
-  })
-
-  it('turns to the same page when the card lane refuses the sign-in for its strength', async () => {
+    const assign = vi.fn()
     stubCoordinator({
       [`${API}/me`]: notSignedIn,
-      [`${API}/login/webeid/start`]: { status: 200, body: { nonce: 'n-1', state: 's-1' } },
-      [`${API}/login/webeid/complete`]: { status: 403, body: { code: 'err:session:assuranceTooLow' } },
+      [`${API}/login/start`]: { status: 200, body: { authorizeUrl: 'https://auth.example.test/authorize' } },
     })
     const { wrapper } = await render()
-    await click(wrapper, '[data-way="webEid"]')
-    expect(wrapper.find('[data-closed="assurance"]').exists()).toBe(true)
-    expect(calls.filter((c) => c.url.endsWith('/me'))).toHaveLength(1)
+    vi.stubGlobal('location', { ...window.location, assign })
+    await clickButton(wrapper, 'eID')
+    expect(calls.filter((c) => c.method === 'POST').map((c) => [c.url, JSON.parse(c.body)])).toEqual([
+      [`${API}/login/start`, { method: 'webEid' }],
+    ])
+    expect(assign).toHaveBeenCalledWith('https://auth.example.test/authorize')
   })
 })

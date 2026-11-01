@@ -3,7 +3,6 @@
     "signIn": {
       "self": "English",
       "language": "Language",
-      "waiting": "Waiting for the card…",
       "hint": {
         "card": "{name} is your ID card, read by the card software on this computer; it asks for your PIN.",
         "redirect": "{name} opens your company’s own sign-in page."
@@ -17,15 +16,9 @@
         "unmatched": "That sign-in could not be matched to the one that started. Start a fresh one.",
         "failed": "The sign-in could not be completed. Try again.",
         "unknown": "The sign-in did not complete. Try again.",
-        "cardFailed": "That did not complete. Check the card is in the reader and try again.",
         "signedOut": "You are signed out of {app}. If you used your company’s own sign-in, it stays signed in on this computer: on a shared computer, sign out of it too.",
         "ended": "Your sign-in has ended. Sign in again.",
         "noWays": "No way to sign in is set up here. Tell whoever runs this deployment."
-      },
-      "missing": {
-        "title": "The card software is not running",
-        "lead": "Signing in with a card needs the ID-software and its browser extension on this computer. Install it, then try again — nothing here has to be redone.",
-        "action": "Get the ID software"
       }
     },
     "frame": {

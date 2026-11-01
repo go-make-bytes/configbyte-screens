@@ -3,6 +3,27 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.13.0
+
+Built on `uibyte` `v0.18.0`, unchanged. **Needs an authority that reads the card on its own sign-in page** (authbyte
+v0.4.0): against an older one, the card's sign-in is refused there and comes back as not completed.
+
+### Changed
+
+- **The card signs in on the authority's own page.** Its button starts a sign-in like every other way:
+  `POST /login/start` with `{ "method": "webEid" }`, and the browser goes to the authority, which reads the card there
+  with the card software and sends the browser back. A way's `flow` now says what kind of way it is, the person's ID
+  card (`card`) or an authority's own sign-in page (`redirect`), and picks the sentence under the buttons; both are
+  started the same way, so a deployment's configured ways stay valid as they are.
+
+### Removed
+
+- The card lane: these screens no longer call `/login/webeid/start` or `/login/webeid/complete`, and no longer load
+  the card software's browser library, so a host need not serve `/web-eid.js` for them.
+- From the package's exports: `signChallenge`, `isCardSoftwareMissing`, `CardError` and `CARD_SOFTWARE_URL`.
+- From `SignInPage`: the `waiting-for` and `software-missing` props and the `cardFailed` message. Waiting for the card
+  and the missing card software are said on the authority's page now.
+
 ## v0.12.1
 
 Built on `uibyte` `v0.18.0`, unchanged. Needs a coordinator that takes the chosen way at `/login/start`: configbyte and
