@@ -281,6 +281,8 @@ describe('the admin app, signed out', () => {
     await click(wrapper, '[data-way="upstream"]')
     const start = calls.find((c) => c.url.endsWith('/login/start'))!
     expect(start.method).toBe('POST')
+    // The way the person chose is named, so the authority goes straight to it.
+    expect(JSON.parse(start.body)).toEqual({ method: 'upstream' })
     expect(start.csrf).toBe('tok-1')
     expect(wrapper.get('[role="alert"]').text()).toBe('The sign-in could not be completed. Try again.')
   })

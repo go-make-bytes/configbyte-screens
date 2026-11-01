@@ -3,6 +3,17 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.12.1
+
+Built on `uibyte` `v0.18.0`, unchanged. Needs a coordinator that takes the chosen way at `/login/start`: configbyte and
+flowbyte-bff do since their OpenID Connect release.
+
+### Changed
+
+- **A redirect sign-in names the way the person chose.** `/login/start` is sent `{ "method": "<the way's key>" }`, so
+  the coordinator asks the authority for that way, and the authority goes straight to it rather than showing its own
+  list of ways first.
+
 ## v0.12.0
 
 Built on `uibyte` `v0.18.0`, unchanged. **Needs a configbyte that sets its cookies as `__Host-`** (same day): against
