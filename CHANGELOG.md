@@ -3,9 +3,18 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
-## v0.11.1
+## v0.12.0
 
-Built on `uibyte` `v0.18.0`, unchanged.
+Built on `uibyte` `v0.18.0`, unchanged. **Needs a configbyte that sets its cookies as `__Host-`** (same day): against
+an older one served over https, every change is refused, because the anti-forgery token is no longer read from the
+plain-named cookie there. v0.11.1 was never tagged; its change is here.
+
+### Security
+
+- **The anti-forgery token is read from the coordinator's own cookie only.** On an https page the screens read
+  `__Host-configbyte_csrf`, which only the coordinator's host can set, and never the plain-named `configbyte_csrf`:
+  a copy another host planted under that name, listed first, made every change send a token the coordinator refuses.
+  A page over plain http falls back to the plain name, as a development coordinator sets it.
 
 ### Changed
 
