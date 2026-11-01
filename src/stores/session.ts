@@ -296,7 +296,7 @@ export const useAdminSession = defineStore('configbyte-session', {
       this.softwareMissing = false
       this.waitingFor = way.flow === 'card' ? way.key : ''
       try {
-        if (way.flow === 'redirect') await this.login()
+        if (way.flow === 'redirect') await this.login(way.key)
         else await this.loginWithCard(lang)
       } catch (e) {
         if (this.closeFor(e)) return
@@ -310,10 +310,11 @@ export const useAdminSession = defineStore('configbyte-session', {
     },
 
     // The redirect sign-in: the coordinator starts it and hands the browser to the
-    // authority. These screens never see a secret — the exchange secret and the
-    // session key are minted and held on the server.
-    async login() {
-      const start = await post<LoginStart>(`${API_ROOT}/login/start`)
+    // authority, naming the way the person chose so the authority goes straight to
+    // it. These screens never see a secret — the exchange secret and the session key
+    // are minted and held on the server.
+    async login(method: string) {
+      const start = await post<LoginStart>(`${API_ROOT}/login/start`, { method })
       window.location.assign(start.authorizeUrl)
     },
 
