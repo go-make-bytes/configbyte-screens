@@ -60,7 +60,7 @@ describe('merging pages of several histories', () => {
 })
 
 const names: Names = {
-  member: (id) => ({ m1: 'Jānis Ozols', m2: 'Anna Bērziņa' })[id] ?? '',
+  member: (id) => ({ m1: 'Jānis Ozols', m2: 'Anna Bērziņa', a1: 'Assistant 1', a2: 'Site log' })[id] ?? '',
   role: (id) => ({ r1: 'Meistars' })[id] ?? '',
   type: (id) => ({ t1: 'Birojs' })[id] ?? '',
   position: (id) => ({ p1: 'Ražošanas vadītājs' })[id] ?? '',
@@ -68,7 +68,8 @@ const names: Names = {
   entitlement: (service) => ({ orders: 'Orders' })[service] ?? '',
   service: (key) => ({ orders: 'Order register' })[key] ?? '',
   grant: (group, level) => ({ 'membership/chart': 'see the Chart of authority' } as Record<string, string>)[`${group}/${level}`] ?? '',
-  isService: (id) => id === 'm5',
+  isService: (id) => id === 'm5' || id === 'a1' || id === 'a2',
+  isAssistant: (id) => id === 'a1' || id === 'a2',
 }
 const line = (kind: string, payload: Record<string, unknown>, userId = '') => ({ section: 'members', id: 'e1', at: '2026-10-03T11:40:00Z', actor: 'sub:A', kind, payload, userId })
 
@@ -100,6 +101,29 @@ describe('the membership register’s lines', () => {
       who: { actor: 'sub:A' },
       words: { key: 'configbyte.history.lines.roleGranted', values: { person: 'Jānis Ozols', role: 'Meistars' } },
     })
+  })
+
+  it('says an assistant’s setup: added for its person, renamed, given a role, removed, and the role made with the first one', () => {
+    const W = 'configbyte.history.lines'
+    expect(registerWords(line('assistantAdded', { subjectKey: 'svc:assistant-X', name: 'Assistant 1', personId: 'm2' }, 'a1'), names)).toEqual({
+      who: { actor: 'sub:A' },
+      words: { key: `${W}.assistantAdded`, values: { name: 'Assistant 1', person: 'Anna Bērziņa' } },
+    })
+    expect(registerWords(line('assistantRenamed', { from: 'Assistant 2', to: 'Site log' }, 'a2'), names)!.words).toEqual({
+      key: `${W}.assistantRenamed`,
+      values: { from: 'Assistant 2', to: 'Site log' },
+    })
+    expect(registerWords(line('tenantRoleGranted', { roleId: 'r9', name: 'Assistant' }, 'a1'), names)!.words).toEqual({
+      key: `${W}.roleGranted`,
+      values: { person: 'Assistant 1', role: 'Assistant' },
+    })
+    expect(registerWords(line('userRevoked', {}, 'a1'), names)!.words).toEqual({ key: `${W}.assistantRemoved`, values: { name: 'Assistant 1' } })
+    expect(registerWords(line('userRevoked', {}, 'm1'), names)!.words).toEqual({ key: `${W}.userRevoked`, values: { person: 'Jānis Ozols' } })
+    expect(registerWords(line('tenantRoleSeeded', { roleId: 'r9', seed: 'assistant', name: 'Assistant' }), names)!.words).toEqual({
+      key: `${W}.roleSeededWithAssistant`,
+      values: { role: 'Assistant' },
+    })
+    expect(registerWords(line('tenantRoleSeeded', { roleId: 'r1', seed: 'worker', name: 'Worker' }), names)!.words.key).toBe(`${W}.roleSeeded`)
   })
 
   it('reads the administrator’s box as the checkbox, not as a service role', () => {

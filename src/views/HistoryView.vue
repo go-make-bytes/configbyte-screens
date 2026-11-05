@@ -26,7 +26,7 @@ import {
 import { useLexicon } from '../lexicon'
 import { useAdminOptions, type HistoryLine, type HistoryNames, type LineWords } from '../options'
 import { REGISTER_FILTER, useHistory } from '../stores/history'
-import { usePeople } from '../stores/people'
+import { isAssistantKey, usePeople } from '../stores/people'
 import { useAdminSession } from '../stores/session'
 
 /** What `who` holds for the lines of whoever runs the deployment. */
@@ -203,6 +203,7 @@ const names: Names = {
     return te(own) ? t(own) : ''
   },
   isService: (id) => people.byId(id)?.kind === 'service',
+  isAssistant: (id) => isAssistantKey(people.byId(id)?.subjectKey ?? ''),
 }
 
 /** The names the host's sentences may use, from the lists this screen already holds. */
