@@ -223,6 +223,8 @@ interface Drawn {
   area: string
   /** Set for a line about a service the workspace runs on. */
   service?: { id: string; name: string }
+  /** Set for a line about an assistant. */
+  assistant?: boolean
 }
 
 /** A day as a heading: its year only when it is not this year's. */
@@ -265,7 +267,11 @@ function draw(p: Placed): Drawn {
   const when = new Date(p.when)
   const member = line.userId ? people.byId(line.userId) : undefined
   const subject = typeof line.payload?.subjectKey === 'string' ? line.payload.subjectKey : ''
-  const about = inRegister && (member ? member.kind === 'service' : subject.startsWith('svc:'))
+  // An assistant is a member of kind service, yet one person's own and set up by an
+  // administrator: its lines are drawn each as a line, never with the services the
+  // workspace runs on.
+  const assistant = inRegister && isAssistantKey(member ? member.subjectKey : subject)
+  const about = inRegister && !assistant && (member ? member.kind === 'service' : subject.startsWith('svc:'))
 
   return {
     id: `${p.stream.key}:${line.id}`,
@@ -279,13 +285,16 @@ function draw(p: Placed): Drawn {
     ...(worded?.detail ? { detail: worded.detail } : {}),
     area: areaWord.value.get(p.stream.filter) ?? '',
     ...(about ? { service: { id: line.userId || subject, name: member ? memberName(member) : '' } } : {}),
+    ...(assistant ? { assistant: true } : {}),
   }
 }
 
 const merged = computed(() => merge(history.streams.filter(isShown)))
-// A service is no newcomer: the user type every arrival receives is not drawn for one.
+// A service is no newcomer, nor an assistant: the user type every arrival receives is not drawn for one.
 const drawn = computed(() =>
-  merged.value.lines.map(draw).filter((d) => !(d.service && d.kind === 'userTypeAssigned' && d.line.payload?.source === 'workspaceDefault')),
+  merged.value.lines
+    .map(draw)
+    .filter((d) => !((d.service || d.assistant) && d.kind === 'userTypeAssigned' && d.line.payload?.source === 'workspaceDefault')),
 )
 /** A person's lines are the lines that begin with their name. */
 const begun = computed(() => drawn.value.filter((d) => !actor.value || d.begins === actor.value))

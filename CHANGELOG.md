@@ -3,6 +3,16 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.14.1
+
+Built on `uibyte` `v0.18.0`, unchanged. Nothing new to deploy.
+
+### Fixed
+
+- **History draws an assistant's setup as lines of its own.** An assistant is a member of kind service, so its lines
+  (added, given a role, removed) were folded into *… lines about the services this workspace runs on*; each is now a
+  line of its own, and the default user type an assistant gets when it is added is not drawn, as for a service.
+
 ## v0.14.0
 
 Built on `uibyte` `v0.18.0`, unchanged. **With `assistants`, needs** a membership register that reads its assistants
