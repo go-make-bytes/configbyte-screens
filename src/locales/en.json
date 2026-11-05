@@ -277,7 +277,8 @@
       "tabs": {
         "users": "Users",
         "roles": "Roles",
-        "types": "User types"
+        "types": "User types",
+        "assistants": "Assistants"
       },
       "users": {
         "lead": "Who is in this workspace, and what each person holds across it.",
@@ -499,7 +500,14 @@
         "typeDeleted": "The user type was deleted.",
         "corporateLogin": "Saved: people arriving through the corporate login get this from now on.",
         "noteSaved": "The note was saved.",
-        "invited": "Invited. {name}’s row says invited, not signed in yet until their first card sign-in."
+        "invited": "Invited. {name}’s row says invited, not signed in yet until their first card sign-in.",
+        "assistantAdded": "{name} was added for {person}, with the role «{role}». {first} connects their AI app to it by signing in at the app.",
+        "assistantAddedFirst": "{name} was added for {person}, with the role «{role}», which this workspace now has (on Roles). {first} connects their AI app to it by signing in at the app.",
+        "assistantAddedNoRole": "{name} was added for {person}, with no role: this workspace keeps a role of its own by that name. Give it a role below.",
+        "assistantRenamed": "{from} is now called «{name}». Every line it made shows the new name.",
+        "appSignedOut": "The {app} connected {at} was signed out. It stopped at once.",
+        "assistantRemoved": "{name} was removed. Every app connected as it was signed out at once.",
+        "assistantRemovedAppsLater": "{name} was removed. Its apps could not be signed out just now, so each stops at its next sign-in check, within minutes."
       },
       "refused": {
         "lastAdministrator": "{name} is this workspace's last administrator. Make someone else an administrator first.",
@@ -523,11 +531,92 @@
         "inviteUnavailable": "This deployment cannot add people just now, so nobody was invited.",
         "unanswered": "The admin service did not answer, so nothing was changed. Try again.",
         "other": "That was not done: {reason}",
-        "unreadable": "That was not done: the answer could not be read. Try again."
+        "unreadable": "That was not done: the answer could not be read. Try again.",
+        "assistantNameTaken": "Another assistant is already called «{name}».",
+        "assistantNoName": "An assistant needs a name.",
+        "assistantInvalid": "An assistant’s name is 1 to 100 characters on one line.",
+        "assistantRefused": "It was not added: its name is 1 to 100 characters on one line, and its person someone active in this workspace.",
+        "assistantGone": "That assistant is no longer in this workspace.",
+        "appGone": "That app was already signed out."
       },
       "inLanguage": {
         "en": "in English",
         "lv": "in Latvian"
+      },
+      "assistants": {
+        "lead": "An assistant is one person’s own. Their AI app works in this workspace for them through it, as that person and never beyond its own roles, and history names both",
+        "leadExample": ":",
+        "through": "through {name}",
+        "loading": "Reading the assistants…",
+        "failedUnanswered": "The admin service did not answer, so the assistants could not be read. Try again.",
+        "failed": "The assistants could not be read.",
+        "none": {
+          "title": "No assistant yet",
+          "text": "Add one for a person. They connect their AI app to it by signing in at the app."
+        },
+        "add": {
+          "open": "Add an assistant",
+          "lead": "One person’s own. A name, unique in this workspace. An assistant starts with the role «Assistant».",
+          "name": "Name",
+          "nameNote": "Name it for what it is used for. You can rename it later; history then shows the new name.",
+          "for": "For",
+          "choose": "Choose a person…",
+          "forNote": "Only they can connect an AI app to it, and they keep it until it is removed.",
+          "submit": "Add",
+          "cancel": "Cancel",
+          "suggested": "Assistant {n}",
+          "errPerson": "Choose the person it is for."
+        },
+        "showRemoved": "Show removed assistants",
+        "removedOn": "removed {day}",
+        "addedOn": "added {day}",
+        "columns": {
+          "person": "Its person",
+          "apps": "Connected apps",
+          "last": "Last used"
+        },
+        "appsCount": "{n} app | {n} apps",
+        "noAppYet": "no app yet",
+        "noKey": "A person connects their AI app by signing in at it and choosing one of their own assistants. Nobody holds a key.",
+        "when": {
+          "today": "today",
+          "yesterday": "yesterday",
+          "moment": "{day}, {time}"
+        },
+        "panel": {
+          "sub": "assistant · {person}’s",
+          "subRemoved": "assistant · removed {day}",
+          "appsConnected": "{n} app connected | {n} apps connected",
+          "noAppYet": "no app yet",
+          "name": "Name",
+          "rename": "Rename",
+          "nameNote": "Unique in this workspace. Every line it made shows the name it has now.",
+          "person": "Its person",
+          "nobody": "Nobody",
+          "added": "added {day}",
+          "personNote": "Only {first} can connect an AI app to it. To give an assistant to someone else, add a new one for them.",
+          "rolesNote": "A role given here holds across the whole workspace. An AI app connected as {name} does only what both its roles and {first} may do.",
+          "apps": "Connected apps",
+          "appsReading": "Reading its connected apps…",
+          "appsUnread": "Its connected apps could not be read just now.",
+          "noApp": "No app connected yet. {first} connects one by signing in at it and choosing {name}.",
+          "connected": "connected {at}",
+          "lastUsed": "last used {when}",
+          "notUsedYet": "not used yet",
+          "signOut": "Sign out",
+          "signOutAsk": "Sign this {app} out?",
+          "signOutDetail": "It stops at once, and so does anything it is doing through {name}. {first} can connect it again by signing in at it.",
+          "signOutDo": "Sign it out",
+          "appsNote": "Each AI app signed in as {name}. Signing one out stops it at once; the others go on.",
+          "marksNote": "What it did shows wherever the app names who did something, as",
+          "marksOnly": "A history can be narrowed to its lines alone.",
+          "remove": "Remove {name}",
+          "removeAsk": "Remove {name}?",
+          "removeDetail": "Every app connected as it is signed out at once, and {first} can no longer choose it. What it did stays in the history, still marked ✦ through {name}.",
+          "removeDo": "Remove it",
+          "removedNote": "Nobody can use it any more. What it did stays in the history, still marked",
+          "removedName": "Its name can be given to a new assistant."
+        }
       }
     },
     "history": {
@@ -635,7 +724,11 @@
         "entitled": "gave the workspace {what}",
         "entitledUnnamed": "gave the workspace something this list cannot name",
         "entitlementRevoked": "took {what} away from the workspace",
-        "entitlementRevokedUnnamed": "took something away from the workspace that this list cannot name"
+        "entitlementRevokedUnnamed": "took something away from the workspace that this list cannot name",
+        "assistantAdded": "added the assistant «{name}» for {person}",
+        "assistantRenamed": "renamed the assistant «{from}» to «{to}»",
+        "assistantRemoved": "removed the assistant «{name}»",
+        "roleSeededWithAssistant": "added the role «{role}» with the first assistant"
       }
     }
   }

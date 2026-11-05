@@ -14,7 +14,7 @@
 // Each list is read once a visit. An act reads again only the list it changed.
 import { defineStore } from 'pinia'
 
-import { ApiError, del, get, post, put, relay, segment } from '../lib/api'
+import { API_ROOT, ApiError, del, get, post, put, relay, segment } from '../lib/api'
 import type { DeclaringService } from '../lib/boxes'
 import { calledAlike, readsAlike, type Labels, type Named } from '../lib/names'
 import en from '../locales/en.json'
@@ -92,6 +92,42 @@ export interface Position {
   people?: { userId: string }[]
 }
 
+/**
+ * One of the workspace's assistants, whole: a named member that is one person's
+ * own, through which that person connects an AI app. Its person is chosen when it
+ * is added and never changed; a removed one stays listed, so old history keeps a
+ * name.
+ */
+export interface Assistant {
+  id: string
+  subjectKey: string
+  name: string
+  status: 'invited' | 'active' | 'revoked'
+  /** Its person; null for one that serves nobody. */
+  person: { id: string; subjectKey: string; displayName: string } | null
+  addedAt: string
+  /** When it was removed; null while it is not. */
+  removedAt: string | null
+}
+
+/** One AI app connected as an assistant, named by the app and when it connected. */
+export interface Connection {
+  id: string
+  app: string
+  connectedAt: string
+  /** When a call last went through it; null until one did. */
+  lastUsed: string | null
+}
+
+/** The apps connected as one assistant: being read, read, or not readable. */
+export interface Apps {
+  state: 'reading' | 'read' | 'unread'
+  lines: Connection[]
+}
+
+/** Whether a member is an assistant, by its key. */
+export const isAssistantKey = (subjectKey: string) => subjectKey.startsWith('svc:assistant-')
+
 /** What the host's setting holds now: read, being read, or not readable. */
 export interface SettingValue {
   state: 'reading' | 'read' | 'unread'
@@ -131,9 +167,13 @@ type Act =
   | 'setting'
   | 'saveNote'
   | 'invite'
+  | 'addAssistant'
+  | 'renameAssistant'
+  | 'removeAssistant'
+  | 'signOutApp'
 
-/** The three lists the register keeps for a workspace. */
-type List = 'access' | 'roles' | 'user-types'
+/** The lists the register keeps for a workspace. */
+type List = 'access' | 'roles' | 'user-types' | 'assistants'
 
 /** What the register answers for the people: the members, and whether it could read how each signs in. */
 interface Access {
@@ -169,6 +209,15 @@ export const usePeople = defineStore('configbyte-people', {
     /** The host's role settings, by key. */
     settings: {} as Record<string, SettingValue>,
     settingsRead: false,
+    /** The assistants, whole, removed ones included; read when the Assistants tab first opens in a visit. */
+    assistants: [] as Assistant[],
+    assistantsRead: false,
+    /** Whether that read has answered, one way or the other. */
+    assistantsLoaded: false,
+    /** Why the assistants could not be read; empty means they were, or are not asked for yet. */
+    assistantsFailed: '' as '' | 'unanswered' | 'notAdministrator' | 'other',
+    /** The apps connected as each assistant, by its key. */
+    apps: {} as Record<string, Apps>,
     loading: false,
     loaded: false,
     /**
@@ -194,6 +243,8 @@ export const usePeople = defineStore('configbyte-people', {
     workspaceDefault: (state) => state.userTypes.find((u) => u.workspaceDefault) ?? null,
     /** The restricted fields have been answered, one way or the other. */
     fieldsSettled: (state) => state.fieldsRead && !state.fieldsReading,
+    /** The assistants not removed, counted from the people's read, so the tab says it before the list is read. */
+    liveAssistants: (state) => state.members.filter((m) => isAssistantKey(m.subjectKey) && m.status !== 'revoked').length,
   },
   actions: {
     path(rest: string): string {
@@ -233,6 +284,11 @@ export const usePeople = defineStore('configbyte-people', {
       this.fieldsReading = false
       this.settings = {}
       this.settingsRead = false
+      this.assistants = []
+      this.assistantsRead = false
+      this.assistantsLoaded = false
+      this.assistantsFailed = ''
+      this.apps = {}
       const [access, roles, types, vocabulary] = await Promise.allSettled([
         get<Access>(this.tenantPath('access')),
         get<{ roles: Role[] }>(this.tenantPath('roles')),
@@ -331,9 +387,144 @@ export const usePeople = defineStore('configbyte-people', {
         }
         if (roles) this.roles = roles.roles ?? []
         if (types) this.userTypes = types.userTypes ?? []
+        if (which.includes('assistants')) this.assistants = (await this.readAssistants()) ?? this.assistants
       } catch {
         // The act itself went through; what is shown is a moment old until the next read.
       }
+    },
+
+    /** The assistants whole, as the register answers its administrator. */
+    async readAssistants(): Promise<Assistant[]> {
+      const page = await get<{ items: Assistant[] }>(this.tenantPath('assistants?whole=true'))
+
+      return page.items ?? []
+    },
+
+    /** The assistants, once a visit, and then the apps connected as each one not removed. */
+    async ensureAssistants() {
+      if (this.assistantsRead) return
+      this.assistantsRead = true
+      this.assistantsFailed = ''
+      const visit = this.visit
+      try {
+        const list = await this.readAssistants()
+        if (visit !== this.visit) return
+        this.assistants = list
+      } catch (e) {
+        if (visit !== this.visit) return
+        this.assistantsFailed = unanswered(e) ? 'unanswered' : e instanceof ApiError && e.status === 403 ? 'notAdministrator' : 'other'
+        this.assistantsLoaded = true
+
+        return
+      }
+      this.assistantsLoaded = true
+      await Promise.all(this.assistants.filter((a) => a.status !== 'revoked').map((a) => this.readApps(a)))
+    },
+
+    /**
+     * The apps connected as one assistant, from the sign-in authority through the
+     * coordinator. Apps that cannot be read are said to be so; the rest of the page
+     * stands.
+     */
+    async readApps(a: Assistant) {
+      const visit = this.visit
+      this.apps[a.subjectKey] = { state: 'reading', lines: this.apps[a.subjectKey]?.lines ?? [] }
+      try {
+        const answer = await get<{ connections: Connection[] }>(`${API_ROOT}/assistants/${segment(a.subjectKey)}/connections`)
+        if (visit === this.visit) this.apps[a.subjectKey] = { state: 'read', lines: answer.connections ?? [] }
+      } catch {
+        if (visit === this.visit) this.apps[a.subjectKey] = { state: 'unread', lines: [] }
+      }
+    },
+
+    /**
+     * Add an assistant for one person. It starts in the role the register gives
+     * it, which the first one brings to the workspace, so the roles are read
+     * again too. Answers its id when it was added, or an empty string.
+     */
+    async addAssistant(input: { name: string; person: Member }): Promise<string> {
+      const first = !this.roles.some((r) => r.seed === 'assistant')
+      let made: { id: string; role: { name: string } | null } | undefined
+      const ok = await this.act(
+        'addAssistant',
+        async () => {
+          made = await post<{ id: string; role: { name: string } | null }>(this.tenantPath('assistants'), {
+            name: input.name,
+            person: input.person.id,
+          })
+        },
+        'assistantAdded',
+        { name: input.name, person: input.person.displayName, first: input.person.displayName.split(/\s+/)[0] ?? input.person.displayName },
+        { reread: ['access', 'roles', 'assistants'] },
+      )
+      if (!ok || !made) return ''
+      const role = made.role?.name ?? ''
+      if (this.said?.kind === 'said') {
+        this.said = { ...this.said, key: !role ? 'assistantAddedNoRole' : first ? 'assistantAddedFirst' : 'assistantAdded', values: { ...this.said.values, role } }
+      }
+      // A new assistant has no app yet; one the list could not be read again for shows when it is.
+      const added = this.assistants.find((a) => a.id === made!.id)
+      if (added) this.apps[added.subjectKey] = { state: 'read', lines: [] }
+
+      return made.id
+    },
+
+    /** Give an assistant another name; the same name again changes nothing and asks nothing. */
+    renameAssistant(a: Assistant, name: string) {
+      if (name === a.name) return Promise.resolve(true)
+
+      return this.act(
+        'renameAssistant',
+        () => put(this.tenantPath(`assistants/${segment(a.id)}/name`), { name }),
+        'assistantRenamed',
+        { from: a.name, name },
+        { reread: ['access', 'assistants'] },
+      )
+    },
+
+    /** Sign one app connected as an assistant out: it stops at once, the others go on. */
+    async signOutApp(a: Assistant, c: Connection, at: string) {
+      const ok = await this.act(
+        'signOutApp',
+        () => del(`${API_ROOT}/assistants/${segment(a.subjectKey)}/connections/${segment(c.id)}`),
+        'appSignedOut',
+        { app: c.app, at },
+        { reread: [] },
+      )
+      await this.readApps(a)
+
+      return ok
+    },
+
+    /**
+     * Remove an assistant: every app connected as it is signed out at the sign-in
+     * authority first, so they stop at once, then the register removes it. When the
+     * authority cannot sign them out, the register still removes it, the authority
+     * then refuses its apps at their next sign-in check, and the words say so.
+     */
+    async removeAssistant(a: Assistant) {
+      this.said = null
+      let appsLeft = false
+      try {
+        await del(`${API_ROOT}/assistants/${segment(a.subjectKey)}/connections`)
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 403) {
+          this.said = this.refusal('removeAssistant', e, { name: a.name })
+
+          return false
+        }
+        appsLeft = true
+      }
+      const ok = await this.act(
+        'removeAssistant',
+        () => del(this.path(`users/${segment(a.id)}?tenant=${segment(this.tenant)}`)),
+        appsLeft ? 'assistantRemovedAppsLater' : 'assistantRemoved',
+        { name: a.name },
+        { reread: ['access', 'assistants'] },
+      )
+      if (ok) this.apps[a.subjectKey] = { state: 'read', lines: [] }
+
+      return ok
     },
 
     /**
@@ -393,6 +584,13 @@ export const usePeople = defineStore('configbyte-people', {
         if (e.status === 422) return refused('inviteInvalid')
         if (e.status === 409) return refused('inviteConflict')
       }
+      if (act === 'addAssistant' || act === 'renameAssistant') {
+        if (e.status === 409) return refused('assistantNameTaken')
+        if (e.status === 400 || e.status === 422) return refused(act === 'addAssistant' ? 'assistantRefused' : 'assistantInvalid')
+        if (e.status === 404) return refused('assistantGone')
+      }
+      if (act === 'signOutApp' && e.status === 404) return refused('appGone')
+      if (act === 'removeAssistant' && e.status === 404) return refused('assistantGone')
       if (e.status === 409) {
         switch (act) {
           case 'administrator':

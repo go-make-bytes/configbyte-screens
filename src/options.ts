@@ -287,6 +287,13 @@ export interface AdminOptions {
    * same name read it; absent, or not found by the coordinator, neither shows.
    */
   register?: string
+  /**
+   * Whether the deployment has assistants: named members, each one person's own,
+   * through which that person connects an AI app. People & access then shows them
+   * on a tab of their own, with the apps connected as each, which the coordinator
+   * reads from the sign-in authority. Absent or false: no such tab.
+   */
+  assistants?: boolean
   /** How an import's rows are named and worded. Absent: the screens' own words. */
   transfer?: TransferOptions
   /** How the Roles screen shows boxes. */

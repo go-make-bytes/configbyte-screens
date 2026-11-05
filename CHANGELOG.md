@@ -3,6 +3,22 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.14.0
+
+Built on `uibyte` `v0.18.0`, unchanged. **With `assistants`, needs** a membership register that reads its assistants
+whole (`GET …/assistants?whole=true`; rolebyte v0.4.0) and a coordinator with the assistants' connections routes
+(configbyte v0.2.0). Without it nothing changes.
+
+### Added
+
+- **People & access › Assistants**, when the host sets `assistants: true`: a fourth tab with the workspace's
+  assistants, each one person's own, with its person, roles, connected AI apps and when one was last used; adding one
+  for a person; an assistant's page with Rename, its person, its roles, its connected apps each with Sign out, and
+  Remove, which signs its apps out first. Routes `/people/assistants` and `/people/assistants/:id`, exported as
+  `PEOPLE_ASSISTANTS` and `PEOPLE_ASSISTANT`.
+- **History says the assistants' setup lines:** *added the assistant «…» for …*, *renamed the assistant «…» to «…»*,
+  *removed the assistant «…»*, and *added the role «…» with the first assistant*.
+
 ## v0.13.0
 
 Built on `uibyte` `v0.18.0`, unchanged. **Needs an authority that reads the card on its own sign-in page** (authbyte

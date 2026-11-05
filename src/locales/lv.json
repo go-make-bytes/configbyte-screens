@@ -277,7 +277,8 @@
       "tabs": {
         "users": "Lietotāji",
         "roles": "Lomas",
-        "types": "Lietotāju veidi"
+        "types": "Lietotāju veidi",
+        "assistants": "Asistenti"
       },
       "users": {
         "lead": "Kas ir šajā darbvietā un kas katram ir visā darbvietā.",
@@ -499,7 +500,14 @@
         "typeDeleted": "Lietotāja veids izdzēsts.",
         "corporateLogin": "Saglabāts: no šī brīža to saņem cilvēki, kas ienāk ar uzņēmuma pieteikšanos.",
         "noteSaved": "Piezīme saglabāta.",
-        "invited": "{name} uzaicināts. Rindā rakstīts: uzaicināts, vēl nav pieslēdzies, līdz pirmajai pieslēgšanās reizei ar karti."
+        "invited": "{name} uzaicināts. Rindā rakstīts: uzaicināts, vēl nav pieslēdzies, līdz pirmajai pieslēgšanās reizei ar karti.",
+        "assistantAdded": "{name} pievienots cilvēkam {person} ar lomu «{role}». {first} tam pievieno savu MI lietotni, pierakstoties lietotnē.",
+        "assistantAddedFirst": "{name} pievienots cilvēkam {person} ar lomu «{role}», kas šai darbvietai tagad ir (sadaļā Lomas). {first} tam pievieno savu MI lietotni, pierakstoties lietotnē.",
+        "assistantAddedNoRole": "{name} pievienots cilvēkam {person} bez lomas: šai darbvietai ir pašai sava loma ar šādu nosaukumu. Piešķiriet tam lomu zemāk.",
+        "assistantRenamed": "{from} tagad saucas «{name}». Katrā rindā, ko tas izdarījis, redzams jaunais nosaukums.",
+        "appSignedOut": "{app}, kas pievienota {at}, tika izrakstīta. Tā apstājās uzreiz.",
+        "assistantRemoved": "{name} noņemts. Katra lietotne, kas pievienota kā tas, tika uzreiz izrakstīta.",
+        "assistantRemovedAppsLater": "{name} noņemts. Tā lietotnes šobrīd nevarēja izrakstīt, tāpēc katra apstāsies nākamajā pierakstīšanās pārbaudē, dažu minūšu laikā."
       },
       "refused": {
         "lastAdministrator": "{name} ir šīs darbvietas pēdējais administrators. Vispirms padariet par administratoru kādu citu.",
@@ -523,11 +531,92 @@
         "inviteUnavailable": "Šī izvietošana šobrīd nevar reģistrēt cilvēkus, tāpēc neviens netika uzaicināts.",
         "unanswered": "Administrēšanas serviss neatbildēja, tāpēc nekas netika mainīts. Mēģiniet vēlreiz.",
         "other": "Tas netika izdarīts: {reason}",
-        "unreadable": "Tas netika izdarīts: atbildi nevarēja nolasīt. Mēģiniet vēlreiz."
+        "unreadable": "Tas netika izdarīts: atbildi nevarēja nolasīt. Mēģiniet vēlreiz.",
+        "assistantNameTaken": "Cits asistents jau saucas «{name}».",
+        "assistantNoName": "Asistentam vajag nosaukumu.",
+        "assistantInvalid": "Asistenta nosaukums ir no 1 līdz 100 rakstzīmēm vienā rindā.",
+        "assistantRefused": "Tas netika pievienots: tā nosaukums ir no 1 līdz 100 rakstzīmēm vienā rindā, un tā cilvēks ir kāds, kas šajā darbvietā ir aktīvs.",
+        "assistantGone": "Šī asistenta šajā darbvietā vairs nav.",
+        "appGone": "Šī lietotne jau bija izrakstīta."
       },
       "inLanguage": {
         "en": "angliski",
         "lv": "latviski"
+      },
+      "assistants": {
+        "lead": "Asistents ir viena cilvēka asistents. Caur to šī cilvēka MI lietotne strādā šajā darbvietā viņa vietā, kā šis cilvēks un nekad ne tālāk par asistenta lomām, un vēsturē ir redzami abi",
+        "leadExample": ":",
+        "through": "caur {name}",
+        "loading": "Nolasa asistentus…",
+        "failedUnanswered": "Administrēšanas serviss neatbildēja, tāpēc asistentus nevarēja nolasīt. Mēģiniet vēlreiz.",
+        "failed": "Asistentus nevarēja nolasīt.",
+        "none": {
+          "title": "Asistentu vēl nav",
+          "text": "Pievienojiet asistentu kādam cilvēkam. Viņš tam pievieno savu MI lietotni, pierakstoties tajā."
+        },
+        "add": {
+          "open": "Pievienot asistentu",
+          "lead": "Viena cilvēka asistents. Nosaukums, šajā darbvietā unikāls. Asistents sāk ar lomu «Asistents».",
+          "name": "Nosaukums",
+          "nameNote": "Nosauciet to pēc tā, kam to lieto. Vēlāk to var pārdēvēt; vēsturē tad redzams jaunais nosaukums.",
+          "for": "Kam",
+          "choose": "Izvēlēties cilvēku…",
+          "forNote": "Tikai šis cilvēks var tam pievienot MI lietotni, un asistents ir viņa, līdz to noņem.",
+          "submit": "Pievienot",
+          "cancel": "Atcelt",
+          "suggested": "Asistents {n}",
+          "errPerson": "Izvēlieties cilvēku, kam tas ir."
+        },
+        "showRemoved": "Rādīt noņemtos asistentus",
+        "removedOn": "noņemts {day}",
+        "addedOn": "pievienots {day}",
+        "columns": {
+          "person": "Tā cilvēks",
+          "apps": "Pievienotās lietotnes",
+          "last": "Pēdējoreiz lietots"
+        },
+        "appsCount": "{n} lietotne | {n} lietotnes",
+        "noAppYet": "lietotnes vēl nav",
+        "noKey": "Cilvēks pievieno savu MI lietotni, pierakstoties tajā un izvēloties kādu no saviem asistentiem. Nevienam nav atslēgas.",
+        "when": {
+          "today": "šodien",
+          "yesterday": "vakar",
+          "moment": "{day}, {time}"
+        },
+        "panel": {
+          "sub": "asistents · {person}",
+          "subRemoved": "asistents · noņemts {day}",
+          "appsConnected": "pievienota {n} lietotne | pievienotas {n} lietotnes",
+          "noAppYet": "lietotnes vēl nav",
+          "name": "Nosaukums",
+          "rename": "Pārdēvēt",
+          "nameNote": "Šajā darbvietā unikāls. Katrā rindā, ko tas izdarījis, redzams tā pašreizējais nosaukums.",
+          "person": "Tā cilvēks",
+          "nobody": "Neviens",
+          "added": "pievienots {day}",
+          "personNote": "Tikai {first} var tam pievienot MI lietotni. Lai asistentu dotu kādam citam, pievienojiet viņam jaunu.",
+          "rolesNote": "Šeit piešķirta loma ir spēkā visā darbvietā. MI lietotne, kas pievienota kā {name}, dara tikai to, ko drīkst gan tā lomas, gan {first}.",
+          "apps": "Pievienotās lietotnes",
+          "appsReading": "Nolasa pievienotās lietotnes…",
+          "appsUnread": "Pievienotās lietotnes šobrīd nevarēja nolasīt.",
+          "noApp": "Neviena lietotne vēl nav pievienota. {first} to pievieno, pierakstoties lietotnē un izvēloties {name}.",
+          "connected": "pievienota {at}",
+          "lastUsed": "pēdējoreiz lietota {when}",
+          "notUsedYet": "vēl nav lietota",
+          "signOut": "Izrakstīt",
+          "signOutAsk": "Izrakstīt šo {app}?",
+          "signOutDetail": "Tā apstājas uzreiz, un tāpat viss, ko tā dara caur {name}. {first} to var pievienot vēlreiz, pierakstoties tajā.",
+          "signOutDo": "Izrakstīt",
+          "appsNote": "Katra MI lietotne, kas pierakstījusies kā {name}. Kad vienu izraksta, tā apstājas uzreiz; pārējās turpina.",
+          "marksNote": "Tas, ko tas izdarījis, redzams visur, kur lietotne norāda, kas ko darījis, kā",
+          "marksOnly": "Vēsturi var sašaurināt līdz tikai tā rindām.",
+          "remove": "Noņemt {name}",
+          "removeAsk": "Noņemt {name}?",
+          "removeDetail": "Katra lietotne, kas pievienota kā tas, tiek uzreiz izrakstīta, un {first} to vairs nevar izvēlēties. Tas, ko tas izdarījis, paliek vēsturē, joprojām atzīmēts ✦ caur {name}.",
+          "removeDo": "Noņemt",
+          "removedNote": "To vairs neviens nevar lietot. Tas, ko tas izdarījis, paliek vēsturē, joprojām atzīmēts",
+          "removedName": "Tā nosaukumu var dot jaunam asistentam."
+        }
       }
     },
     "history": {
@@ -635,7 +724,11 @@
         "entitled": "piešķīra darbvietai {what}",
         "entitledUnnamed": "piešķīra darbvietai kaut ko, ko šis saraksts nespēj nosaukt",
         "entitlementRevoked": "atņēma darbvietai {what}",
-        "entitlementRevokedUnnamed": "atņēma darbvietai kaut ko, ko šis saraksts nespēj nosaukt"
+        "entitlementRevokedUnnamed": "atņēma darbvietai kaut ko, ko šis saraksts nespēj nosaukt",
+        "assistantAdded": "pievienoja asistentu «{name}» cilvēkam {person}",
+        "assistantRenamed": "pārdēvēja asistentu «{from}» par «{to}»",
+        "assistantRemoved": "noņēma asistentu «{name}»",
+        "roleSeededWithAssistant": "pievienoja lomu «{role}» kopā ar pirmo asistentu"
       }
     }
   }

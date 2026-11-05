@@ -21,6 +21,10 @@ export const PEOPLE_USER_TYPES = 'configbyte-people-user-types'
 export const PEOPLE_USER_TYPE_NEW = 'configbyte-people-user-type-new'
 /** One user type, on a page of its own: `/people/user-types/:id`. */
 export const PEOPLE_USER_TYPE = 'configbyte-people-user-type'
+/** The Assistants list. */
+export const PEOPLE_ASSISTANTS = 'configbyte-people-assistants'
+/** One assistant open, beside the Assistants list or alone: `/people/assistants/:id`. */
+export const PEOPLE_ASSISTANT = 'configbyte-people-assistant'
 
 /**
  * The places inside People & access are children of its one screen, so that
@@ -47,6 +51,8 @@ export function adminRoutes(): RouteRecordRaw[] {
         { path: 'user-types', name: PEOPLE_USER_TYPES, component: place },
         { path: 'user-types/new', name: PEOPLE_USER_TYPE_NEW, component: place },
         { path: 'user-types/:id', name: PEOPLE_USER_TYPE, component: place },
+        { path: 'assistants', name: PEOPLE_ASSISTANTS, component: place },
+        { path: 'assistants/:id', name: PEOPLE_ASSISTANT, component: place },
       ],
     },
   ]

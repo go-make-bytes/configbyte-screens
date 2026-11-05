@@ -15,6 +15,8 @@ import { Button, PageHeader, Tabs, type TabItem } from 'uibyte'
 import { useAdminOptions } from '../options'
 import {
   PEOPLE_ACCESS,
+  PEOPLE_ASSISTANT,
+  PEOPLE_ASSISTANTS,
   PEOPLE_ROLE,
   PEOPLE_ROLE_NEW,
   PEOPLE_ROLES,
@@ -25,6 +27,7 @@ import {
 } from '../routes'
 import { usePeople } from '../stores/people'
 import { useAdminSession } from '../stores/session'
+import AssistantsList from './people/AssistantsList.vue'
 import RolePage from './people/RolePage.vue'
 import RolesList from './people/RolesList.vue'
 import UsersList from './people/UsersList.vue'
@@ -39,8 +42,8 @@ const route = useRoute()
 const router = useRouter()
 const w = (key: string) => `configbyte.people.${key}`
 
-type Tab = 'users' | 'roles' | 'types'
-type Place = 'users' | 'user' | 'roles' | 'role' | 'types' | 'type'
+type Tab = 'users' | 'roles' | 'types' | 'assistants'
+type Place = 'users' | 'user' | 'roles' | 'role' | 'types' | 'type' | 'assistants' | 'assistant'
 
 const first = (value: unknown) => String((Array.isArray(value) ? value[0] : value) ?? '')
 const id = computed(() => first(route.params.id))
@@ -60,11 +63,21 @@ const place = computed<Place>(() => {
     case PEOPLE_USER_TYPE:
     case PEOPLE_USER_TYPE_NEW:
       return 'type'
+    // A deployment without assistants has no such place: the address opens the Users list.
+    case PEOPLE_ASSISTANTS:
+      return options.assistants ? 'assistants' : 'users'
+    case PEOPLE_ASSISTANT:
+      return options.assistants ? 'assistant' : 'users'
     default:
       return 'users'
   }
 })
-const tab = computed<Tab>(() => ({ users: 'users', user: 'users', roles: 'roles', role: 'roles', types: 'types', type: 'types' })[place.value] as Tab)
+const tab = computed<Tab>(
+  () =>
+    ({ users: 'users', user: 'users', roles: 'roles', role: 'roles', types: 'types', type: 'types', assistants: 'assistants', assistant: 'assistants' })[
+      place.value
+    ] as Tab,
+)
 
 /** The people whose access is not revoked: persons, never the services acting here. */
 const present = computed(() => people.people.filter((m) => m.status !== 'revoked').length)
@@ -75,17 +88,28 @@ const tabs = computed<TabItem[]>(() => [
   { key: 'users', label: t(w('tabs.users')), tag: tag(present.value) },
   { key: 'roles', label: t(w('tabs.roles')), tag: tag(people.roles.length) },
   { key: 'types', label: t(w('tabs.types')), tag: tag(people.userTypes.length) },
+  ...(options.assistants ? [{ key: 'assistants', label: t(w('tabs.assistants')), tag: tag(people.liveAssistants) }] : []),
 ])
 
-const lists: Record<Tab, string> = { users: PEOPLE_ACCESS, roles: PEOPLE_ROLES, types: PEOPLE_USER_TYPES }
+const lists: Record<Tab, string> = { users: PEOPLE_ACCESS, roles: PEOPLE_ROLES, types: PEOPLE_USER_TYPES, assistants: PEOPLE_ASSISTANTS }
 
 /** Whether the invitation form is open. */
 const inviting = ref(false)
+/** Whether the form that adds an assistant is open. */
+const adding = ref(false)
 
 function choose(key: string) {
   people.said = null
   inviting.value = false
+  adding.value = false
   void router.push({ name: lists[key as Tab] })
+}
+
+/** Open the form that adds an assistant, on the list: an assistant open beside it gives way. */
+function add() {
+  people.said = null
+  adding.value = true
+  if (place.value === 'assistant') void router.push({ name: PEOPLE_ASSISTANTS })
 }
 
 /** Open the invitation form, on the list: a person open beside it gives way. */
@@ -103,7 +127,7 @@ function invite() {
 function pressed(ev: MouseEvent) {
   const button = (ev.target as Element | null)?.closest?.('[role="tab"]')
   if (!button || button.getAttribute('aria-selected') !== 'true') return
-  if (place.value !== 'user' && place.value !== 'role' && place.value !== 'type') return
+  if (place.value !== 'user' && place.value !== 'role' && place.value !== 'type' && place.value !== 'assistant') return
   choose(tab.value)
 }
 
@@ -131,9 +155,11 @@ const counts = computed(() => {
   ].join(' · ')
 })
 
-// A person opened takes the form's place; what was typed in it goes with it.
+// A person opened takes the form's place; what was typed in it goes with it. So
+// does an assistant opened, for the form that adds one.
 watch(place, (now) => {
   if (now !== 'users') inviting.value = false
+  if (now !== 'assistants') adding.value = false
 })
 
 // An address naming something the lists do not hold opens the list it belongs to.
@@ -168,6 +194,10 @@ onMounted(() => {
       <template v-if="tab === 'users' && people.loaded && !people.failed" #actions>
         <Button size="sm" data-act="invite-open" @click="invite">{{ t(w('users.invite.open')) }}</Button>
       </template>
+      <!-- While there is none, the empty list holds the one button. -->
+      <template v-else-if="tab === 'assistants' && people.loaded && !people.failed && people.liveAssistants > 0 && !adding" #actions>
+        <Button size="sm" data-act="assistant-add-open" @click="add">{{ t(w('assistants.add.open')) }}</Button>
+      </template>
     </PageHeader>
 
     <Tabs class="mt-5" :tabs="tabs" :model-value="tab" :label="t(w('title'))" @update:model-value="choose" @click="pressed" />
@@ -186,6 +216,13 @@ onMounted(() => {
       <RolesList v-else-if="place === 'roles'" />
       <RolePage v-else-if="place === 'role'" :role-id="route.name === PEOPLE_ROLE ? id : ''" />
       <UserTypesList v-else-if="place === 'types'" />
+      <AssistantsList
+        v-else-if="place === 'assistants' || place === 'assistant'"
+        :open-id="place === 'assistant' ? id : ''"
+        :adding="adding"
+        @add="add"
+        @close-add="adding = false"
+      />
       <UserTypePage v-else :type-id="route.name === PEOPLE_USER_TYPE ? id : ''" />
     </template>
   </section>

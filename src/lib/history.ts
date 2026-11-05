@@ -91,6 +91,8 @@ export interface Names {
   grant(group: string, level: string): string
   /** Whether a member is a service the workspace runs on rather than a person. */
   isService(id: string): boolean
+  /** Whether a member is an assistant: one person's own, through which their AI app works. */
+  isAssistant(id: string): boolean
 }
 
 /** Corporate login issuers a person knows by name, by the host of the issuer's address. */
@@ -212,7 +214,13 @@ export function registerWords(line: HistoryLine, names: Names): Worded | null {
     case 'directoryAdmitted':
       return about('directoryAdmitted')
     case 'userRevoked':
-      return by('userRevoked', { person })
+      return names.isAssistant(member) ? by('assistantRemoved', { name: person }) : by('userRevoked', { person })
+    // An assistant is added for one person, chosen then; each line names it as it
+    // was called then. Its roles are given and taken in the lines every member's are.
+    case 'assistantAdded':
+      return by('assistantAdded', { name: asText(p.name), person: names.member(asText(p.personId)) })
+    case 'assistantRenamed':
+      return by('assistantRenamed', { from: asText(p.from), to: asText(p.to) })
     case 'noteChanged':
       return by(p.cleared === true ? 'noteCleared' : 'noteChanged', { person })
     case 'roleGranted':
@@ -234,7 +242,8 @@ export function registerWords(line: HistoryLine, names: Names): Worded | null {
     case 'tenantRoleDefined':
       return by('roleDefined', { role })
     case 'tenantRoleSeeded':
-      return by('roleSeeded', { role })
+      // The role every assistant starts in is made with the workspace's first one.
+      return p.seed === 'assistant' ? by('roleSeededWithAssistant', { role }) : by('roleSeeded', { role })
     case 'tenantRoleRenamed': {
       // Written when the name or the names in other languages change: a name
       // that stayed means only the names in other languages did.

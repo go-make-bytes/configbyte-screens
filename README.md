@@ -175,6 +175,22 @@ marked on every one of them.
   name, what it is for and what it holds, **Save**, **Cancel** and **Delete** (not on the one new people get). How
   many people hold a user type is never shown: a delete is refused by the register with the reason.
 
+- **Assistants** (only when the host sets `assistants`): `/people/assistants`, and `/people/assistants/:id` one open
+  beside the list or alone when there is no room. An assistant is one person's own, through which that person's AI app
+  works in the workspace for them, as that person and never beyond its own roles. Each row says its name and the day it
+  was added, its person, its roles across the workspace, how many AI apps are connected as it (*no app yet*) and when one
+  was last used; the removed ones stay behind **Show removed assistants**, dated, so old history keeps a name. With
+  none, the empty list holds the one **Add an assistant**; otherwise the head does. Adding asks for a name (1 to 100
+  characters on one line, unique among the workspace's assistants) and **For**, one of the workspace's active people;
+  the person is chosen then and never changed. The page renames it, shows its person, gives and takes its roles as a
+  person's are, lists the apps connected as it (*connected …*, *last used …* or *not used yet*), each with **Sign out**,
+  and **Remove**; both are asked first, in place. Remove signs every app connected as it out at the sign-in authority
+  first, so they stop at once, then the register removes it; when the authority cannot, it is still removed and the
+  words say its apps stop at their next sign-in check. The register reads the list whole (`assistants?whole=true`);
+  the apps are the coordinator's `/assistants/{assistant}/connections`. The route names are exported
+  (`PEOPLE_ASSISTANTS`, `PEOPLE_ASSISTANT`). History says the assistants' own setup lines: an assistant added for its
+  person, renamed, removed, and the role made with the first one; its roles are said as every member's.
+
 Each list is read once a visit, and an act reads again only the list it changed.
 
 Roles, user types and positions are shown by their names as entered. The names in other languages the register may
@@ -290,6 +306,7 @@ Every text is a **message key in the host's own translator**, so it reads in the
 | `never` | the Export card's last line: what the file never carries |
 | `entries` | the host's own admin screens: a label, the route it opens, the section whose owner serves it, and optionally the `group` it sits in, its `icon`, and `locked` for a subject the workspace lacks |
 | `register` | the section of the membership register; People & access and its History filter show only when the coordinator found it |
+| `assistants` | `true` when the deployment has assistants (each one person's own, through which they connect an AI app): People & access then has an *Assistants* tab; absent or `false`, none |
 | `roles` | how the Roles screen shows boxes: its `groups` (each a word and the starts of the permission names it gathers), the restricted `fields` the host reads from their owners, the `guard` sentence for a ticked field's box, and `settings`, the host's own choices of a role, listed under the roles |
 | `history` | History: its `filters` (each an area: a key and the key of its word) and `sources` (a section, the query that keeps its lines, its filter, and optionally `locked`); `describe`, the sentence for a line of the host's own services; `entitlements` and `boxes`, the host's words (message keys) for what a workspace was given, by service or `service/feature`, and for a box a position sees, by permission; and `prepare(areas)`, called with the ticked areas' keys when History opens and when a tick turns on, so the host can read what its sentences name |
 | `transfer` | how an import's rows are named and worded: `find`, which finds an item in the file when a report's key is not the item's `key` or `number` (it is handed the part's items as the file has them, so it checks a value's type before using it); `members`, a message for each changed member the screens have no words for (said as *its … changes*); and `describe`, a row in the host's own words (its name, what happens to it, its part, the entry where it is taken out of use), or `null` to keep the screens' own |
@@ -391,7 +408,8 @@ with the `__Host-` cookies.
 | `POST` | `/logout` | ends the session; answers where to go next |
 | `GET` | `/config/export` | the whole configuration as one file |
 | `POST` | `/config/import?dryRun=true` · `/config/import` | what a file would do, then applying exactly that |
-| any | `/sections/{section}/{path}` | relayed to that section's owner: People & access calls the register's `tenants/{id}/access`, `…/roles`, `…/user-types`, `…/corporate-login-default`, `…/administrators/{user}`, `…/chart/positions`, `users/{user}`, `…/users/{user}/note`, `…/users/{user}/identity-code`, `…/people` and `config`; History calls `history` on the register and on each stream's owner |
+| any | `/sections/{section}/{path}` | relayed to that section's owner: People & access calls the register's `tenants/{id}/access`, `…/roles`, `…/user-types`, `…/corporate-login-default`, `…/administrators/{user}`, `…/chart/positions`, `…/assistants?whole=true`, `…/assistants`, `…/assistants/{user}/name`, `users/{user}`, `…/users/{user}/note`, `…/users/{user}/identity-code`, `…/people` and `config`; History calls `history` on the register and on each stream's owner |
+| `GET` · `DELETE` | `/assistants/{assistant}/connections` · `DELETE …/connections/{id}` | with `assistants`: the AI apps connected as one assistant, all of them signed out (before its removal), or one |
 
 An Apply sends the file's own text with the versions its preview answered added as its last member, so what lands is
 exactly what the person read, or nothing.
