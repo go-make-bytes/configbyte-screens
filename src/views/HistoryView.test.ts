@@ -82,6 +82,8 @@ const people = {
     member('m3', 'sub:A', 'Anna Bērziņa', 'person', 'revoked'),
     member('m5', 'svc:orders', 'Order register', 'service'),
     member('m6', 'svc:stock', 'Stock modules', 'service'),
+    member('a1', 'svc:assistant-01J0000000000000000000000A', 'Assistant 1', 'service'),
+    member('a2', 'svc:assistant-01J0000000000000000000000B', 'Assistant 2', 'service'),
   ],
 }
 
@@ -413,6 +415,30 @@ describe('History', () => {
     expect(lines(wrapper)[2]).toContain('Whoever runs the deployment invited Order register')
     await wrapper.get('[data-act="fold"]').trigger('click')
     expect(lines(wrapper)).toHaveLength(3)
+  })
+
+  it('draws each line of an assistant’s setup as a line of its own, never folded with the services', async () => {
+    stub(
+      registerOnly([
+        ev('h7', '2026-10-03T10:07:00Z', 'sub:L', 'tenantRoleGranted', { roleId: 'r9', name: 'Assistant' }, 'a2'),
+        ev('h6', '2026-10-03T10:06:00Z', 'sub:L', 'userTypeAssigned', { userTypeId: 't1', source: 'workspaceDefault' }, 'a2'),
+        ev('h5', '2026-10-03T10:05:00Z', 'sub:L', 'assistantAdded', { subjectKey: 'svc:assistant-01J0000000000000000000000B', name: 'Assistant 2', personId: 'm2' }, 'a2'),
+        ev('h4', '2026-10-03T10:04:00Z', 'sub:L', 'tenantRoleGranted', { roleId: 'r9', name: 'Assistant' }, 'a1'),
+        ev('h3', '2026-10-03T10:03:00Z', 'sub:L', 'tenantRoleSeeded', { roleId: 'r9', seed: 'assistant', name: 'Assistant' }),
+        ev('h2', '2026-10-03T10:02:00Z', 'sub:L', 'assistantAdded', { subjectKey: 'svc:assistant-01J0000000000000000000000A', name: 'Assistant 1', personId: 'm1' }, 'a1'),
+        ev('h1', '2026-10-03T10:01:00Z', 'sub:L', 'userRevoked', {}, 'a1'),
+      ]),
+    )
+    const { wrapper } = await render()
+    const out = lines(wrapper)
+    expect(out.join(' ')).not.toContain('services this workspace runs on')
+    expect(out).toHaveLength(6)
+    expect(out[0]).toContain('Laura Zariņa gave Assistant 2 the role «Assistant»')
+    expect(out[1]).toContain('Laura Zariņa added the assistant «Assistant 2» for Jānis Ozols')
+    expect(out[2]).toContain('Laura Zariņa gave Assistant 1 the role «Assistant»')
+    expect(out[3]).toContain('Laura Zariņa added the role «Assistant» with the first assistant')
+    expect(out[4]).toContain('Laura Zariņa added the assistant «Assistant 1» for Laura Zariņa')
+    expect(out[5]).toContain('Laura Zariņa removed the assistant «Assistant 1»')
   })
 
   it('says one service when the run is about one, and draws a lone service line as a line', async () => {
