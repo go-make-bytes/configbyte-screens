@@ -3,6 +3,16 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.15.2
+
+Built on `uibyte` `v0.19.0` (was `v0.18.0`), so a host that moves to that kit version keeps one copy of it. No
+screen changes, and there is nothing new to deploy.
+
+### Changed
+
+- **The kit pin is `uibyte` `v0.19.0`.** Move a host's own `uibyte` pin to the same tag together with this one, then
+  read `npm ls uibyte` back: one copy.
+
 ## v0.15.1
 
 Built on `uibyte` `v0.18.0`, unchanged. Nothing new to deploy.
