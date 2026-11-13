@@ -3,6 +3,11 @@ export { default as AdminFrame } from './AdminFrame.vue'
 export { configbyteScreens, messages, type HostTranslator } from './plugin'
 export {
   adminRoutes,
+  DEPLOYMENT_ADMINS,
+  DEPLOYMENT_COMPANIES,
+  DEPLOYMENT_COMPANY,
+  DEPLOYMENT_COMPANY_NEW,
+  DEPLOYMENT_SIGN_IN_TAB,
   EXPORT_IMPORT,
   PEOPLE_ACCESS,
   PEOPLE_ASSISTANT,
@@ -33,7 +38,7 @@ export type {
 } from './options'
 // What a host's `write` throws when a change is refused, so the refusal is said in words.
 export { ApiError } from './lib/api'
-export { useAdminSession, type Identity } from './stores/session'
+export { useAdminSession, type DeploymentState, type Identity } from './stores/session'
 
 // The one sign-in page, for every app of a deployment, and what it reads.
 export { default as SignInPage } from './components/SignInPage.vue'

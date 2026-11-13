@@ -37,6 +37,11 @@ function csrfToken(): string {
   return csrfFrom(document.cookie, location.protocol === 'https:')
 }
 
+/** The coordinator's code for a sign-in below the strength a part of the app asks for. */
+export const ASSURANCE_TOO_LOW = 'err:session:assuranceTooLow'
+/** The coordinator's code for a sign-in that is strong enough but older than a part of the app accepts. */
+export const SIGN_IN_TOO_OLD = 'err:session:signInTooOld'
+
 /** A refused or failed call, carrying the stable code the coordinator answered with. */
 export class ApiError extends Error {
   status: number
@@ -50,6 +55,21 @@ export class ApiError extends Error {
     this.code = code
     this.related = related
   }
+}
+
+/** Whether a failure is the refusal that carries this status and code. */
+export function isRefusal(e: unknown, status: number, code: string): e is ApiError {
+  return e instanceof ApiError && e.status === status && e.code === code
+}
+
+/** Whether a failure says the sign-in is too old for the part of the app that was asked. */
+export function isSignInTooOld(e: unknown): e is ApiError {
+  return isRefusal(e, 403, SIGN_IN_TOO_OLD)
+}
+
+/** Whether a failure says the sign-in is not the strongest kind the part of the app that was asked requires. */
+export function isAssuranceTooLow(e: unknown): e is ApiError {
+  return isRefusal(e, 403, ASSURANCE_TOO_LOW)
 }
 
 /** The address a `Link` header names as related (`<…>; rel="related"`), if it names one. */
@@ -101,15 +121,16 @@ export function whenSignInEnds(listener: () => void): void {
 }
 
 /** A read, answered as it came — after telling whoever listens if it says nobody is signed in any more. */
-export async function read(path: string): Promise<Response> {
-  const resp = await fetch(path, { credentials: 'same-origin' })
+export async function read(path: string, extra: Pick<RequestInit, 'cache'> = {}): Promise<Response> {
+  const resp = await fetch(path, { credentials: 'same-origin', ...extra })
   if (resp.status === 401) signInEnded()
 
   return resp
 }
 
-export async function get<T>(path: string): Promise<T> {
-  return handle<T>(await read(path))
+/** A read answered as a value. `extra` asks something of the fetch itself, such as `cache: 'no-store'`. */
+export async function get<T>(path: string, extra: Pick<RequestInit, 'cache'> = {}): Promise<T> {
+  return handle<T>(await read(path, extra))
 }
 
 /**

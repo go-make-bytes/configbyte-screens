@@ -59,6 +59,11 @@
         "locked": "nav pieejams"
       },
       "history": "Vēsture",
+      "deployment": {
+        "group": "Izvietojums",
+        "companies": "Uzņēmumi",
+        "admins": "Izvietojuma administratori"
+      },
       "peopleAccess": "Cilvēki un piekļuve",
       "notIncluded": "nav iekļauts",
       "closed": {
@@ -528,7 +533,7 @@
         "personGone": "Šī persona vairs nav darbvietā, tāpēc piezīme netika saglabāta.",
         "inviteConflict": "Cilvēks ar šo personas kodu jau ir šajā darbvietā.",
         "inviteInvalid": "Šis vārds vai personas kods netika pieņemts. Pārbaudiet tos un mēģiniet vēlreiz.",
-        "inviteUnavailable": "Šī izvietošana šobrīd nevar reģistrēt cilvēkus, tāpēc neviens netika uzaicināts.",
+        "inviteUnavailable": "Šī izvietošana šobrīd nevar pievienot cilvēkus, tāpēc neviens netika uzaicināts.",
         "unanswered": "Administrēšanas serviss neatbildēja, tāpēc nekas netika mainīts. Mēģiniet vēlreiz.",
         "other": "Tas netika izdarīts: {reason}",
         "unreadable": "Tas netika izdarīts: atbildi nevarēja nolasīt. Mēģiniet vēlreiz.",
@@ -729,6 +734,323 @@
         "assistantRenamed": "pārdēvēja asistentu «{from}» par «{to}»",
         "assistantRemoved": "noņēma asistentu «{name}»",
         "roleSeededWithAssistant": "pievienoja lomu «{role}» kopā ar pirmo asistentu"
+      }
+    },
+    "deployment": {
+      "eyebrow": "Izvietojums",
+      "placeholder": {
+        "title": "Vēl nav atvērts",
+        "lead": "Šī izvietojuma sadaļas lapa vēl nav atvērta."
+      },
+      "refusal": {
+        "tooOld": {
+          "title": "Jūsu pieslēgšanās ir par vecu šai administrēšanas lietotnes daļai",
+          "lead": "Šī administrēšanas lietotnes daļa prasa pieslēgšanos, kas nav vecāka par {n} minūti. Pieslēdzieties vēlreiz, lai pārvaldītu izvietojumu. | Šī administrēšanas lietotnes daļa prasa pieslēgšanos, kas nav vecāka par {n} minūtēm. Pieslēdzieties vēlreiz, lai pārvaldītu izvietojumu.",
+          "leadPlain": "Šī administrēšanas lietotnes daļa prasa nesenu pieslēgšanos. Pieslēdzieties vēlreiz, lai pārvaldītu izvietojumu.",
+          "newTab": "Pieslēgties vēlreiz jaunā cilnē"
+        },
+        "notAdmin": {
+          "title": "Jūs neesat izvietojuma administrators",
+          "lead": "Šī administrēšanas lietotnes daļa ir paredzēta tikai tiem, kas pārvalda izvietojumu, tāpēc šeit nekas netiek rādīts."
+        },
+        "noLonger": {
+          "title": "Jūs vairs neesat izvietojuma administrators",
+          "lead": "Nekas netika mainīts. Izvēlne ir nolasīta no jauna, un nekas no izvietojuma netiek rādīts."
+        }
+      },
+      "companies": {
+        "title": "Uzņēmumi",
+        "count": "{n} uzņēmums šajā izvietojumā | {n} uzņēmumi šajā izvietojumā",
+        "open": "Atvērt uzņēmumu",
+        "loading": "Nolasa uzņēmumus…",
+        "lead": "Visi uzņēmumi, ko apkalpo šis izvietojums, ar to, kas katram ir. Uzņēmuma cilvēki, lomas un konfigurācija ir paša uzņēmuma ziņā: tie šeit netiek rādīti.",
+        "find": "Meklēt uzņēmumu",
+        "own": "uztur šo izvietojumu",
+        "noProduct": "vēl nav neviena produkta",
+        "administrators": "{n} administrators | {n} administratori",
+        "columns": {
+          "name": "Uzņēmums",
+          "products": "Produkti",
+          "administrators": "Administratori",
+          "opened": "Atvērts"
+        },
+        "noMatch": "Nevienam uzņēmumam nav šāda nosaukuma.",
+        "showEvery": "Rādīt visus uzņēmumus",
+        "pager": {
+          "range": "{from}–{to} no {total}",
+          "label": "Lapas",
+          "previous": "Iepriekšējā lapa",
+          "next": "Nākamā lapa",
+          "page": "{n}. lapa"
+        },
+        "failed": {
+          "companies": "Uzņēmumus neizdevās nolasīt",
+          "products": "Produktus neizdevās nolasīt, tāpēc nevar parādīt, kas katram uzņēmumam ir",
+          "unanswered": "Administrēšanas serviss neatbildēja. Nekas netika mainīts.",
+          "plain": "Nekas netika mainīts. Mēģiniet vēlreiz; ja tas atkārtojas, pastāstiet tam, kas uztur šo izvietojumu.",
+          "retry": "Mēģināt vēlreiz"
+        },
+        "noCustomer": {
+          "title": "Klientu uzņēmumu vēl nav",
+          "lead": "Vienīgais uzņēmums šeit ir tas, kas uztur šo izvietojumu.",
+          "open": "Atvērt uzņēmumu →"
+        }
+      },
+      "company": {
+        "title": "Uzņēmums",
+        "opened": "atvērts {day}",
+        "loading": "Nolasa uzņēmumu…",
+        "missing": {
+          "title": "Tāda uzņēmuma nav",
+          "text": "Iespējams, tā šeit nekad nav bijis, vai adrese nav pareiza.",
+          "back": "Atpakaļ uz uzņēmumiem"
+        },
+        "failed": {
+          "title": "Uzņēmumu neizdevās nolasīt",
+          "unanswered": "Administrēšanas serviss neatbildēja. Nekas netika mainīts.",
+          "plain": "Nekas netika mainīts. Mēģiniet vēlreiz; ja tas atkārtojas, pastāstiet tam, kas uztur šo izvietojumu.",
+          "retry": "Mēģināt vēlreiz"
+        },
+        "arrival": {
+          "title": "«{company}» ir atvērts.",
+          "lead": "Administrators ir uzaicināts. Tas sākas bez nekā iestatīta."
+        },
+        "products": {
+          "title": "Produkti",
+          "failed": "Produktus neizdevās nolasīt",
+          "none": "Šis izvietojums vēl nepiedāvā nevienu produktu. Produkti nāk no servisiem, ko šis izvietojums darbina.",
+          "takeAsk": "Atņemt {product} uzņēmumam «{company}»?",
+          "takeLead": "Tā cilvēki to vairs nevarēs izmantot.",
+          "takeDo": "Atņemt",
+          "keep": "Atstāt"
+        },
+        "administrators": {
+          "title": "Administratori",
+          "reading": "Nolasa…",
+          "show": "Parādīt administratorus",
+          "recorded": "To parādīšanu reģistrē piekļuves audita serviss.",
+          "unrecorded": {
+            "title": "Saraksts netika parādīts",
+            "lead": "Tā rādīšanu neizdevās reģistrēt, tāpēc tas netika nolasīts. Nekas netika mainīts."
+          },
+          "again": "Mēģināt vēlreiz",
+          "failed": "Administratorus neizdevās nolasīt.",
+          "last": "pēdējo reizi pieslēdzies {when}",
+          "remove": "Noņemt administratora tiesības",
+          "last1": "Uzņēmumam vienmēr ir vismaz viens administrators. Vispirms uzaiciniet citu.",
+          "removeAsk": "Noņemt {name} administratora tiesības uzņēmumā «{company}»?",
+          "removeLead": "{name} paliek viens no uzņēmuma cilvēkiem.",
+          "removeDo": "Noņemt",
+          "keep": "Atstāt"
+        },
+        "invite": {
+          "open": "Uzaicināt administratoru",
+          "title": "Uzaicināt administratoru",
+          "note": "Lai cilvēkus atšķirtu. Viņi kļūst par administratoru pirmajā pieslēgšanās reizē.",
+          "sending": "Uzaicina…"
+        },
+        "start": {
+          "title": "Sākuma konfigurācija",
+          "entered": "Kāds no «{company}» ir pieslēdzies, tāpēc tā konfigurācija tagad ir viņu pašu. Tās administratori to maina savā administrēšanas lietotnē, sadaļā Eksports un imports.",
+          "loading": "Nolasa sākuma failus…",
+          "failed": "Sākuma failus neizdevās nolasīt",
+          "none": "Šim izvietojumam nav sagatavota neviena sākuma konfigurācija. Tās glabā tas, kas uztur izvietojumu, kā failus mapē, ko lasa administrēšanas serviss.",
+          "file": "Piemērojamā sākuma konfigurācija",
+          "only": "Iespējams tikai, līdz pieslēdzas kāds no «{company}».",
+          "again": "«{file}» ir piemērots. To pašu failu otrreiz noraidīs: tā vienumi jau ir šeit."
+        }
+      },
+      "products": {
+        "needs": "Vajadzīgs {names}. Vispirms atzīmējiet to. | Vajadzīgi {names}. Vispirms atzīmējiet tos.",
+        "neededBy": "{names} to vajag. Vispirms noņemiet atzīmi tam. | {names} to vajag. Vispirms noņemiet atzīmes tiem.",
+        "unoffered": "Tā pakalpojumi šajā izvietojumā vēl nav sākuši darboties."
+      },
+      "configuration": {
+        "changes": "{n} izmaiņa veikta | {n} izmaiņas veiktas",
+        "partRefused": "tās serviss atteica šo daļu. Nekas no tās netika ierakstīts.",
+        "applied": {
+          "title": "«{file}» ir piemērots uzņēmumam «{company}».",
+          "lead": "Viss fails ir spēkā."
+        },
+        "refused": {
+          "title": "«{file}» netika piemērots uzņēmumam «{company}».",
+          "lead": "No tā nekas netika ierakstīts: viena daļa atteica, tāpēc pārējās tika aizturētas."
+        },
+        "failed": {
+          "title": "«{file}» nevarēja piemērot uzņēmumam «{company}».",
+          "lead": "Kāds serviss neatbildēja, un nekas netika ierakstīts. Piemērojiet failu vēlreiz zemāk."
+        },
+        "rolledBack": {
+          "title": "«{file}» netika piemērots uzņēmumam «{company}»: tas tika ierakstīts, pēc tam atcelts.",
+          "lead": "Kādu daļu nevarēja ierakstīt, tāpēc ierakstītais tika atcelts, izņemot to, ko fails pievienoja."
+        },
+        "partial": {
+          "title": "«{file}» ir piemērots uzņēmumam «{company}» tikai daļēji.",
+          "lead": "Kādu daļu nevarēja ierakstīt, un arī ierakstītā atcelšana neizdevās. Rindas zemāk norāda, kuras daļas ir spēkā."
+        }
+      },
+      "line": {
+        "invited": "Uzaicinājums nosūtīts. Cilvēks kļūst par administratoru pirmajā pieslēgšanās reizē.",
+        "removed": "Administratora tiesības noņemtas. Cilvēks paliek viens no uzņēmuma cilvēkiem.",
+        "lastAdministrator": "Uzņēmumam vienmēr ir vismaz viens administrators. Vispirms uzaiciniet citu.",
+        "administratorGone": "Šis cilvēks vairs nav šī uzņēmuma administrators.",
+        "removeFailed": "Tas netika izdarīts. Mēģiniet vēlreiz.",
+        "unanswered": "Administrēšanas serviss neatbildēja, tāpēc nekas netika mainīts. Mēģiniet vēlreiz.",
+        "tickUnoffered": "{product} netika piešķirts: tā pakalpojumi šajā izvietojumā vēl nav sākuši darboties.",
+        "tickNeeds": "{product} netika piešķirts: tam vajag {needs}.",
+        "tickNeededBy": "{product} netika atņemts: to vajag {by}.",
+        "tickChanged": "{product} netika mainīts: uzņēmuma produkti starplaikā mainījās.",
+        "tickFailed": "Tas netika izdarīts. Mēģiniet vēlreiz.",
+        "inviteInvalid": "Šis vārds vai personas kods netika pieņemts. Pārbaudiet tos un mēģiniet vēlreiz.",
+        "inviteConflict": "Cilvēks netika uzaicināts. Viņš, iespējams, jau ir šī uzņēmuma administrators vai ir zaudējis piekļuvi tam.",
+        "inviteFailed": "Cilvēks netika uzaicināts. Mēģiniet vēlreiz.",
+        "fileUnknown": "«{file}» vairs nav fails, ko šis izvietojums glabā, tāpēc nekas netika piemērots.",
+        "fileBad": "«{file}» nav konfigurācija, ko šis izvietojums spēj nolasīt, tāpēc nekas netika piemērots. Izvēlieties citu un pastāstiet tam, kas glabā failus.",
+        "applyFailed": "Fails netika piemērots. Mēģiniet vēlreiz.",
+        "signedInAgain": "Jūs pieslēdzāties vēlreiz. Nospiediet pogu vēlreiz.",
+        "openFileUnknown": "«{file}» vairs nav fails, ko šis izvietojums glabā, tāpēc nekas netika atvērts.",
+        "openFileBad": "«{file}» nav konfigurācija, ko šis izvietojums spēj nolasīt, tāpēc nekas netika atvērts. Izvēlieties citu vai Tukšs un pastāstiet tam, kas glabā failus.",
+        "openStarting": "Šī izvietojuma servisi vēl tiek startēti, tāpēc nekas netika atvērts. Mēģiniet pēc minūtes.",
+        "openRefusedPerson": "Uzņēmums netika atvērts.",
+        "openFailed": "Uzņēmums netika atvērts. Nekas netika ierakstīts.",
+        "firstRunStarting": "Šī izvietojuma servisi vēl tiek startēti. Mēģiniet pēc minūtes.",
+        "firstRunNotNamed": "To var iestatīt tikai tas cilvēks, ko nosauc šis izvietojums.",
+        "firstRunFailed": "Uzņēmums netika iestatīts. Mēģiniet vēlreiz.",
+        "adminAdded": "Pievienots. Viņš pārvalda šo izvietojumu no nākamās pieslēgšanās.",
+        "adminInvalid": "Šis personas kods netika pieņemts. Pārbaudiet to un mēģiniet vēlreiz.",
+        "adminNotAdded": "Cilvēks netika pievienots kā izvietojuma administrators.",
+        "adminAddFailed": "Cilvēks netika pievienots. Mēģiniet vēlreiz.",
+        "adminRemoved": "Noņemts. Viņš vairs nevar pārvaldīt šo izvietojumu.",
+        "adminRemoveRefused": "Šis cilvēks netika noņemts: izvietojumam paliek vismaz viens administrators, kas ir pieslēdzies.",
+        "adminRemoveFailed": "Tas netika izdarīts. Mēģiniet vēlreiz."
+      },
+      "again": {
+        "title": "Pieslēdzieties vēlreiz, lai pārvaldītu izvietojumu",
+        "askedFor": "Šī administrēšanas lietotnes daļa prasa pieslēgšanos, kas nav vecāka par {n} minūti. | Šī administrēšanas lietotnes daļa prasa pieslēgšanos, kas nav vecāka par {n} minūtēm.",
+        "askedForPlain": "Šī administrēšanas lietotnes daļa prasa nesenu pieslēgšanos.",
+        "signedAt": "Jūs pieslēdzāties {when}.",
+        "signedUnknown": "Jūsu pieslēgšanās laiks nav zināms.",
+        "restOpen": "Viss pārējais administrēšanas lietotnē jums paliek atvērts kā līdz šim.",
+        "button": "Pieslēgties vēlreiz",
+        "chooseWay": "Veids, ar kuru pieslēdzāties, šeit vairs netiek piedāvāts. Izvēlieties kādu no šiem."
+      },
+      "tab": {
+        "eyebrow": "administrēšanas lietotne",
+        "startingTitle": "Pieslēdz jūs vēlreiz",
+        "startingLead": "Jūs tiekat nosūtīts pieslēgties. Nekas, ko aizpildījāt, nepazūd: tas paliek cilnē, no kuras nācāt.",
+        "chooseWay": "Veids, ar kuru pieslēdzāties, šeit vairs netiek piedāvāts. Izvēlieties kādu no šiem.",
+        "doneTitle": "Jūs esat pieslēdzies vēlreiz",
+        "doneLead": "Aizveriet šo cilni un atgriezieties pie tā, ko aizpildījāt. Nekas tur nepazuda.",
+        "signedIn": "{name} · pieslēdzies"
+      },
+      "firstRun": {
+        "eyebrow": "pirmā palaišana · izvietojums",
+        "eyebrowLocal": "pirmā palaišana",
+        "title": "Uzņēmums, kas uztur šo izvietojumu",
+        "titleLocal": "Iestatiet savu uzņēmumu",
+        "lead": "Jūs esat nosaukts kā šī izvietojuma pirmais administrators. Nosauciet uzņēmumu, kas to uztur. Tā cilvēki lemj, kurš vēl pārvalda izvietojumu; uzņēmumus, ko apkalpojat, atver pēc tam.",
+        "leadLocal": "Šis izvietojums apkalpo vienu uzņēmumu, un jūs esat nosaukts kā tas, kas to iestata. Dodiet tam nosaukumu; tas saņem visu, ko šis izvietojums piedāvā, un jūs kļūstat par tā administratoru.",
+        "startingTitle": "Vēl nav iestatīts.",
+        "startingLead": "Šī izvietojuma servisi vēl tiek startēti. Nekas netika ierakstīts. Mēģiniet pēc minūtes.",
+        "name": "Nosaukums",
+        "namePlaceholder": "uzņēmuma nosaukums",
+        "language": "Valoda",
+        "languageHint": "Tajā tiek nosauktas tā sākuma lomas.",
+        "errName": "Nosaukums ir nepieciešams.",
+        "errNameLong": "Nosaukums ir ne garāks par {n} rakstzīmēm.",
+        "again": "Mēģināt vēlreiz",
+        "doing": "Iestata…",
+        "submit": "Iestatīt uzņēmumu",
+        "signedIn": "{name} · pieslēdzies",
+        "done": "«{name}» ir iestatīts. Tā sākuma lomas ir izveidotas.",
+        "doneUnnamed": "Uzņēmums ir iestatīts. Tā sākuma lomas ir izveidotas.",
+        "doneMissing": "Dažas sākuma lomas pagaidām nevarēja izveidot."
+      },
+      "open": {
+        "title": "Atvērt uzņēmumu",
+        "lead": "Viena darbība: uzņēmums, tā sākuma lomas, tas, kas tam ir, un pirmā administratora uzaicinājums tiek ierakstīti kopā, vai nekas netiek ierakstīts.",
+        "loading": "Nolasa, kas uzņēmumam var būt…",
+        "failed": {
+          "title": "Neizdevās nolasīt, kas uzņēmumam var būt",
+          "text": "Nekas netika mainīts. Mēģiniet vēlreiz; ja tas atkārtojas, pastāstiet tam, kas uztur šo izvietojumu.",
+          "retry": "Mēģināt vēlreiz"
+        },
+        "notOpened": "Nekas netika atvērts.",
+        "name": "Nosaukums",
+        "namePlaceholder": "uzņēmuma nosaukums",
+        "nameTaken": "Uzņēmums ar šādu nosaukumu jau ir šeit. Uzņēmuma nosaukumu lieto vienu reizi.",
+        "errName": "Nosaukums ir nepieciešams.",
+        "errNameLong": "Nosaukums ir ne garāks par {n} rakstzīmēm.",
+        "language": "Valoda",
+        "languageHint": "tajā tiek nosauktas tā sākuma lomas",
+        "products": "Produkti",
+        "productsHint": "kas uzņēmumam ir",
+        "noProducts": "Šis izvietojums vēl nepiedāvā nevienu produktu. Produkti nāk no servisiem, ko šis izvietojums darbina.",
+        "startsFrom": "Sāk no",
+        "startsFromHint": "tā pirmā konfigurācija",
+        "empty": "Tukšs",
+        "filesHint": "Faili, ko šim izvietojumam glabā tas, kas to uztur. Tukšs uzņēmumu sāk bez nekā iestatīta.",
+        "noFilesHint": "Šim izvietojumam nav sagatavota neviena sākuma konfigurācija, tāpēc uzņēmums sākas bez nekā iestatīta. Tās glabā tas, kas uztur izvietojumu, kā failus mapē, ko lasa administrēšanas serviss.",
+        "administrator": "Pirmais administrators",
+        "administratorHint": "vārds un personas kods ar valsti",
+        "administratorNote": "Lai cilvēkus atšķirtu. Viņi kļūst par uzņēmuma administratoru pirmajā pieslēgšanās reizē.",
+        "submit": "Atvērt «{name}»",
+        "submitEmpty": "Atvērt uzņēmumu",
+        "opening": "Atver…",
+        "cancel": "Atcelt",
+        "waits": "Tā gaida nosaukumu un pirmo administratoru."
+      },
+      "opened": {
+        "applied": {
+          "title": "«{company}» ir atvērts un sākas no «{file}».",
+          "lead": "Administrators ir uzaicināts. Viss fails ir spēkā."
+        },
+        "refused": {
+          "title": "«{company}» ir atvērts, bet tā konfigurācija netika piemērota.",
+          "lead": "Administrators ir uzaicināts. No «{file}» nekas netika ierakstīts: viena daļa atteica, tāpēc pārējās tika aizturētas."
+        },
+        "failed": {
+          "title": "«{company}» ir atvērts, bet tā konfigurāciju nevarēja piemērot.",
+          "lead": "Administrators ir uzaicināts. Kāds serviss neatbildēja, un nekas netika ierakstīts. Piemērojiet failu vēlreiz zemāk."
+        },
+        "rolledBack": {
+          "title": "«{company}» ir atvērts, bet tā konfigurācija netika piemērota.",
+          "lead": "Administrators ir uzaicināts. «{file}» tika ierakstīts, pēc tam atcelts, jo kādu daļu nevarēja ierakstīt."
+        },
+        "partial": {
+          "title": "«{company}» ir atvērts, bet tā konfigurācija ir piemērota tikai daļēji.",
+          "lead": "Administrators ir uzaicināts. Kādu «{file}» daļu nevarēja ierakstīt, un arī ierakstītā atcelšana neizdevās. Rindas zemāk norāda, kuras daļas ir spēkā."
+        }
+      },
+      "admins": {
+        "title": "Izvietojuma administratori",
+        "count": "{n} cilvēks var atvērt uzņēmumus un teikt, kas katram ir | {n} cilvēki var atvērt uzņēmumus un teikt, kas katram ir",
+        "add": "Pievienot izvietojuma administratoru",
+        "lead": "Cilvēki, kas pārvalda šo izvietojumu. Katrs ir tā uzņēmuma cilvēks, kas to uztur, un katram šeit jebkam vajadzīga visspēcīgākā pieslēgšanās, kas nav vecāka par {n} minūti. | Cilvēki, kas pārvalda šo izvietojumu. Katrs ir tā uzņēmuma cilvēks, kas to uztur, un katram šeit jebkam vajadzīga visspēcīgākā pieslēgšanās, kas nav vecāka par {n} minūtēm.",
+        "leadPlain": "Cilvēki, kas pārvalda šo izvietojumu. Katrs ir tā uzņēmuma cilvēks, kas to uztur, un katram šeit jebkam vajadzīga visspēcīgākā un nesena pieslēgšanās.",
+        "recorded": "Šī saraksta atvēršanu reģistrē piekļuves audita serviss.",
+        "loading": "Nolasa izvietojuma administratorus…",
+        "unrecorded": {
+          "title": "Saraksts netika parādīts",
+          "lead": "Tā rādīšanu neizdevās reģistrēt, tāpēc tas netika nolasīts. Nekas netika mainīts."
+        },
+        "again": "Mēģināt vēlreiz",
+        "failed": {
+          "title": "Izvietojuma administratorus neizdevās nolasīt",
+          "text": "Nekas netika mainīts. Mēģiniet vēlreiz; ja tas atkārtojas, pastāstiet tam, kas uztur šo izvietojumu."
+        },
+        "addLead": "Pēc personas koda. Viņam jau jābūt tā uzņēmuma cilvēkam, kas uztur šo izvietojumu: vispirms uzaiciniet viņu sadaļā Cilvēki un piekļuve.",
+        "nobody": "Neviens no uzņēmuma, kas uztur šo izvietojumu, nav ar šādu personas kodu. Vispirms uzaiciniet viņu sadaļā Cilvēki un piekļuve.",
+        "adding": "Pievieno…",
+        "addDo": "Pievienot",
+        "addedSettings": "no izvietojuma iestatījumiem",
+        "addedScreen": "šajā ekrānā",
+        "remove": "Noņemt",
+        "last": "Pēdējo izvietojuma administratoru, kas ir pieslēdzies, nevar noņemt.",
+        "removeAsk": "Noņemt {name} kā izvietojuma administratoru?",
+        "removeLead": "{name} vairs nevarēs pārvaldīt šo izvietojumu, un paliks viens no uzņēmuma cilvēkiem.",
+        "removeDo": "Noņemt",
+        "keep": "Atstāt"
       }
     }
   }

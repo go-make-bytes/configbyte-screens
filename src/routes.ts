@@ -26,6 +26,18 @@ export const PEOPLE_ASSISTANTS = 'configbyte-people-assistants'
 /** One assistant open, beside the Assistants list or alone: `/people/assistants/:id`. */
 export const PEOPLE_ASSISTANT = 'configbyte-people-assistant'
 
+/** The companies a deployment serves: `/deployment/companies`. */
+export const DEPLOYMENT_COMPANIES = 'configbyte-deployment-companies'
+/** Opening a company: `/deployment/companies/new`. */
+export const DEPLOYMENT_COMPANY_NEW = 'configbyte-deployment-company-new'
+/** One company on a page of its own: `/deployment/companies/:id`. */
+export const DEPLOYMENT_COMPANY = 'configbyte-deployment-company'
+/** The people who manage the deployment: `/deployment/admins`. */
+export const DEPLOYMENT_ADMINS = 'configbyte-deployment-admins'
+
+/** The tab a sign-in again is made in, opened from a page that must keep what was typed: `/deployment/sign-in-again`. */
+export const DEPLOYMENT_SIGN_IN_TAB = 'configbyte-deployment-sign-in-tab'
+
 /**
  * The places inside People & access are children of its one screen, so that
  * screen stays as it is while a person, a role or a user type is opened, and
@@ -39,6 +51,12 @@ export function adminRoutes(): RouteRecordRaw[] {
     { path: '/', redirect: { name: EXPORT_IMPORT } },
     { path: '/export-import', name: EXPORT_IMPORT, component: () => import('./views/ExportImportView.vue') },
     { path: '/history', name: HISTORY, component: () => import('./views/HistoryView.vue') },
+    { path: '/deployment/companies', name: DEPLOYMENT_COMPANIES, component: () => import('./views/deployment/CompaniesView.vue') },
+    { path: '/deployment/companies/new', name: DEPLOYMENT_COMPANY_NEW, component: () => import('./views/deployment/OpenCompanyView.vue') },
+    { path: '/deployment/companies/:id', name: DEPLOYMENT_COMPANY, component: () => import('./views/deployment/CompanyView.vue') },
+    { path: '/deployment/admins', name: DEPLOYMENT_ADMINS, component: () => import('./views/deployment/DeploymentAdminsView.vue') },
+    // The sign-in tab is drawn by the frame, as a page of its own without the menu; the place draws nothing.
+    { path: '/deployment/sign-in-again', name: DEPLOYMENT_SIGN_IN_TAB, component: place },
     {
       path: '/people',
       name: PEOPLE_ACCESS,
