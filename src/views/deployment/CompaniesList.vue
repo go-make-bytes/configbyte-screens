@@ -59,7 +59,7 @@ watch(query, () => {
 const columns = computed<ListColumn[]>(() => [
   { key: 'name', label: t(w('columns.name')), priority: 1, width: 'minmax(220px,2fr)' },
   { key: 'products', label: t(w('columns.products')), priority: 2, width: 'minmax(200px,3fr)' },
-  { key: 'administrators', label: t(w('columns.administrators')), priority: 3, width: '150px' },
+  { key: 'administrators', label: t(w('columns.administrators')), priority: 2, width: '150px' },
   { key: 'opened', label: t(w('columns.opened')), width: '110px', end: true },
 ])
 

@@ -3,6 +3,16 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.15.1
+
+Built on `uibyte` `v0.18.0`, unchanged. Nothing new to deploy.
+
+### Fixed
+
+- **The companies list shows each company's number of administrators.** The column was given the list's lowest
+  priority, which the list hides at 1100 pixels wide or less, and the page is never wider, so the count was hidden at
+  every width. It now stays at every width, and a narrow row shows it beneath the company's name.
+
 ## v0.15.0
 
 Built on `uibyte` `v0.18.0`, unchanged. **Needs** a coordinator whose sign-in answer carries `signedInAt` and

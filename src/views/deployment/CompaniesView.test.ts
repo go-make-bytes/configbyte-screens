@@ -6,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { ListTable } from 'uibyte'
 
 import type { AdminOptions } from '../../options'
 import { configbyteScreens } from '../../plugin'
@@ -149,6 +150,22 @@ describe('Companies › the list', () => {
     expect(norm(list[2]!.text())).toContain('1 administrator')
     expect(list[8]!.text()).toContain('today')
     expect(list[7]!.text()).toContain('yesterday')
+  })
+
+  // The test environment draws no layout, so a hidden cell's text is still in the page. What decides whether a cell
+  // can be seen is the list's own fold: a column of the lowest priority (3) is hidden when the list is 1100 pixels
+  // wide or narrower, and this page's list is never wider than about 1088. So the count must not be in such a column,
+  // at 1088 pixels (the widest the page has), at 760 (where a row folds into its title and the cells below it) and
+  // at 400 (a narrow window), where the list's own rule for cells below the title applies to every column alike.
+  it.each([[1088], [760], [400]])('keeps the administrators’ count out of a column the list hides at %s pixels', async (width) => {
+    stub()
+    const { wrapper } = await render()
+    const columns = (wrapper.findComponent(ListTable).props() as unknown as { columns: { key: string; priority?: number }[] }).columns
+    const column = columns.find((c) => c.key === 'administrators')!
+    expect(width <= 1100).toBe(true)
+    expect(column.priority).not.toBe(3)
+    const cell = wrapper.findAll('ul[aria-label="Companies"] > li')[1]!.findAll('span').find((s) => /\d administrators?/.test(s.text()))!
+    expect(cell.element.closest('[class*="max-[1100px]:hidden"]')).toBeNull()
   })
 
   it('says "no product yet" in the row of a company with none', async () => {
