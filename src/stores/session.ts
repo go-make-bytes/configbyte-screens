@@ -3,12 +3,32 @@
 // all from the coordinator. The browser holds only its opaque cookie.
 import { defineStore } from 'pinia'
 
-import { API_ROOT, ApiError, get, post, put } from '../lib/api'
+import { API_ROOT, ApiError, ASSURANCE_TOO_LOW, get, post, put } from '../lib/api'
 import { messageOfMarker, noteSignedOut, type SignInMessage, type SignInWay } from '../lib/signin'
+
+/**
+ * What the deployment is, as far as the person's own screens need to know: how it
+ * is run, whether this person manages it, whether its own company is still to be
+ * named, and how recent a sign-in the deployment's own area asks for.
+ */
+export interface DeploymentState {
+  /** `saas` for a deployment that serves many companies; `local` for one that serves one. */
+  mode: string
+  /** Whether this person manages the deployment. */
+  admin: boolean
+  /** The deployment's own company has no name yet, and this person is the one to give it. */
+  firstRunOwed: boolean
+  /** How old, in seconds, a sign-in may be for the deployment's area; null when any age will do. */
+  signInAge: number | null
+}
 
 export interface Identity {
   /** The person, as the owners name them in their history. */
   subject: string
+  /** When the person proved who they are, as an instant; null when it is not known. */
+  signedInAt?: string | null
+  /** What the deployment is; null when it could not be read. */
+  deployment?: DeploymentState | null
   name: string
   loginMethod: string
   loa: string
@@ -79,8 +99,6 @@ export type Closed = '' | 'network' | 'assurance'
 
 /** The coordinator's code for a request from outside the allowed networks. */
 const NETWORK_NOT_ALLOWED = 'err:configbyte:networkNotAllowed'
-/** The coordinator's code for a sign-in below the deployment's minimum. */
-const ASSURANCE_TOO_LOW = 'err:session:assuranceTooLow'
 
 /** The closed state a refusal names, if it names one. */
 function closedBy(e: unknown): Closed {
@@ -135,6 +153,10 @@ export const useAdminSession = defineStore('configbyte-session', {
     signOutFailed: false,
     /** The last language picked could not be kept, and the one last kept is back. */
     languageFailed: false,
+    /** The person has just come back from a sign-in that asked for a recent one: the area is not pre-judged again. */
+    cameBack: false,
+    /** The sign-in time for which the server has accepted a call of the area; the browser's clock guesses no more for it. */
+    areaAcceptedFor: null as string | null,
   }),
   getters: {
     /** Whether the person holds any of the scopes, under any section. */
@@ -146,6 +168,17 @@ export const useAdminSession = defineStore('configbyte-session', {
 
         return scopes.some((s) => held.has(s))
       },
+
+    /** What the deployment is, as the sign-in answer told it; null when it did not, or could not be read. */
+    deployment: (state): DeploymentState | null => state.me?.deployment ?? null,
+
+    /**
+     * Whether the menu shows the deployment's own area: the person manages the
+     * deployment and it serves many companies. It depends on this answer alone —
+     * never on what else the person configures — and on a deployment that could
+     * not be read it shows nothing.
+     */
+    managesDeployment: (state): boolean => state.me?.deployment?.admin === true && state.me.deployment.mode === 'saas',
 
     /**
      * Whether to say the coordinator is not answering: it could not say who is
@@ -281,10 +314,10 @@ export const useAdminSession = defineStore('configbyte-session', {
      * leaves is said on the page: the coordinator not answering, or the sign-in not
      * starting — each apart from the other.
      */
-    async start(way: SignInWay) {
+    async start(way: SignInWay, recent = false) {
       this.message = ''
       try {
-        await this.login(way.key)
+        await this.login(way.key, recent)
       } catch (e) {
         if (this.closeFor(e)) return
         if (unanswered(e)) this.unreachable = true
@@ -296,9 +329,36 @@ export const useAdminSession = defineStore('configbyte-session', {
     // naming the way the person chose so the authority goes straight to it. These
     // screens never see a secret — the exchange secret and the session key are
     // minted and held on the server.
-    async login(method: string) {
-      const start = await post<LoginStart>(`${API_ROOT}/login/start`, { method })
-      window.location.assign(start.authorizeUrl)
+    // With `recent` it asks for a sign-in made now, for a part of the app that wants one.
+    async login(method: string, recent = false) {
+      const start = await post<LoginStart>(`${API_ROOT}/login/start`, recent ? { method, recent: true } : { method })
+      // Only a web address is followed: anything else is a sign-in that did not start.
+      const address = webAddress(start.authorizeUrl ?? '')
+      if (!address) throw new Error('the sign-in did not start')
+      window.location.assign(address)
+    },
+
+    /**
+     * Ask who is signed in again, comparing with `pinned` (the person a page was opened for)
+     * or else with the person held. `same` replaces what is held with the fresh answer; `other`
+     * means somebody else is signed in now, or nobody is (nothing held is replaced); `failed`
+     * means the answer could not be read.
+     */
+    async reread(pinned?: string): Promise<'same' | 'other' | 'failed'> {
+      const held = this.me
+      if (!held) return 'other'
+      try {
+        // Asked of the network every time: a comparison made on a cached answer compares nothing.
+        const me = await get<Identity>(`${API_ROOT}/me`, { cache: 'no-store' })
+        if (me.subject !== (pinned || held.subject)) return 'other'
+        // The register could not be read just then for the same person: what is known is kept, not thrown away.
+        if (!me.deployment && held.deployment) me.deployment = held.deployment
+        if (this.me === held) this.me = me
+
+        return 'same'
+      } catch (e) {
+        return e instanceof ApiError && e.status === 401 ? 'other' : 'failed'
+      }
     },
 
     /**

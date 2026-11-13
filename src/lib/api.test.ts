@@ -4,7 +4,22 @@
 // echoes: the coordinator's own __Host- cookie, never a copy another host planted.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { csrfFrom, del, get, post, postText, put, read, relatedLink, whenSignInEnds } from './api'
+import {
+  ApiError,
+  ASSURANCE_TOO_LOW,
+  csrfFrom,
+  del,
+  get,
+  isAssuranceTooLow,
+  isSignInTooOld,
+  post,
+  postText,
+  put,
+  read,
+  relatedLink,
+  SIGN_IN_TOO_OLD,
+  whenSignInEnds,
+} from './api'
 
 function answer(status: number) {
   vi.stubGlobal(
@@ -86,6 +101,34 @@ describe('the address a refusal names as related', () => {
     ['no header', null, ''],
   ])('%s', (_case, header, want) => {
     expect(relatedLink(header)).toBe(want)
+  })
+})
+
+describe('the refusals of the deployment’s area', () => {
+  it('knows a sign-in too old as a named refusal, keeping the shape of the error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 403, headers: new Headers(), json: async () => ({ code: SIGN_IN_TOO_OLD, title: 'sign in again' }) }) as unknown as Response),
+    )
+    const refused = await get('/x').catch((e: unknown) => e)
+    expect(refused).toBeInstanceOf(ApiError)
+    expect(refused).toMatchObject({ status: 403, code: 'err:session:signInTooOld', message: 'sign in again', related: '' })
+    expect(isSignInTooOld(refused)).toBe(true)
+    expect(isAssuranceTooLow(refused)).toBe(false)
+  })
+
+  it('knows a sign-in that is not the strongest as a named refusal of its own', () => {
+    const refused = new ApiError(403, ASSURANCE_TOO_LOW, 'stronger')
+    expect(isAssuranceTooLow(refused)).toBe(true)
+    expect(isSignInTooOld(refused)).toBe(false)
+  })
+
+  it.each([
+    ['the same code with another status', new ApiError(401, SIGN_IN_TOO_OLD, '')],
+    ['another code', new ApiError(403, 'err:request:forbidden', '')],
+    ['something that is not an error of the client', new Error(SIGN_IN_TOO_OLD)],
+  ])('does not take %s for a sign-in too old', (_case, e) => {
+    expect(isSignInTooOld(e)).toBe(false)
   })
 })
 

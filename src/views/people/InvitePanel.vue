@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import { Button, IdentityCodeField, parseIdentityCode, TextField, type CountryGroup, type IdentityCodeError } from 'uibyte'
 
 import SaidLine from '../../components/SaidLine.vue'
+import { COUNTRIES, describeCode } from '../../lib/codes'
 import { usePeople } from '../../stores/people'
 
 const emit = defineEmits<{ close: [] }>()
@@ -15,9 +16,6 @@ const emit = defineEmits<{ close: [] }>()
 const { t, te } = useI18n()
 const people = usePeople()
 const w = (key: string) => `configbyte.people.users.invite.${key}`
-
-/** Latvia first, the choice the form starts on, then the other two Baltic states. */
-const COUNTRIES = ['LV', 'EE', 'LT']
 
 const name = ref('')
 const code = ref('')
@@ -30,29 +28,7 @@ const countries = computed<CountryGroup[]>(() => [
 ])
 
 /** Why a code cannot be used, in words a person can act on. */
-function describe(error: IdentityCodeError, issuer: string): string {
-  const key = `configbyte.people.users.way.country.${issuer}`
-  const named = te(key) ? t(key) : issuer
-
-  switch (error.problem) {
-    case 'length':
-      return t(w('refused.length'), { country: named, want: error.expected ?? 0, got: error.actual ?? 0 })
-    case 'digits':
-      return t(w('refused.digits'), { country: named })
-    case 'notAPerson':
-      return t(w('refused.notAPerson'), { type: error.type ?? '' })
-    case 'unknownType':
-      return t(w('refused.unknownType'), { type: error.type ?? '' })
-    case 'ambiguous':
-      return t(w('refused.ambiguous'))
-    case 'malformed':
-      return t(w('refused.malformed'))
-    case 'countryMissing':
-      return t(w('refused.countryMissing'))
-  }
-
-  return t(w('refused.empty'))
-}
+const describe = (error: IdentityCodeError, issuer: string): string => describeCode(t, te, error, issuer)
 
 const unusable = computed(() => {
   const read = parseIdentityCode(code.value, country.value)

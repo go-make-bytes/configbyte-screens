@@ -60,6 +60,11 @@
       },
       "history": "History",
       "peopleAccess": "People & access",
+      "deployment": {
+        "group": "Deployment",
+        "companies": "Companies",
+        "admins": "Deployment admins"
+      },
       "notIncluded": "not included",
       "closed": {
         "back": "Back",
@@ -729,6 +734,323 @@
         "assistantRenamed": "renamed the assistant «{from}» to «{to}»",
         "assistantRemoved": "removed the assistant «{name}»",
         "roleSeededWithAssistant": "added the role «{role}» with the first assistant"
+      }
+    },
+    "deployment": {
+      "eyebrow": "Deployment",
+      "placeholder": {
+        "title": "Not open yet",
+        "lead": "This page of the deployment’s area is not open yet."
+      },
+      "refusal": {
+        "tooOld": {
+          "title": "Your sign-in is too old for this part of the admin app",
+          "lead": "This part of the admin app asks for a sign-in no older than {n} minute. Sign in again to manage the deployment. | This part of the admin app asks for a sign-in no older than {n} minutes. Sign in again to manage the deployment.",
+          "leadPlain": "This part of the admin app asks for a recent sign-in. Sign in again to manage the deployment.",
+          "newTab": "Sign in again, in a new tab"
+        },
+        "notAdmin": {
+          "title": "You are not a deployment admin",
+          "lead": "This part of the admin app is only for the people who manage the deployment, so nothing of it is shown."
+        },
+        "noLonger": {
+          "title": "You are no longer a deployment admin",
+          "lead": "Nothing was changed. The menu has been read again, and nothing of the deployment is shown."
+        }
+      },
+      "companies": {
+        "title": "Companies",
+        "count": "{n} company on this deployment | {n} companies on this deployment",
+        "open": "Open a company",
+        "loading": "Reading the companies…",
+        "lead": "Every company this deployment serves, with what each has. A company’s own people, roles and configuration are its own: they are not shown here.",
+        "find": "Find a company",
+        "own": "runs this deployment",
+        "noProduct": "no product yet",
+        "administrators": "{n} administrator | {n} administrators",
+        "columns": {
+          "name": "Company",
+          "products": "Products",
+          "administrators": "Administrators",
+          "opened": "Opened"
+        },
+        "noMatch": "No company has that name.",
+        "showEvery": "Show every company",
+        "pager": {
+          "range": "{from}–{to} of {total}",
+          "label": "Pages",
+          "previous": "Previous page",
+          "next": "Next page",
+          "page": "Page {n}"
+        },
+        "failed": {
+          "companies": "The companies could not be read",
+          "products": "The products could not be read, so what each company has cannot be shown",
+          "unanswered": "The admin service did not answer. Nothing was changed.",
+          "plain": "Nothing was changed. Try again; if it keeps happening, tell whoever runs this deployment.",
+          "retry": "Try again"
+        },
+        "noCustomer": {
+          "title": "No customer company yet",
+          "lead": "The company that runs this deployment is the only one here.",
+          "open": "Open a company →"
+        }
+      },
+      "company": {
+        "title": "Company",
+        "opened": "opened {day}",
+        "loading": "Reading the company…",
+        "missing": {
+          "title": "There is no such company",
+          "text": "It may never have been here, or the address is not right.",
+          "back": "Back to the companies"
+        },
+        "failed": {
+          "title": "The company could not be read",
+          "unanswered": "The admin service did not answer. Nothing was changed.",
+          "plain": "Nothing was changed. Try again; if it keeps happening, tell whoever runs this deployment.",
+          "retry": "Try again"
+        },
+        "arrival": {
+          "title": "«{company}» is opened.",
+          "lead": "The administrator is invited. It starts with nothing set up."
+        },
+        "products": {
+          "title": "Products",
+          "failed": "The products could not be read",
+          "none": "This deployment offers no product yet. Products come from the services this deployment runs.",
+          "takeAsk": "Take {product} from «{company}»?",
+          "takeLead": "Its people can no longer use it.",
+          "takeDo": "Take it",
+          "keep": "Keep it"
+        },
+        "administrators": {
+          "title": "Administrators",
+          "reading": "Reading…",
+          "show": "Show the administrators",
+          "recorded": "Showing them is recorded by the access audit service.",
+          "unrecorded": {
+            "title": "The list was not shown",
+            "lead": "Showing it could not be recorded, so it was not read. Nothing was changed."
+          },
+          "again": "Try again",
+          "failed": "The administrators could not be read.",
+          "last": "last signed in {when}",
+          "remove": "Remove as administrator",
+          "last1": "A company keeps at least one administrator. Invite another first.",
+          "removeAsk": "Remove {name} as an administrator of «{company}»?",
+          "removeLead": "{name} stays one of the company’s people.",
+          "removeDo": "Remove",
+          "keep": "Keep"
+        },
+        "invite": {
+          "open": "Invite an administrator",
+          "title": "Invite an administrator",
+          "note": "To tell people apart. They become an administrator at their first sign-in.",
+          "sending": "Inviting…"
+        },
+        "start": {
+          "title": "Starting configuration",
+          "entered": "Somebody of «{company}» has signed in, so its configuration is theirs now. Its administrators change it in their own admin app, under Export & import.",
+          "loading": "Reading the starting files…",
+          "failed": "The starting files could not be read",
+          "none": "No starting configuration is prepared for this deployment. Whoever runs it keeps them as files in a folder the admin service reads.",
+          "file": "Starting configuration to apply",
+          "only": "Possible only until somebody of «{company}» signs in.",
+          "again": "«{file}» is applied. The same file a second time is refused: its items are already here."
+        }
+      },
+      "products": {
+        "needs": "Needs {names}. Tick it first. | Needs {names}. Tick them first.",
+        "neededBy": "{names} needs it. Untick that first. | {names} need it. Untick those first.",
+        "unoffered": "Its services have not started in this deployment."
+      },
+      "configuration": {
+        "changes": "{n} change made | {n} changes made",
+        "partRefused": "its service refused this part. Nothing of it was written.",
+        "applied": {
+          "title": "«{file}» is applied to «{company}».",
+          "lead": "The whole file is in force."
+        },
+        "refused": {
+          "title": "«{file}» was not applied to «{company}».",
+          "lead": "Nothing of it was written: one part refused, so the rest was withheld."
+        },
+        "failed": {
+          "title": "«{file}» could not be applied to «{company}».",
+          "lead": "A service did not answer, and nothing was written. Apply the file again below."
+        },
+        "rolledBack": {
+          "title": "«{file}» was not applied to «{company}»: it was written, then taken back.",
+          "lead": "A part could not be written, so what was written was taken back, except what the file added."
+        },
+        "partial": {
+          "title": "«{file}» is only partly applied to «{company}».",
+          "lead": "A part could not be written, and taking back what was written failed too. The lines below say which parts are in force."
+        }
+      },
+      "line": {
+        "invited": "Invited. They become an administrator at their first sign-in.",
+        "removed": "Removed as an administrator. They stay one of the company’s people.",
+        "lastAdministrator": "A company keeps at least one administrator. Invite another first.",
+        "administratorGone": "That person is no longer an administrator of this company.",
+        "removeFailed": "That was not done. Try again.",
+        "unanswered": "The admin service did not answer, so nothing was changed. Try again.",
+        "tickUnoffered": "{product} was not given: its services have not started in this deployment.",
+        "tickNeeds": "{product} was not given: it needs {needs}.",
+        "tickNeededBy": "{product} was not taken: {by} needs it.",
+        "tickChanged": "{product} was not changed: the company’s products changed meanwhile.",
+        "tickFailed": "That was not done. Try again.",
+        "inviteInvalid": "That name or personal code was not accepted. Check them and try again.",
+        "inviteConflict": "The person was not invited. They may already be an administrator of this company, or have lost access to it.",
+        "inviteFailed": "The person was not invited. Try again.",
+        "fileUnknown": "«{file}» is not a file this deployment keeps any more, so nothing was applied.",
+        "fileBad": "«{file}» is not a configuration this deployment can read, so nothing was applied. Choose another, and tell whoever keeps the files.",
+        "applyFailed": "The file was not applied. Try again.",
+        "signedInAgain": "You signed in again. Press the button once more.",
+        "openFileUnknown": "«{file}» is not a file this deployment keeps any more, so nothing was opened.",
+        "openFileBad": "«{file}» is not a configuration this deployment can read, so nothing was opened. Choose another, or Empty, and tell whoever keeps the files.",
+        "openStarting": "The services of this deployment are still starting, so nothing was opened. Try again in a minute.",
+        "openRefusedPerson": "The company was not opened.",
+        "openFailed": "The company was not opened. Nothing was written.",
+        "firstRunStarting": "The services of this deployment are still starting. Try again in a minute.",
+        "firstRunNotNamed": "Only the person this deployment names can set it up.",
+        "firstRunFailed": "The company was not set up. Try again.",
+        "adminAdded": "Added. They manage this deployment from their next sign-in.",
+        "adminInvalid": "That personal code was not accepted. Check it and try again.",
+        "adminNotAdded": "The person was not added as a deployment admin.",
+        "adminAddFailed": "The person was not added. Try again.",
+        "adminRemoved": "Removed. They can no longer manage this deployment.",
+        "adminRemoveRefused": "That person was not removed: the deployment keeps at least one admin who has signed in.",
+        "adminRemoveFailed": "That was not done. Try again."
+      },
+      "again": {
+        "title": "Sign in again to manage the deployment",
+        "askedFor": "This part of the admin app asks for a sign-in no older than {n} minute. | This part of the admin app asks for a sign-in no older than {n} minutes.",
+        "askedForPlain": "This part of the admin app asks for a recent sign-in.",
+        "signedAt": "You signed in {when}.",
+        "signedUnknown": "The time of your sign-in is not known.",
+        "restOpen": "Everything else in the admin app stays open to you as it is.",
+        "button": "Sign in again",
+        "chooseWay": "The way you signed in with is not offered here any more. Choose one of these."
+      },
+      "tab": {
+        "eyebrow": "admin app",
+        "startingTitle": "Signing you in again",
+        "startingLead": "You are being sent to sign in. Nothing you were filling in is lost: it stays in the tab you came from.",
+        "chooseWay": "The way you signed in with is not offered here any more. Choose one of these.",
+        "doneTitle": "You are signed in again",
+        "doneLead": "Close this tab and go back to what you were filling in. Nothing there was lost.",
+        "signedIn": "{name} · signed in"
+      },
+      "firstRun": {
+        "eyebrow": "first run · deployment",
+        "eyebrowLocal": "first run",
+        "title": "The company that runs this deployment",
+        "titleLocal": "Set up your company",
+        "lead": "You are named as this deployment’s first admin. Name the company that runs it. Its people decide who else manages the deployment; the companies you serve are opened after this.",
+        "leadLocal": "This deployment serves one company, and you are named as the one who sets it up. Give it its name; it gets everything this deployment offers, and you become its administrator.",
+        "startingTitle": "Not set up yet.",
+        "startingLead": "The services of this deployment are still starting. Nothing was written. Try again in a minute.",
+        "name": "Name",
+        "namePlaceholder": "the company’s name",
+        "language": "Language",
+        "languageHint": "Its starting roles are named in it.",
+        "errName": "A name is needed.",
+        "errNameLong": "A name is at most {n} characters.",
+        "again": "Try again",
+        "doing": "Setting up…",
+        "submit": "Set up the company",
+        "signedIn": "{name} · signed in",
+        "done": "«{name}» is set up. Its starting roles are made.",
+        "doneUnnamed": "The company is set up. Its starting roles are made.",
+        "doneMissing": "Some starting roles could not be made yet."
+      },
+      "open": {
+        "title": "Open a company",
+        "lead": "One act: the company, its starting roles, what it has and its first administrator’s invitation are written together, or nothing is.",
+        "loading": "Reading what a company can have…",
+        "failed": {
+          "title": "What a company can have could not be read",
+          "text": "Nothing was changed. Try again; if it keeps happening, tell whoever runs this deployment.",
+          "retry": "Try again"
+        },
+        "notOpened": "Nothing was opened.",
+        "name": "Name",
+        "namePlaceholder": "the company’s name",
+        "nameTaken": "A company of this name is already here. A company’s name is used once.",
+        "errName": "A name is needed.",
+        "errNameLong": "A name is at most {n} characters.",
+        "language": "Language",
+        "languageHint": "its starting roles are named in it",
+        "products": "Products",
+        "productsHint": "what the company has",
+        "noProducts": "This deployment offers no product yet. Products come from the services this deployment runs.",
+        "startsFrom": "Starts from",
+        "startsFromHint": "its first configuration",
+        "empty": "Empty",
+        "filesHint": "The files whoever runs this deployment keeps for it. Empty starts the company with nothing set up.",
+        "noFilesHint": "No starting configuration is prepared for this deployment, so the company starts with nothing set up. Whoever runs it keeps them as files in a folder the admin service reads.",
+        "administrator": "First administrator",
+        "administratorHint": "a name, and a personal code with its country",
+        "administratorNote": "To tell people apart. They become the company’s administrator at their first sign-in.",
+        "submit": "Open «{name}»",
+        "submitEmpty": "Open the company",
+        "opening": "Opening…",
+        "cancel": "Cancel",
+        "waits": "It waits for a name and the first administrator."
+      },
+      "opened": {
+        "applied": {
+          "title": "«{company}» is opened, and starts from «{file}».",
+          "lead": "The administrator is invited. The whole file is in force."
+        },
+        "refused": {
+          "title": "«{company}» is opened, but its configuration was not applied.",
+          "lead": "The administrator is invited. Nothing of «{file}» was written: one part refused, so the rest was withheld."
+        },
+        "failed": {
+          "title": "«{company}» is opened, but its configuration could not be applied.",
+          "lead": "The administrator is invited. A service did not answer, and nothing was written. Apply the file again below."
+        },
+        "rolledBack": {
+          "title": "«{company}» is opened, but its configuration was not applied.",
+          "lead": "The administrator is invited. «{file}» was written, then taken back, because a part could not be written."
+        },
+        "partial": {
+          "title": "«{company}» is opened, but its configuration is only partly applied.",
+          "lead": "The administrator is invited. A part of «{file}» could not be written, and taking back what was written failed too. The lines below say which parts are in force."
+        }
+      },
+      "admins": {
+        "title": "Deployment admins",
+        "count": "{n} person may open companies and say what each has | {n} people may open companies and say what each has",
+        "add": "Add a deployment admin",
+        "lead": "The people who manage this deployment. Each is a person of the company that runs it, and each needs the strongest sign-in, no older than {n} minute, to do anything here. | The people who manage this deployment. Each is a person of the company that runs it, and each needs the strongest sign-in, no older than {n} minutes, to do anything here.",
+        "leadPlain": "The people who manage this deployment. Each is a person of the company that runs it, and each needs the strongest sign-in, and a recent one, to do anything here.",
+        "recorded": "Opening this list is recorded by the access audit service.",
+        "loading": "Reading the deployment admins…",
+        "unrecorded": {
+          "title": "The list was not shown",
+          "lead": "Showing it could not be recorded, so it was not read. Nothing was changed."
+        },
+        "again": "Try again",
+        "failed": {
+          "title": "The deployment admins could not be read",
+          "text": "Nothing was changed. Try again; if it keeps happening, tell whoever runs this deployment."
+        },
+        "addLead": "By personal code. They must already be a person of the company that runs this deployment: invite them in People & access first.",
+        "nobody": "Nobody of the company that runs this deployment has this personal code. Invite them in People & access first.",
+        "adding": "Adding…",
+        "addDo": "Add",
+        "addedSettings": "from the deployment’s settings",
+        "addedScreen": "on this screen",
+        "remove": "Remove",
+        "last": "The last deployment admin who has signed in cannot be removed.",
+        "removeAsk": "Remove {name} as a deployment admin?",
+        "removeLead": "{name} can no longer manage this deployment, and stays a person of the company.",
+        "removeDo": "Remove",
+        "keep": "Keep"
       }
     }
   }

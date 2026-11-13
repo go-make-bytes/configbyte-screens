@@ -84,7 +84,7 @@ const tones: Record<string, string> = {
 </script>
 
 <template>
-  <main class="min-h-screen" data-page="sign-in">
+  <main class="@container/page min-h-screen" data-page="sign-in">
     <div v-if="languages.length > 1" class="flex justify-end px-[18px] py-3.5">
       <LanguageMenu
         :languages="languages"

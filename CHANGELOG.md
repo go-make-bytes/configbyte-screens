@@ -3,6 +3,84 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.15.0
+
+Built on `uibyte` `v0.18.0`, unchanged. **Needs** a coordinator whose sign-in answer carries `signedInAt` and
+`deployment` and whose area answers below `/deployment`, and a role register whose company rows say whether somebody of
+the company has signed in (`entered`). A host whose served-pages list is fixed adds the area's addresses
+(`/deployment/companies`, `/deployment/companies/new`, `/deployment/companies/{id}`, `/deployment/admins`, and the
+sign-in tab's own `/deployment/sign-in-again`).
+
+### Added
+
+- **The deployment's own group in the menu.** Last, after everything a person configures in their own company, shown
+  by the sign-in answer alone: *Deployment*, with *Companies* and *Deployment admins*, to a person who manages a
+  deployment that serves many companies. A person shown it who configures nothing else sees only the group, and the
+  app's first address opens *Companies*. A deployment that could not be read draws no group. A person who is not shown
+  the group and types an address of the area reads the area's refusal of them as a line, never a sign-in page, and never
+  data.
+- **Companies.** Every company the deployment serves, with its products by their names, its administrators counted,
+  and the day it was opened; *Find a company* and pages of 25 in the browser; a failed read says so, with *Try
+  again*.
+- **A company's page.** Its products as boxes that save at once, with the reason beside a box that cannot be changed
+  (a product that needs another, a product another needs, a product whose services have not started) and a question
+  asked in place before one is taken; its administrators, counted with the company and named only when someone presses
+  to see them (showing them is recorded), invited with a name and a personal code and removed after a question; and
+  the starting configuration, applied from the files the deployment keeps while nobody of the company has signed in,
+  with a band and a line for each part saying what became of it. The names close again after an invitation or a
+  removal, and are shown only by the press, every time; the company is read again for its count. A part of a file that
+  its owner refused is said in these screens' own words, never the owner's title or detail. A company's answer that
+  does not say whether somebody of it has signed in is read as *somebody has*: the page says its configuration is its
+  people's now and offers no starting configuration; only an explicit `entered: false` offers one.
+- **Open a company.** A page of its own: name, language, products (with the same guard), *Starts from* (*Empty* or a
+  prepared file) and the first administrator by name and personal code, written together or not at all. Every answer is
+  worded: a name taken is said under *Name*, an unreadable file or services still starting say nothing was opened, and
+  an opening lands on the company's page with a band that says what became of its file, a line per part. What was typed
+  is held in the form (a component of its own, taken away when the area refuses the person) and the one request, and
+  nowhere else.
+- **Deployment admins.** One recorded read, said on the page; adding by personal code and country alone (the form is a
+  component of its own, taken away when the area refuses the person); removing after one question, naming the person
+  on the row, asked in place; no row is marked as the person looking. The last admin who has signed in keeps a button
+  that is off, with the reason. After any removal who is signed in is read again: a person who no longer manages the
+  deployment is moved off the area, otherwise the list is read again, and the page never stays on loading.
+- **The first run**, in place of everything and before the menu, in both kinds of deployment: the company's name and
+  language; services still starting keep the form; when done the app opens on *Companies* or as for any administrator,
+  with a line that the company is set up. A sign-in too old for it is always the line that asks to sign in again, in a
+  new tab, whatever is held about managing the deployment (the person manages nothing yet); what was typed stays in the
+  form, and once the same person has signed in again, by the server's answer, the button can be pressed again.
+- **Signing in again.** Entering the area, when the browser's clock says the sign-in is older than the deployment asks
+  for, shows a page that starts a recent sign-in and returns to the address being opened (kept in the tab's session
+  storage, and opened only if it is one of the app's own routes). The clock is only a first guess: never twice in a row,
+  at most once for a sign-in time (once the server has accepted a call of the area for it, only the server's own
+  refusal brings the page back), and never for a person who is not shown the area. In the middle of an act, a sign-in
+  too old puts a line over the page and offers a new tab at `/deployment/sign-in-again` that signs in again, says it
+  can be closed, and takes its mark off once it has. The first tab trusts only the server: *you signed in again* is the
+  same person with a later sign-in time.
+- **A form is never sent as another person.** A page of the area pins the person it was opened for. Before every act,
+  and every read of people (a company's administrators, the deployment admins), the sign-in answer is read again from
+  the network (`cache: 'no-store'`) and compared; every tab with an area page open compares when it is looked at again
+  and on the sign-in tab's hint. A different person, or nobody, sends nothing, drops what the area and the form hold, and
+  loads the app again. An answer for the same person that lacks its deployment part keeps the part held. A page left
+  while an answer was out sends nothing. No list of people in the area is read again without the comparison.
+- **The sign-in answer's new members** (`signedInAt`, `deployment`) are read and typed on `useAdminSession`
+  (`managesDeployment`), and `err:session:signInTooOld` is a named refusal beside `err:session:assuranceTooLow`
+  (`isSignInTooOld`, `isAssuranceTooLow`). The routes are exported as `DEPLOYMENT_COMPANIES`, `DEPLOYMENT_COMPANY_NEW`,
+  `DEPLOYMENT_COMPANY` and `DEPLOYMENT_ADMINS`.
+
+### Changed
+
+- **A sign-in start follows only an `http://` or `https://` address.** Any other answer, for any way of signing in, is
+  told as a sign-in that did not start.
+- **The sign-in start can ask for a recent sign-in.** `POST /login/start` carries `recent: true` only when a page of
+  the area asks; every other start sends the body it sent.
+- ***Nothing here for you to configure*** is said only to a person who configures nothing and is not shown the
+  *Deployment* group.
+
+### Fixed
+
+- **The invitation's refusal for a deployment that cannot add people** is said in Latvian without the word for
+  registering.
+
 ## v0.14.1
 
 Built on `uibyte` `v0.18.0`, unchanged. Nothing new to deploy.

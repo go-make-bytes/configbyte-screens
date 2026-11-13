@@ -49,6 +49,15 @@ when the membership register's owner answered. A host screen sits in the group i
 when it names none; the host's groups follow in the order their first screen arrives. A screen whose subject the
 workspace lacks can be shown locked, marked *not included*, and does not open.
 
+**The deployment's own group comes last, and is shown by the sign-in answer alone.** `GET /me` carries `deployment`
+(`mode`, `admin`, `firstRunOwed`, `signInAge`) and `signedInAt`. The group *Deployment*, with *Companies* and
+*Deployment admins*, is shown exactly when `admin` is true and `mode` is `saas`; it never depends on what else the
+person configures. A person shown the group who configures nothing else sees only the group, and the app's first
+address opens *Companies*; *Nothing here for you to configure* is said only to a person who configures nothing and is
+not shown the group. A `deployment` that is `null` (the role register could not be read) draws no group and says
+nothing about it. Every address of the area is judged by the coordinator, so a person who types one without the right
+reads the refusal as a line, never data.
+
 ## The screens
 
 **Export & import** carries the whole configuration out as one file and back in. The coordinator judges the file —
@@ -192,6 +201,92 @@ marked on every one of them.
   person, renamed, removed, and the role made with the first one; its roles are said as every member's.
 
 Each list is read once a visit, and an act reads again only the list it changed.
+
+**The deployment's own area** is for the people who manage a deployment that serves many companies.
+
+- **Companies** reads the companies and the products once each, together, when it opens. A row is one link to the
+  company: its name (marked *runs this deployment* on the company that does), the products it has by their names, how
+  many administrators it has, and the day it was opened, in the service's order. *Find a company* (shown when there is
+  more than one) and pages of 25 work in the browser. A company with a product the products' read does not hold makes
+  the products be read once more, and a key is never drawn. With only the deployment's own company the page says there
+  is no customer company yet, and how to open one. A read that fails says so, with *Try again*, never *no companies*.
+- **A company** is a page of its own. Its products are boxes that save at once; a product that needs another cannot be
+  ticked before it, a ticked product another ticked one needs cannot be unticked, and one whose services have not
+  started cannot be ticked, each saying why beside it; taking one is asked first, in place. Its administrators are
+  counted with the company, and their names are read only when someone presses *Show the administrators*, because
+  showing them is recorded; they are forgotten when the page is left. An administrator is invited with a name and a
+  personal code (checked as People & access checks them; the code lives only in its form and the one request) and
+  removed after a question asked in place; the last one cannot be removed, and the button says why. After an
+  invitation or a removal the names close again and the company is read again for its count: they are shown only by the
+  press, every time. While nobody of
+  the company has signed in, one of the starting configurations the deployment keeps can be applied, and what became
+  of it is a band with a line for each part, read from the answer's own outcome — a refused file arrives in an answer
+  that is itself a success. Once somebody has signed in the page says the configuration is theirs now.
+- **Open a company** is a page of its own: a name (1 to 200 characters after trimming, sent trimmed), the language its
+  starting roles are named in (the person's own to begin with), the products (the same guard as on a company's page,
+  worked out in the browser), *Starts from* (*Empty*, or one of the files the deployment keeps; with none prepared it
+  says where they come from) and the first administrator by name and personal code. The button is off, and says what it
+  waits for, until a name, a person and a code are given, and then reads *Open «name»*. What was typed lives only in
+  the form and the one request: not in a store, not in storage, not in an address. A refused opening keeps the form:
+  a name taken is said under *Name*, an unknown or unreadable file and services still starting are bands saying nothing
+  was opened, anything else is one line. An opening is the company's page with a band that says what became of its
+  file, a line per part.
+- **Deployment admins** is one recorded read, said on the page. A person of the deployment's own company is added by
+  personal code and country alone; removing one is asked first, in place, with one question naming the person on the
+  row (no row is marked as the person looking: a name says nothing of who is who). After any removal who is signed in
+  is read again: a person who no longer manages the deployment is moved off the area and the group leaves the menu;
+  otherwise the list is read again. The last admin who has signed in keeps the button, off, with the reason.
+- **The first run** is shown in place of everything, before the menu, in both kinds of deployment, to the person the
+  deployment names (`deployment.firstRunOwed`): the company's name and language, `POST /deployment/first-run`. Services
+  still starting keep the form and offer *Try again*; a company already set up is taken as done; when it is done who is
+  signed in is read again, and a deployment for many companies opens on *Companies*, one for one company opens as for
+  any administrator, each with a line that the company is set up. A sign-in too old for it (the person manages nothing
+  yet, so the area's rule for such a person does not apply) is always the line that asks to sign in again in a new tab,
+  with what was typed kept; once the same person has signed in again, by the server's answer, the button can be pressed
+  again. Any other refusal of the person keeps the form with a line that only the person the deployment names can set it up.
+- **A form is never sent as another person.** The sign-in is shared by every tab of a browser, so when a page of the
+  area opens it pins the person it was opened for (the subject of the sign-in answer). Before every act, and before
+  every read of people (showing a company's administrators, opening the deployment admins), the page reads the sign-in
+  answer again from the server and compares: a different person, or nobody, sends nothing, drops everything the area
+  and the form hold, and loads the app again. Every tab with an area page open reads it again, and compares, when the
+  window is looked at again and when another tab says it signed in. A page left while the answer was out sends nothing.
+  That read always asks the network (`cache: 'no-store'`). No list of people in the area is read again without that
+  comparison having just been made, so after an addition or a removal of a deployment admin the list is read again only
+  for the same person; if after a removal the person no longer manages the deployment the page says the area's refusal
+  or the frame leaves it, never *loading* for good. When the answer for the same person comes back with its deployment
+  part missing (the register could not be read just then), the held part is kept and nothing is left or lost; a
+  different person, or nobody, still drops everything. The forms that open a company and add a deployment admin are
+  components of their own that the page takes away when the area refuses the person as a whole.
+- **Signing in again, in two moments.** Entering the area, when the browser's clock says the sign-in is older than
+  `deployment.signInAge` seconds (or its time is not known), shows a page that says so and asks nothing of the area. The
+  clock is only a first guess: it is never made twice in a row (a person who has just come back from a sign-in that
+  asked for a recent one is not judged again, so a clock that runs ahead cannot loop), never again for a sign-in time
+  once the server has accepted a call of the area for it, never for a person who is not shown the area (the area's own
+  call is made and its refusal drawn: the coordinator checks the age before the right, so such a person is told the
+  sign-in is too old by every address, and that is drawn as *you do not manage this deployment*, not as a sign-in to
+  renew), and the server's answer decides; its button starts a sign-in that is
+  recent (`POST /login/start` with `recent: true`, the way the person used; the ways are offered when that way is not
+  among them), keeps the address being opened in this tab's session storage, and opens it when the sign-in comes back
+  if it is one of the app's own routes (anything else kept is dropped and *Companies* opens). In the middle of an act, a
+  `403 err:session:signInTooOld` puts a line over the page, which stays as it is, with *Sign in again, in a new tab*.
+  The new tab is the app at `/deployment/sign-in-again`: it marks itself as a sign-in tab, starts the same recent
+  sign-in at once, and when it comes back says *you are signed in again, close this tab* and nothing else, telling the
+  other tabs of the browser. The first tab reads who is signed in again when it is looked at again or told by the other
+  tab, and trusts only the answer it reads itself: the same person with a sign-in time later than the one the page held
+  when the line appeared says so and lets the act be pressed again (the browser's clock decides nothing here); a
+  different person drops everything the page holds and loads the app again. A sign-in that fails or is cancelled in the
+  new tab shows the sign-in page's own words there, and the first tab keeps its line. The new tab takes its mark off
+  once it has said it is signed in again. An address the sign-in start answers is followed only if it begins with
+  `https://` or `http://`; anything else is told as a sign-in that did not start.
+- **What a tab keeps.** Its session storage holds the address to return to and the mark that the tab is a sign-in tab,
+  and nothing else. No name, personal code, company, product or answer of the area is written to any storage, log line
+  or address.
+- **Refusals.** A sign-in that is not the strongest (`err:session:assuranceTooLow`) leads to the closing page the app
+  already has; any other `403` drops the page, says the person is no longer a deployment admin and reads who is signed
+  in again. No sentence of a service is drawn as it came: a part of a starting file that its owner refused is said in
+  these screens' own words, never the owner's title or detail. When the area refuses the person as a whole, the form
+  that opens a company is taken away, so nothing typed in it stays in memory. A company's answer that does not say whether somebody of it has
+  signed in (`entered`) is read as *somebody has*: only an explicit `false` offers a starting configuration.
 
 Roles, user types and positions are shown by their names as entered. The names in other languages the register may
 keep beside them (`labels`: a language's code and the name in it) are read but not edited here, and a Save leaves
@@ -343,6 +438,17 @@ const creatorRole: RoleSetting = {
 // configbyteScreens(i18n, { …, roles: { groups, settings: [creatorRole] } })
 ```
 
+### The deployment's own area in the host
+
+The routes of `adminRoutes()` include the area's, so the host's router carries them. A host that serves its admin
+pages from a list of addresses (a server that answers only the pages it knows) adds these: `/deployment/companies`,
+`/deployment/companies/new`, `/deployment/companies/{id}`, `/deployment/admins` and the sign-in tab's own address,
+`/deployment/sign-in-again`. Their route names are exported: `DEPLOYMENT_COMPANIES`, `DEPLOYMENT_COMPANY_NEW`,
+`DEPLOYMENT_COMPANY`, `DEPLOYMENT_ADMINS`, `DEPLOYMENT_SIGN_IN_TAB`. The sign-in tab is opened from the app itself, so
+a host that serves its admin pages from a list must carry that address too, or the new tab finds nothing. The first
+run needs no address: it is drawn in place of everything wherever the app is. The area names no product: the products'
+names arrive in the answers. It needs no option.
+
 ### Words
 
 The screens carry their own words in **English and Latvian**, merged into the host's translator under `configbyte.*`
@@ -410,6 +516,14 @@ with the `__Host-` cookies.
 | `POST` | `/config/import?dryRun=true` · `/config/import` | what a file would do, then applying exactly that |
 | any | `/sections/{section}/{path}` | relayed to that section's owner: People & access calls the register's `tenants/{id}/access`, `…/roles`, `…/user-types`, `…/corporate-login-default`, `…/administrators/{user}`, `…/chart/positions`, `…/assistants?whole=true`, `…/assistants`, `…/assistants/{user}/name`, `users/{user}`, `…/users/{user}/note`, `…/users/{user}/identity-code`, `…/people` and `config`; History calls `history` on the register and on each stream's owner |
 | `GET` · `DELETE` | `/assistants/{assistant}/connections` · `DELETE …/connections/{id}` | with `assistants`: the AI apps connected as one assistant, all of them signed out (before its removal), or one |
+
+The deployment's own area calls the coordinator's own routes below `/deployment` (never the relay): `GET`
+`/companies` · `/companies/{id}` · `/companies/{id}/administrators` · `/products` · `/configurations` · `/admins`, `POST`
+`/companies` · `/companies/{id}/administrators` · `/companies/{id}/configuration` · `/admins` · `/first-run`, `PUT` and
+`DELETE` `/companies/{id}/products/{key}`, and `DELETE` `/companies/{id}/administrators/{user}` · `/admins/{user}`.
+`POST /login/start` also takes `recent: true`, and `GET /me` carries `signedInAt` and `deployment`. Needs a role
+register whose company rows say whether somebody of the company has signed in (`entered`) and which answers a name
+taken as `409 err:membership:name_taken` and services not yet declared as `409 err:membership:not_declared`.
 
 An Apply sends the file's own text with the versions its preview answered added as its last member, so what lands is
 exactly what the person read, or nothing.

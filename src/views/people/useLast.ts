@@ -8,7 +8,7 @@ export function useLast() {
   const { t } = useI18n()
 
   /** *today*, *yesterday*, *{n} days ago*; a dash when they never signed in. */
-  return function lastSignedIn(m: Member): string {
+  return function lastSignedIn(m: Pick<Member, 'lastSignedInOn'>): string {
     if (!m.lastSignedInOn) return '—'
     const n = daysAgo(m.lastSignedInOn)
     if (n === null) return '—'
