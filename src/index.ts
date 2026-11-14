@@ -43,7 +43,9 @@ export { useAdminSession, type DeploymentState, type Identity, type WorkspaceRef
 // The page that asks which workspace to work in, and the workspace a page was opened for.
 export { default as ChooseWorkspace, type WorkspaceRow } from './components/ChooseWorkspace.vue'
 export {
+  forgetOpenedWorkspace,
   isOtherWorkspace,
+  openedFor,
   OTHER_WORKSPACE,
   whenWorkspaceMoves,
   WORKSPACE_HEADER,

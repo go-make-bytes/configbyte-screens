@@ -3,6 +3,13 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.16.1
+
+### Fixed
+
+- An application with a session store of its own can now set the workspace its page was opened for (`openedFor`), so
+  its requests carry it. `forgetOpenedWorkspace` is exported too, for a host's own tests.
+
 ## v0.16.0
 
 Built on `uibyte` `v0.20.0` (was `v0.19.0`): move a host's own `uibyte` pin to the same tag together with this one,

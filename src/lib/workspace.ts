@@ -36,7 +36,7 @@ export function workspaceOpenedFor(): Readonly<Opened> | null {
   return opened
 }
 
-/** Forget the workspace the page was opened for, as loading the page again does. */
+/** Forget the workspace the page was opened for, as loading the page again does. For a host's own tests: a page load starts with none. */
 export function forgetOpenedWorkspace(): void {
   opened = null
 }
