@@ -495,7 +495,10 @@ call; the host passes the rows and every word, and runs what is chosen:
 A host's own calls name the workspace through the module `workspaceHeaders()`, which answers `{ 'Workspace-Id': id }`,
 or `{}` while the page was opened for none; `isOtherWorkspace(error)` recognises the refusal above and
 `whenWorkspaceMoves(listener)` adds a listener that is told when a call was refused that way, and answers a function
-that removes it. `workspaceOpenedFor()` answers the workspace's id and name. A host that makes its own calls adds
+that removes it. `workspaceOpenedFor()` answers the workspace's id and name. `openedFor(id, name?)` sets it, once per
+page load (a second call changes nothing, an empty id sets nothing); the session store that reads the first sign-in
+answer naming a workspace calls it, as this package's own store does, so a host with a store of its own calls it there.
+`forgetOpenedWorkspace()` clears it, for a host's own tests. A host that makes its own calls adds
 `workspaceHeaders()` to them and, on a refusal that `isOtherWorkspace` recognises (it accepts any value with
 `status` 409 and that `code`, so the host's own error type does), calls `workspaceMoved()`: every listener is told,
 the frame's among them, and the frame holds the page as above. A host may add its own listener without taking the

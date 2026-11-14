@@ -7,11 +7,24 @@ import * as screens from './index'
 describe('what the package exports', () => {
   it('exports the page to choose a workspace and the module of the workspace a page was opened for', () => {
     expect(screens.ChooseWorkspace).toBeTruthy()
-    for (const name of ['workspaceHeaders', 'isOtherWorkspace', 'whenWorkspaceMoves', 'workspaceMoved', 'workspaceOpenedFor']) {
+    for (const name of ['workspaceHeaders', 'isOtherWorkspace', 'whenWorkspaceMoves', 'workspaceMoved', 'workspaceOpenedFor', 'openedFor', 'forgetOpenedWorkspace']) {
       expect(typeof (screens as Record<string, unknown>)[name], name).toBe('function')
     }
     expect(screens.WORKSPACE_HEADER).toBe('Workspace-Id')
     expect(screens.OTHER_WORKSPACE).toBe('err:session:otherWorkspace')
+  })
+
+  it('lets a host set the workspace its page was opened for, once, and forget it', () => {
+    screens.forgetOpenedWorkspace()
+    expect(screens.workspaceHeaders()).toEqual({})
+    screens.openedFor('w-1', 'First')
+    expect(screens.workspaceHeaders()).toEqual({ 'Workspace-Id': 'w-1' })
+    expect(screens.workspaceOpenedFor()).toEqual({ id: 'w-1', name: 'First' })
+    screens.openedFor('w-2', 'Second')
+    expect(screens.workspaceHeaders()).toEqual({ 'Workspace-Id': 'w-1' })
+    expect(screens.workspaceOpenedFor()).toEqual({ id: 'w-1', name: 'First' })
+    screens.forgetOpenedWorkspace()
+    expect(screens.workspaceHeaders()).toEqual({})
   })
 
   it('still exports everything it exported before', () => {
