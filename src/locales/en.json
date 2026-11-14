@@ -21,6 +21,18 @@
         "noWays": "No way to sign in is set up here. Tell whoever runs this deployment."
       }
     },
+    "workspace": {
+      "choose": {
+        "title": "Choose a workspace",
+        "lead": "You are in more than one. You can switch later from the workspace’s name at the top.",
+        "list": "Your workspaces"
+      },
+      "tab": "This tab was opened for {old}. You are now working in {new}, so nothing was done here.",
+      "reload": "Reload",
+      "gone": "You are no longer in {name}, so you stay in {current}.",
+      "ended": "Your access to {name} has ended. You are now working in {current}.",
+      "endedChoose": "Your access to {name} has ended."
+    },
     "frame": {
       "admin": "admin",
       "tab": "{name} — admin",
@@ -516,6 +528,7 @@
       },
       "refused": {
         "lastAdministrator": "{name} is this workspace's last administrator. Make someone else an administrator first.",
+        "lastDeploymentAdmin": "{name} is this deployment’s last admin, so their access was not ended. Add another under Deployment › Deployment admins first.",
         "notAdministrator": "You are no longer an administrator of this workspace, so nothing was changed. Sign in again to see what is yours.",
         "roleHeld": "«{role}» is held by {n} person. Take it from them first. | «{role}» is held by {n} people. Take it from them first.",
         "rolePlaced": "«{role}» is still placed by a service on things it keeps. Move those places to another role first.",

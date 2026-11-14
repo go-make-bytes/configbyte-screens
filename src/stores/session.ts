@@ -3,8 +3,15 @@
 // all from the coordinator. The browser holds only its opaque cookie.
 import { defineStore } from 'pinia'
 
-import { API_ROOT, ApiError, ASSURANCE_TOO_LOW, get, post, put } from '../lib/api'
+import { API_ROOT, ApiError, ASSURANCE_TOO_LOW, del, get, post, put } from '../lib/api'
 import { messageOfMarker, noteSignedOut, type SignInMessage, type SignInWay } from '../lib/signin'
+import { isOtherWorkspace, openedFor } from '../lib/workspace'
+
+/** A workspace the person is in, as the sign-in answer lists it. */
+export interface WorkspaceRef {
+  id: string
+  name: string
+}
 
 /**
  * What the deployment is, as far as the person's own screens need to know: how it
@@ -35,6 +42,12 @@ export interface Identity {
   tenant: string
   /** The workspace's own name and what it was given; null when they could not be read. */
   workspace?: { name: string; entitlements: { service: string; feature: string }[] } | null
+  /** Every workspace the person is in; left out for a person in one. */
+  workspaces?: WorkspaceRef[]
+  /** The name of a workspace the person's access to has ended, said once. */
+  workspaceEnded?: string
+  /** The name of a workspace the person chose that they are no longer in, said once. */
+  workspaceGone?: string
   /** Every section of this deployment, with the person's scopes under its owner's keys. */
   sections: Record<string, string[]>
   presentation: {
@@ -157,6 +170,10 @@ export const useAdminSession = defineStore('configbyte-session', {
     cameBack: false,
     /** The sign-in time for which the server has accepted a call of the area; the browser's clock guesses no more for it. */
     areaAcceptedFor: null as string | null,
+    /** The workspace a sign-in is being started for; empty when none is. */
+    switchTarget: '',
+    /** The last start for another workspace was refused or not answered; cleared when the next one begins. */
+    switchFailed: false,
   }),
   getters: {
     /** Whether the person holds any of the scopes, under any section. */
@@ -168,6 +185,9 @@ export const useAdminSession = defineStore('configbyte-session', {
 
         return scopes.some((s) => held.has(s))
       },
+
+    /** The id of the workspace a sign-in is under way for; empty when none is. */
+    switchingTo: (state): string => state.switchTarget,
 
     /** What the deployment is, as the sign-in answer told it; null when it did not, or could not be read. */
     deployment: (state): DeploymentState | null => state.me?.deployment ?? null,
@@ -192,7 +212,9 @@ export const useAdminSession = defineStore('configbyte-session', {
     async resolve() {
       this.unreachable = false
       try {
-        const me = await get<Identity>(`${API_ROOT}/me`)
+        const me = await this.readMe()
+        // The page is opened for the workspace the first answer names, and stays so until it is loaded again.
+        openedFor(me.tenant, me.workspace?.name ?? me.workspaces?.find((w) => w.id === me.tenant)?.name ?? '')
         const lines = await get<{ sections: SectionLine[] }>(`${API_ROOT}/sections`)
         this.me = me
         this.order = lines.sections.map((l) => l.section)
@@ -208,6 +230,21 @@ export const useAdminSession = defineStore('configbyte-session', {
     },
 
     /**
+     * Read who is signed in. The coordinator answers the first request after the person's access to their
+     * workspace ended with a refusal that names the other workspace; that is not an answer that failed, so the
+     * read is made once more, once only, and goes on with what that says.
+     */
+    async readMe(): Promise<Identity> {
+      try {
+        return await get<Identity>(`${API_ROOT}/me`, { unscoped: true })
+      } catch (e) {
+        if (!isOtherWorkspace(e)) throw e
+
+        return await get<Identity>(`${API_ROOT}/me`, { unscoped: true })
+      }
+    },
+
+    /**
      * Read the ways this deployment offers to sign in, once they have been read
      * successfully. Without them the page cannot offer a way in, so to someone not
      * signed in a failure is the coordinator not answering — never an empty list,
@@ -217,7 +254,7 @@ export const useAdminSession = defineStore('configbyte-session', {
       if (this.waysRead) return
       this.waysFailed = false
       try {
-        const read = await get<LoginWays>(`${API_ROOT}/login/ways`)
+        const read = await get<LoginWays>(`${API_ROOT}/login/ways`, { unscoped: true })
         this.ways = read.ways ?? []
         this.appUrl = webAddress(read.appUrl ?? '')
         this.deploymentLanguage = read.language ?? ''
@@ -331,16 +368,68 @@ export const useAdminSession = defineStore('configbyte-session', {
     // minted and held on the server.
     // With `recent` it asks for a sign-in made now, for a part of the app that wants one.
     async login(method: string, recent = false) {
-      const start = await post<LoginStart>(`${API_ROOT}/login/start`, recent ? { method, recent: true } : { method })
-      // Only a web address is followed: anything else is a sign-in that did not start.
+      const start = await post<LoginStart>(`${API_ROOT}/login/start`, recent ? { method, recent: true } : { method }, { unscoped: true })
+      this.follow(start)
+    },
+
+    /** Send the browser to the address a sign-in start answered. Only a web address is followed: anything else is a sign-in that did not start. */
+    follow(start: LoginStart) {
       const address = webAddress(start.authorizeUrl ?? '')
       if (!address) throw new Error('the sign-in did not start')
       window.location.assign(address)
     },
 
     /**
+     * Start a sign-in for another workspace the person is in. The way they signed in with is named, so
+     * the page of ways is not shown where it need not be. Until the browser leaves, the workspace it is for is
+     * `switchingTo` and a second start does nothing; a start that is refused or not answered says so with the
+     * message of a sign-in that could not start, and frees the choice again.
+     */
+    async switchTo(workspace: string) {
+      if (this.switchTarget) return
+      this.switchTarget = workspace
+      this.switchFailed = false
+      this.message = ''
+      try {
+        const method = this.me?.loginMethod
+        const start = await post<LoginStart>(`${API_ROOT}/login/start`, method ? { method, workspace } : { workspace }, { unscoped: true })
+        this.follow(start)
+      } catch {
+        this.switchTarget = ''
+        this.switchFailed = true
+        this.message = 'failed'
+      }
+    },
+
+    /**
+     * Tell the coordinator the line about an ended or gone workspace was shown, so it is not said again.
+     * When it answers, the store forgets both names; a failure is passed over and the names stay, so the
+     * next load says it again.
+     */
+    async noteShown() {
+      try {
+        await del(`${API_ROOT}/me/workspace-notice`, { unscoped: true })
+      } catch {
+        return
+      }
+      if (this.me) {
+        delete this.me.workspaceEnded
+        delete this.me.workspaceGone
+      }
+    },
+
+    /** Ask who is signed in once more, from the network, naming no workspace; null when it cannot be read. Nothing held is replaced. */
+    async readCurrent(): Promise<Identity | null> {
+      try {
+        return await get<Identity>(`${API_ROOT}/me`, { cache: 'no-store', unscoped: true })
+      } catch {
+        return null
+      }
+    },
+
+    /**
      * Ask who is signed in again, comparing with `pinned` (the person a page was opened for)
-     * or else with the person held. `same` replaces what is held with the fresh answer; `other`
+     * or else with the person held, and with the workspace held. `same` replaces what is held with the fresh answer; `other`
      * means somebody else is signed in now, or nobody is (nothing held is replaced); `failed`
      * means the answer could not be read.
      */
@@ -349,8 +438,10 @@ export const useAdminSession = defineStore('configbyte-session', {
       if (!held) return 'other'
       try {
         // Asked of the network every time: a comparison made on a cached answer compares nothing.
-        const me = await get<Identity>(`${API_ROOT}/me`, { cache: 'no-store' })
+        const me = await get<Identity>(`${API_ROOT}/me`, { cache: 'no-store', unscoped: true })
         if (me.subject !== (pinned || held.subject)) return 'other'
+        // The same person, signed in to another workspace now: the page was opened for the one it holds.
+        if (me.tenant !== held.tenant) return 'other'
         // The register could not be read just then for the same person: what is known is kept, not thrown away.
         if (!me.deployment && held.deployment) me.deployment = held.deployment
         if (this.me === held) this.me = me
@@ -385,7 +476,7 @@ export const useAdminSession = defineStore('configbyte-session', {
       this.signOutFailed = false
       let out: Logout
       try {
-        out = await post<Logout>(`${API_ROOT}/logout`)
+        out = await post<Logout>(`${API_ROOT}/logout`, undefined, { unscoped: true })
       } catch {
         this.signOutFailed = true
 

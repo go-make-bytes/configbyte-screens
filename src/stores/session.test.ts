@@ -106,6 +106,28 @@ describe('reading who is signed in again, for a comparison', () => {
   })
 })
 
+describe('reading who is signed in again, for the workspace', () => {
+  it('says the same for the same person in the same workspace, and another when the same person is in another workspace now', async () => {
+    const session = useAdminSession()
+    const held = identity({ tenant: 'W-1' })
+    session.me = held
+    answerMe(identity({ tenant: 'W-1' }))
+    expect(await session.reread()).toBe('same')
+    answerMe(identity({ tenant: 'W-2' }))
+    expect(await session.reread()).toBe('other')
+    // Nothing held is replaced by the answer of another workspace.
+    expect(session.me?.tenant).toBe(held.tenant)
+    expect(session.me?.tenant).toBe('W-1')
+  })
+
+  it('compares the workspace for a page opened for a person too', async () => {
+    const session = useAdminSession()
+    session.me = identity({ tenant: 'W-1' })
+    answerMe(identity({ tenant: 'W-2' }))
+    expect(await session.reread('sub:A')).toBe('other')
+  })
+})
+
 describe('who the deployment’s own area is shown to', () => {
   it.each([
     ['a deployment admin on a deployment for many companies', state({ mode: 'saas', admin: true }), true],

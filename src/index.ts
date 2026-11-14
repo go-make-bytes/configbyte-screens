@@ -38,7 +38,19 @@ export type {
 } from './options'
 // What a host's `write` throws when a change is refused, so the refusal is said in words.
 export { ApiError } from './lib/api'
-export { useAdminSession, type DeploymentState, type Identity } from './stores/session'
+export { useAdminSession, type DeploymentState, type Identity, type WorkspaceRef } from './stores/session'
+
+// The page that asks which workspace to work in, and the workspace a page was opened for.
+export { default as ChooseWorkspace, type WorkspaceRow } from './components/ChooseWorkspace.vue'
+export {
+  isOtherWorkspace,
+  OTHER_WORKSPACE,
+  whenWorkspaceMoves,
+  WORKSPACE_HEADER,
+  workspaceMoved,
+  workspaceHeaders,
+  workspaceOpenedFor,
+} from './lib/workspace'
 
 // The one sign-in page, for every app of a deployment, and what it reads.
 export { default as SignInPage } from './components/SignInPage.vue'
