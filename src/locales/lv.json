@@ -21,6 +21,18 @@
         "noWays": "Šeit nav iestatīta neviena pieslēgšanās iespēja. Pasakiet to tam, kas uztur šo izvietojumu."
       }
     },
+    "workspace": {
+      "choose": {
+        "title": "Izvēlieties darbvietu",
+        "lead": "Jūs esat vairākās darbvietās. Vēlāk varat pārslēgties, nospiežot darbvietas nosaukumu augšā.",
+        "list": "Jūsu darbvietas"
+      },
+      "tab": "Šī cilne tika atvērta darbvietai {old}. Tagad jūs strādājat darbvietā {new}, tāpēc šeit nekas netika izdarīts.",
+      "reload": "Pārlādēt",
+      "gone": "Jūs vairs neesat darbvietā {name}, tāpēc paliekat darbvietā {current}.",
+      "ended": "Jūsu piekļuve darbvietai {name} ir beigusies. Tagad jūs strādājat darbvietā {current}.",
+      "endedChoose": "Jūsu piekļuve darbvietai {name} ir beigusies."
+    },
     "frame": {
       "admin": "administrēšana",
       "tab": "{name} — administrēšana",
@@ -516,6 +528,7 @@
       },
       "refused": {
         "lastAdministrator": "{name} ir šīs darbvietas pēdējais administrators. Vispirms padariet par administratoru kādu citu.",
+        "lastDeploymentAdmin": "{name} ir šī izvietojuma pēdējais administrators, tāpēc piekļuve netika noņemta. Vispirms pievienojiet vēl vienu sadaļā Izvietojums › Izvietojuma administratori.",
         "notAdministrator": "Jūs vairs neesat šīs darbvietas administrators, tāpēc nekas netika mainīts. Piesakieties vēlreiz, lai redzētu, kas ir jūsu ziņā.",
         "roleHeld": "Lomu «{role}» tur {n} cilvēks. Vispirms to noņemiet. | Lomu «{role}» tur {n} cilvēki. Vispirms to noņemiet.",
         "rolePlaced": "Lomu «{role}» joprojām izmanto kāds serviss savos objektos. Vispirms pārceliet tos uz citu lomu.",

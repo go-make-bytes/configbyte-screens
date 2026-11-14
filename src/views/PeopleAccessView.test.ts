@@ -686,6 +686,45 @@ describe('People & access › Users', () => {
     expect([reads('/access'), reads('/roles'), reads('/user-types')]).toEqual([2, 1, 1])
   })
 
+  it('says the deployment’s last admin keeps their access, with their name, in English and in Latvian, and the person stays in the list', async () => {
+    const refusal = { status: 409, body: { code: 'err:membership:last_deployment_admin' } }
+    stub({ [`DELETE ${R}/users/m4?tenant=W-1`]: refusal })
+    const english = await render({ url: '/people/users/m4' })
+    await button(english.wrapper, 'Take away all access').trigger('click')
+    await settle(english.wrapper)
+    await button(english.wrapper, 'Take it away').trigger('click')
+    await settle(english.wrapper)
+    expect(english.wrapper.get('[data-said="refused"]').text()).toBe(
+      'Kārlis Picker is this deployment’s last admin, so their access was not ended. Add another under Deployment › Deployment admins first.',
+    )
+    expect(writes()).toHaveLength(1)
+    await go(english, '/people')
+    expect(rowOf(english.wrapper, 'Kārlis Picker').exists()).toBe(true)
+
+    stub({ [`DELETE ${R}/users/m4?tenant=W-1`]: refusal })
+    const latvian = await render({ url: '/people/users/m4', locale: 'lv' })
+    await button(latvian.wrapper, 'Atņemt visu piekļuvi').trigger('click')
+    await settle(latvian.wrapper)
+    await button(latvian.wrapper, 'Atņemt').trigger('click')
+    await settle(latvian.wrapper)
+    expect(latvian.wrapper.get('[data-said="refused"]').text()).toBe(
+      'Kārlis Picker ir šī izvietojuma pēdējais administrators, tāpēc piekļuve netika noņemta. Vispirms pievienojiet vēl vienu sadaļā Izvietojums › Izvietojuma administratori.',
+    )
+  })
+
+  it('keeps the sentence of today for the same act refused 409 with another code', async () => {
+    stub({ [`DELETE ${R}/users/m4?tenant=W-1`]: { status: 409, body: { code: 'err:request:conflict', detail: 'the register said so' } } })
+    const { wrapper } = await render({ url: '/people/users/m4' })
+    await button(wrapper, 'Take away all access').trigger('click')
+    await settle(wrapper)
+    await button(wrapper, 'Take it away').trigger('click')
+    await settle(wrapper)
+    // Today a 409 of this act is read as the workspace's own last administrator, whatever its code.
+    expect(wrapper.get('[data-said="refused"]').text()).toBe(
+      "Kārlis Picker is this workspace's last administrator. Make someone else an administrator first.",
+    )
+  })
+
   it('gathers the same people by access, naming the first five of a long list', async () => {
     stub({}, [...members(), ...arrivals(8)])
     const { wrapper } = await render()

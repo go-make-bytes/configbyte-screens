@@ -525,7 +525,8 @@ describe('Signing in again › in the middle of an act', () => {
   const tooOld = { status: 403, body: { code: 'err:session:signInTooOld' } }
   /** The page opens on the first answer, the act is checked on the second; the later ones are what the server says after. */
   const later = (extra: Record<string, unknown> = {}) => ok(me(extra, 1))
-  const recentMe = later()
+  // Built when a test asks, never when the file loads: in a long run the file's load is seconds behind the test.
+  const recentMe = () => later()
 
   async function stuck(extra: Record<string, Reply | Reply[]> = {}) {
     stub({ [`POST ${AREA}/companies`]: tooOld, ...extra })
@@ -566,11 +567,13 @@ describe('Signing in again › in the middle of an act', () => {
 
   it('reads who is signed in again when the page is looked at again, says the sign-in is recent, and sends the act once when it is pressed again', async () => {
     const { wrapper } = await stuck({
-      [`GET ${API}/me`]: [ok(me()), ok(me()), recentMe],
+      [`GET ${API}/me`]: [ok(me()), ok(me()), recentMe()],
       [`POST ${AREA}/companies`]: [tooOld, { status: 201, body: { company: { id: 'c9', name: 'Kalve Ltd', status: 'active', createdAt: new Date().toISOString(), entered: false } } }],
     })
     await wrapper.get('[data-act="sign-in-new-tab"]').trigger('click')
     window.dispatchEvent(new Event('focus'))
+    // Wait for the read this test expects, never a fixed time: a loaded machine answers later.
+    await vi.waitFor(() => expect(reads(`${API}/me`)).toBe(3), { timeout: 8000 })
     await settle(wrapper)
     expect(reads(`${API}/me`)).toBe(3)
     expect(wrapper.find('[data-refusal="tooOld"]').exists()).toBe(false)
@@ -581,9 +584,11 @@ describe('Signing in again › in the middle of an act', () => {
   })
 
   it('is told by the sign-in tab, in this browser, and reads who is signed in again', async () => {
-    const { wrapper } = await stuck({ [`GET ${API}/me`]: [ok(me()), ok(me()), recentMe] })
+    const { wrapper } = await stuck({ [`GET ${API}/me`]: [ok(me()), ok(me()), recentMe()] })
     await wrapper.get('[data-act="sign-in-new-tab"]').trigger('click')
     new FakeChannel('configbyte-sign-in').postMessage('signed-in')
+    // Wait for the read this test expects, never a fixed time: a loaded machine answers later.
+    await vi.waitFor(() => expect(reads(`${API}/me`)).toBe(3), { timeout: 8000 })
     await settle(wrapper)
     expect(reads(`${API}/me`)).toBe(3)
     expect(wrapper.get('[data-line="said"]').text()).toContain('You signed in again.')
@@ -618,7 +623,7 @@ describe('Signing in again › in the middle of an act', () => {
   })
 
   it('holds in the tab’s storage nothing a person typed, whatever was done', async () => {
-    const { wrapper, pinia } = await stuck({ [`GET ${API}/me`]: [ok(me()), ok(me()), recentMe] })
+    const { wrapper, pinia } = await stuck({ [`GET ${API}/me`]: [ok(me()), ok(me()), recentMe()] })
     await wrapper.get('[data-act="sign-in-new-tab"]').trigger('click')
     window.dispatchEvent(new Event('focus'))
     await settle(wrapper)

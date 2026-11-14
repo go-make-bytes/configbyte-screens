@@ -449,6 +449,77 @@ a host that serves its admin pages from a list must carry that address too, or t
 run needs no address: it is drawn in place of everything wherever the app is. The area names no product: the products'
 names arrive in the answers. It needs no option.
 
+### Workspaces
+
+A person can be in several workspaces and is signed in to one at a time, in every tab of the browser. A host that
+moves to this release gets, with no option to set:
+
+- **The line under the brand**, in the menu beside the page and in the one a phone opens: the name of the workspace
+  the person is in. For a person in one it is plain words with nothing to press; for a person in several it is a
+  button that lists them, the current one marked, and choosing another starts a sign-in for it (`POST /login/start`
+  with `workspace`, and the way the person signed in with as `method`) and sends the browser to the address answered.
+  The deployment's name stays the brand.
+- **The page to choose**, drawn in place of everything after the sign-in pages, before the first run, for a person who
+  is signed in, in at least one workspace, and in none right now (`tenant` is empty and `workspaces` lists some).
+- **A notice on a page left behind.** Every call a page makes names the workspace the page was opened for in the
+  `Workspace-Id` header. When the coordinator refuses a call for naming another workspace than the session's (`409`
+  `err:session:otherWorkspace`), the frame reads the sign-in answer once more: if the person now works in another
+  workspace, a notice that cannot be closed names both and offers *Reload*; if in none, the page loads again at once.
+  The refused call still fails for whoever made it. The workspace the page was opened for is kept in memory only, for the life of the page.
+- **Two lines over the page**, each said once and then reported to the coordinator (`DELETE /me/workspace-notice`): the
+  person's access to a workspace has ended (`workspaceEnded`), and a workspace they chose is gone (`workspaceGone`).
+  With one workspace left and none current, the sign-in for it starts by itself, once per page load.
+- **People & access** words the refusal of ending the access of the deployment's last administrator (`409`
+  `err:membership:last_deployment_admin`) in a sentence of its own.
+
+`ChooseWorkspace` is exported so a host can show the same page in its own sign-in look. It knows no store and makes no
+call; the host passes the rows and every word, and runs what is chosen:
+
+```vue
+<ChooseWorkspace
+  :rows="[{ key: 'w-1', label: 'First company' }, { key: 'w-2', label: 'Second company' }]"
+  :busy="startedFor"
+  :product="t('app.product')"
+  :title="t('app.choose.title')"
+  :lead="t('app.choose.lead')"
+  :list-label="t('app.choose.list')"
+  :sign-out-label="t('app.signOut')"
+  :line="{ outcome: 'done', text: t('app.choose.ended') }"
+  @choose="(key) => startSignIn(key)"
+  @sign-out="signOut"
+>
+  <template #mark="{ size }"><svg :width="size" :height="size">…</svg></template>
+</ChooseWorkspace>
+```
+
+A host's own calls name the workspace through the module `workspaceHeaders()`, which answers `{ 'Workspace-Id': id }`,
+or `{}` while the page was opened for none; `isOtherWorkspace(error)` recognises the refusal above and
+`whenWorkspaceMoves(listener)` adds a listener that is told when a call was refused that way, and answers a function
+that removes it. `workspaceOpenedFor()` answers the workspace's id and name. A host that makes its own calls adds
+`workspaceHeaders()` to them and, on a refusal that `isOtherWorkspace` recognises (it accepts any value with
+`status` 409 and that `code`, so the host's own error type does), calls `workspaceMoved()`: every listener is told,
+the frame's among them, and the frame holds the page as above. A host may add its own listener without taking the
+frame's.
+
+```ts
+import { isOtherWorkspace, workspaceHeaders, workspaceMoved } from 'configbyte-screens'
+
+const resp = await fetch('/api/configbyte/v1/sections/orders/things', { credentials: 'same-origin', headers: workspaceHeaders() })
+if (!resp.ok && isOtherWorkspace({ status: resp.status, code: (await resp.json()).code })) workspaceMoved()
+```
+
+The words are the keys `configbyte.workspace.choose.title`, `.choose.lead`, `.choose.list`, `.tab`, `.reload`,
+`.gone`, `.ended` and `.endedChoose`, and `configbyte.people.refused.lastDeploymentAdmin`, in English and Latvian; a
+host's own words for them are handed in like any other.
+
+**What the coordinator must answer for them** (the configuration coordinator's release that lists a person's
+workspaces): `GET /me` carries `workspaces` (`{ id, name }` for each workspace the person is in; left out for a person
+in one), `workspaceEnded` and `workspaceGone` (a workspace's name each; left out when there is none), and `tenant` is
+the empty string while the session is in none; `POST /login/start` takes an optional `workspace`; a call naming
+another workspace than the session's in `Workspace-Id` is refused `409` `err:session:otherWorkspace`, and one without
+the header is served; `DELETE /me/workspace-notice` clears both names (`204`); and ending a person's access can be
+refused `409` `err:membership:last_deployment_admin`.
+
 ### Words
 
 The screens carry their own words in **English and Latvian**, merged into the host's translator under `configbyte.*`
@@ -507,10 +578,11 @@ with the `__Host-` cookies.
 | Method | Path | For |
 |---|---|---|
 | `GET` | `/login/ways` | before anyone is signed in: the ways to sign in, the everyday app's address, the deployment's language |
-| `GET` | `/me` | who is signed in, the deployment's name, the person's scopes per section, and in `presentation` the language to speak (`locale`), the person's own (`personLocale`, `null` when none) and the deployment's (`deploymentLocale`) |
+| `GET` | `/me` | who is signed in, the workspace they are in and the ones they could be in, the deployment's name, the person's scopes per section, and in `presentation` the language to speak (`locale`), the person's own (`personLocale`, `null` when none) and the deployment's (`deploymentLocale`) |
 | `PUT` | `/me/language` | keeps the language picked at the globe for the person: `{"language": "lv"}`, answered with the three members above |
 | `GET` | `/sections` | the deployment's sections, in the order an import writes them |
-| `POST` | `/login/start` | a sign-in by any way, the card too, `{"method": "<the way's key>"}`; answers where to send the browser |
+| `POST` | `/login/start` | a sign-in by any way, the card too, `{"method": "<the way's key>"}`, and for another workspace `{"workspace": "<its id>"}`; answers where to send the browser |
+| `DELETE` | `/me/workspace-notice` | tells the coordinator the line about a workspace that ended or is gone was shown |
 | `POST` | `/logout` | ends the session; answers where to go next |
 | `GET` | `/config/export` | the whole configuration as one file |
 | `POST` | `/config/import?dryRun=true` · `/config/import` | what a file would do, then applying exactly that |

@@ -152,6 +152,9 @@ export interface Said {
   place?: 'note' | 'invite'
 }
 
+/** The register's code for ending the access of the person who is the deployment's last administrator. */
+const LAST_DEPLOYMENT_ADMIN = 'err:membership:last_deployment_admin'
+
 /** The acts whose refusals read differently. */
 type Act =
   | 'userType'
@@ -592,6 +595,8 @@ export const usePeople = defineStore('configbyte-people', {
       if (act === 'signOutApp' && e.status === 404) return refused('appGone')
       if (act === 'removeAssistant' && e.status === 404) return refused('assistantGone')
       if (e.status === 409) {
+        // Ending the access of the deployment's last administrator is said in words of its own, in whichever workspace it is tried.
+        if (act === 'takeAll' && e.code === LAST_DEPLOYMENT_ADMIN) return refused('lastDeploymentAdmin')
         switch (act) {
           case 'administrator':
           case 'takeAll':

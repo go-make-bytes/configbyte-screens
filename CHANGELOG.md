@@ -3,6 +3,36 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.16.0
+
+Built on `uibyte` `v0.20.0` (was `v0.19.0`): move a host's own `uibyte` pin to the same tag together with this one,
+then read `npm ls uibyte` back: one copy. **Needs** a coordinator that lists a person's workspaces in its sign-in
+answer and judges the `Workspace-Id` header. A host that changes nothing else gets all of this in its admin app.
+
+### Added
+
+- **The line under the brand names the workspace the person is in.** Plain words for a person in one workspace; for a
+  person in several, a button that lists them and starts a sign-in for the one chosen. The footer and the brand are
+  as they were.
+- **A page to choose a workspace**, for a person who is in several and signed in to none, drawn before the first run.
+  It is exported as `ChooseWorkspace`, for a host that wants it in its own sign-in look.
+- **Every call names the workspace the page was opened for** (`Workspace-Id`), except the calls that ask where the
+  person is. A call the coordinator refuses for naming another workspace than the session's holds the page with a
+  notice that cannot be closed, and one button to load it again. The module that keeps the value is exported
+  (`workspaceHeaders`, `isOtherWorkspace`, `whenWorkspaceMoves`, `workspaceMoved`, `workspaceOpenedFor`): a host's own
+  client reports a refusal with `workspaceMoved()`, and may add a listener of its own beside the frame's.
+- **A first read of who is signed in that names the other workspace is read once more**, instead of showing that the
+  coordinator is not answering.
+- **Two lines over the page**, each said once and then reported to the coordinator: the person's access to a
+  workspace has ended, and a workspace they chose is gone. With one workspace left, the sign-in for it starts by
+  itself.
+- **People & access words the refusal of ending the last deployment administrator's access** in a sentence of its own.
+
+### Changed
+
+- **A sign-in answer read again after a sign-in in another tab compares the workspace too.** The same person in another
+  workspace now drops the page and loads it again, as another person does.
+
 ## v0.15.2
 
 Built on `uibyte` `v0.19.0` (was `v0.18.0`), so a host that moves to that kit version keeps one copy of it. No

@@ -2,7 +2,17 @@
 // always same-origin, always with its session cookie. State-changing requests
 // echo the anti-forgery token the coordinator minted into its readable cookie.
 
+import { isOtherWorkspace, workspaceHeaders, workspaceMoved } from './workspace'
+
 export const API_ROOT = '/api/configbyte/v1'
+
+/**
+ * What a call may ask of the client beyond its address and body. `unscoped` marks a call
+ * that asks where the person is, which never names the workspace the page was opened for.
+ */
+export interface CallOptions {
+  unscoped?: boolean
+}
 
 const CSRF_COOKIE = 'configbyte_csrf'
 const CSRF_HEADER = 'X-CSRF-Token'
@@ -82,7 +92,10 @@ export function relatedLink(header: string | null): string {
   return ''
 }
 
-/** The refusal a response carries: its code, and the words meant for a person. */
+/**
+ * The refusal a response carries: its code, and the words meant for a person. A call refused for naming
+ * another workspace than the session's tells the page so, once, here: every refusal is read through this.
+ */
 export async function refusalOf(resp: Response): Promise<ApiError> {
   let code = ''
   let detail = ''
@@ -96,7 +109,10 @@ export async function refusalOf(resp: Response): Promise<ApiError> {
     // A non-JSON body: the status alone carries the signal.
   }
 
-  return new ApiError(resp.status, code, detail || `HTTP ${resp.status}`, relatedLink(resp.headers.get('Link')))
+  const refused = new ApiError(resp.status, code, detail || `HTTP ${resp.status}`, relatedLink(resp.headers.get('Link')))
+  if (isOtherWorkspace(refused)) workspaceMoved()
+
+  return refused
 }
 
 async function handle<T>(resp: Response): Promise<T> {
@@ -121,15 +137,17 @@ export function whenSignInEnds(listener: () => void): void {
 }
 
 /** A read, answered as it came — after telling whoever listens if it says nobody is signed in any more. */
-export async function read(path: string, extra: Pick<RequestInit, 'cache'> = {}): Promise<Response> {
-  const resp = await fetch(path, { credentials: 'same-origin', ...extra })
+export async function read(path: string, extra: Pick<RequestInit, 'cache'> & CallOptions = {}): Promise<Response> {
+  const { unscoped, ...fetchOptions } = extra
+  const headers = unscoped ? {} : workspaceHeaders()
+  const resp = await fetch(path, { credentials: 'same-origin', ...fetchOptions, ...(Object.keys(headers).length ? { headers } : {}) })
   if (resp.status === 401) signInEnded()
 
   return resp
 }
 
 /** A read answered as a value. `extra` asks something of the fetch itself, such as `cache: 'no-store'`. */
-export async function get<T>(path: string, extra: Pick<RequestInit, 'cache'> = {}): Promise<T> {
+export async function get<T>(path: string, extra: Pick<RequestInit, 'cache'> & CallOptions = {}): Promise<T> {
   return handle<T>(await read(path, extra))
 }
 
@@ -147,25 +165,25 @@ export function segment(value: string): string {
   return encodeURIComponent(value)
 }
 
-function send(method: string, body?: unknown): RequestInit {
+function send(method: string, body?: unknown, options: CallOptions = {}): RequestInit {
   return {
     method,
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', [CSRF_HEADER]: csrfToken() },
+    headers: { 'Content-Type': 'application/json', [CSRF_HEADER]: csrfToken(), ...(options.unscoped ? {} : workspaceHeaders()) },
     body: body === undefined ? undefined : JSON.stringify(body),
   }
 }
 
-export async function post<T>(path: string, body?: unknown): Promise<T> {
-  return handle<T>(await fetch(path, send('POST', body)))
+export async function post<T>(path: string, body?: unknown, options: CallOptions = {}): Promise<T> {
+  return handle<T>(await fetch(path, send('POST', body, options)))
 }
 
-export async function put<T>(path: string, body?: unknown): Promise<T> {
-  return handle<T>(await fetch(path, send('PUT', body)))
+export async function put<T>(path: string, body?: unknown, options: CallOptions = {}): Promise<T> {
+  return handle<T>(await fetch(path, send('PUT', body, options)))
 }
 
-export async function del<T>(path: string): Promise<T> {
-  return handle<T>(await fetch(path, send('DELETE')))
+export async function del<T>(path: string, options: CallOptions = {}): Promise<T> {
+  return handle<T>(await fetch(path, send('DELETE', undefined, options)))
 }
 
 /**
@@ -178,7 +196,7 @@ export async function postText<T>(path: string, text: string): Promise<T> {
     await fetch(path, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', [CSRF_HEADER]: csrfToken() },
+      headers: { 'Content-Type': 'application/json', [CSRF_HEADER]: csrfToken(), ...workspaceHeaders() },
       body: text,
     }),
   )

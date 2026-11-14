@@ -16,7 +16,7 @@
 // At the foot of the menu, above the person's name, a globe names the language
 // the page speaks and changes it at once. The choice is the person's, kept for
 // them by the coordinator; the language everyone here has is marked as that.
-import { computed, onMounted, watch, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
@@ -24,20 +24,24 @@ import {
   AppShell,
   Button,
   buttonVariants,
+  HoldNotice,
   LanguageMenu,
   type LanguageOption,
   type NavGroup,
   type NavItem,
+  ScopeMenu,
   type ShellLabels,
 } from 'uibyte'
 
 import AdminBrand from './components/AdminBrand.vue'
 import AdminSignIn from './components/AdminSignIn.vue'
+import ChooseWorkspace from './components/ChooseWorkspace.vue'
 import FirstRun from './components/FirstRun.vue'
 import SignInTab from './components/SignInTab.vue'
 import { isSignInTab, ownAddress, takeReturn } from './lib/again'
 import { whenSignInEnds } from './lib/api'
 import { takeSignedOut, wayName } from './lib/signin'
+import { whenWorkspaceMoves, workspaceOpenedFor } from './lib/workspace'
 import { useAdminOptions } from './options'
 import { DEPLOYMENT_ADMINS, DEPLOYMENT_COMPANIES, DEPLOYMENT_SIGN_IN_TAB, EXPORT_IMPORT, HISTORY, PEOPLE_ACCESS } from './routes'
 import { useDeployment } from './stores/deployment'
@@ -247,6 +251,119 @@ const firstRunLine = computed(() => {
   return done.missing ? `${said} ${t('configbyte.deployment.firstRun.doneMissing')}` : said
 })
 
+// --- The workspaces a person is in -------------------------------------------------------------------
+//
+// The line under the brand names the workspace the person is in and, for a person in several, is the way
+// to another; a person in several who is signed in to none is asked which first; and what the coordinator
+// says once about a workspace — an access that ended, a chosen one that is gone — is said in a line over the page.
+
+/** The name of the workspace the sign-in answer puts the person in; empty when it is not known. */
+const currentWorkspaceName = computed(
+  () => session.me?.workspace?.name ?? session.me?.workspaces?.find((w) => w.id === session.me?.tenant)?.name ?? '',
+)
+
+/** What the line under the brand offers: the person's workspaces, or the one they are in. */
+const scopeOptions = computed(() => {
+  const me = session.me
+  if (!me?.tenant) return []
+  if (me.workspaces?.length) return me.workspaces.map((w) => ({ key: w.id, label: w.name }))
+
+  return currentWorkspaceName.value ? [{ key: me.tenant, label: currentWorkspaceName.value }] : []
+})
+
+/** Signed in to no workspace, and in at least one: the page to choose comes before anything else. */
+const choosing = computed(() => !!session.me && !session.me.tenant && (session.me.workspaces?.length ?? 0) > 0)
+const workspaceRows = computed(() => (session.me?.workspaces ?? []).map((w) => ({ key: w.id, label: w.name })))
+
+/** A sign-in that came back with a marker on the address was an attempt already made. */
+const cameBackMarked = !!new URLSearchParams(window.location.search).get('error')
+let autoStarted = false
+
+interface PageLine {
+  kind: 'ended' | 'gone'
+  outcome: 'done' | 'refused'
+  text: string
+}
+/** The lines over the page about a workspace, kept as they were said until the page is loaded again. */
+const pageLines = ref<PageLine[]>([])
+/** The line above the rows of the page to choose. */
+const choiceLine = ref<{ outcome: 'done' | 'refused'; text: string } | null>(null)
+
+/** A start for another workspace that was refused or not answered, in the sign-in page's own words for it; gone when the next start begins. */
+const startFailedLine = computed(() =>
+  session.switchFailed ? { outcome: 'refused' as const, text: t('configbyte.signIn.message.failed') } : null,
+)
+
+/**
+ * Say what the coordinator says once, then tell it so. When the person has one workspace left to go to and
+ * their access to the last one ended, the sign-in for it starts by itself, once; the coordinator is told only
+ * when the line was settled on a page, so the next page says it if this attempt goes elsewhere.
+ */
+function settleWorkspaces() {
+  const me = session.me
+  if (!me) return
+  const list = me.workspaces ?? []
+  const auto = !me.tenant && !!me.workspaceEnded && list.length === 1 && !autoStarted && !session.message && !cameBackMarked
+  let said = false
+  const current = currentWorkspaceName.value
+  if (me.workspaceEnded) {
+    const name = me.workspaceEnded
+    if (me.tenant) {
+      if (!pageLines.value.some((l) => l.kind === 'ended')) pageLines.value.push({ kind: 'ended', outcome: 'done', text: t('configbyte.workspace.ended', { name, current }) })
+      said = true
+    } else if (list.length > 0) {
+      choiceLine.value = { outcome: 'done', text: t('configbyte.workspace.endedChoose', { name }) }
+      said = !auto
+    }
+  }
+  if (me.workspaceGone && me.tenant) {
+    const name = me.workspaceGone
+    if (!pageLines.value.some((l) => l.kind === 'gone')) pageLines.value.push({ kind: 'gone', outcome: 'refused', text: t('configbyte.workspace.gone', { name, current }) })
+    said = true
+  }
+  if (said) void session.noteShown()
+  if (auto) {
+    autoStarted = true
+    void session.switchTo(list[0]!.id)
+  }
+}
+watch(
+  () => [session.me?.tenant, session.me?.workspaceEnded, session.me?.workspaceGone, session.me?.workspaces?.length] as const,
+  settleWorkspaces,
+  { immediate: true },
+)
+
+/** The workspace the page was opened for is not the one the person works in any more, and the page must not be used. */
+const stale = ref<{ old: string; now: string } | null>(null)
+let checking = false
+
+/** A call was refused for naming another workspace than the session's: read the sign-in answer once, however many were. */
+async function checkWorkspace() {
+  // A page not yet opened for any workspace has none to be left behind in.
+  if (checking || stale.value || !workspaceOpenedFor()) return
+  checking = true
+  try {
+    const now = await session.readCurrent()
+    const opened = workspaceOpenedFor()
+    if (!now || !opened) return
+    if (!now.tenant) {
+      window.location.reload()
+
+      return
+    }
+    if (now.tenant === opened.id) return
+    stale.value = { old: opened.name, now: now.workspace?.name ?? now.workspaces?.find((w) => w.id === now.tenant)?.name ?? '' }
+  } finally {
+    checking = false
+  }
+}
+const stopWatchingWorkspace = whenWorkspaceMoves(() => void checkWorkspace())
+onBeforeUnmount(stopWatchingWorkspace)
+
+function reloadPage() {
+  window.location.reload()
+}
+
 const labels = computed<ShellLabels>(() => ({
   skipToContent: t(f('shell.skipToContent')),
   openMenu: t(f('shell.openMenu')),
@@ -274,6 +391,24 @@ const labels = computed<ShellLabels>(() => ({
       </SignInTab>
     </template>
 
+    <!-- In several workspaces and signed in to none: which one, before the first run and any menu. -->
+    <ChooseWorkspace
+      v-else-if="choosing"
+      :rows="workspaceRows"
+      :busy="session.switchingTo"
+      :product="t(options.product)"
+      :tag="t(f('signIn.tag'))"
+      :title="t('configbyte.workspace.choose.title')"
+      :lead="t('configbyte.workspace.choose.lead')"
+      :list-label="t('configbyte.workspace.choose.list')"
+      :sign-out-label="t(f('logout'))"
+      :line="startFailedLine ?? choiceLine"
+      @choose="(key: string) => session.switchTo(key)"
+      @sign-out="session.logout()"
+    >
+      <template #mark="{ size }"><slot name="mark" :size="size" /></template>
+    </ChooseWorkspace>
+
     <!-- The first run: one question, before any menu. -->
     <FirstRun v-else-if="firstRunOwed">
       <template #mark="{ size }"><slot name="mark" :size="size" /></template>
@@ -294,6 +429,19 @@ const labels = computed<ShellLabels>(() => ({
         <AdminBrand :name="brandName">
           <template #default="{ size }"><slot name="mark" :size="size" /></template>
         </AdminBrand>
+      </template>
+
+      <!-- The workspace the person is in, under the brand: plain words for a person in one, the way to another for a person in several. -->
+      <template #sidebar-top>
+        <ScopeMenu
+          v-if="scopeOptions.length"
+          tone="console"
+          block
+          :label="t(f('shell.workspace'))"
+          :current="session.me?.tenant ?? ''"
+          :options="scopeOptions"
+          @select="(key: string) => session.switchTo(key)"
+        />
       </template>
 
       <!-- The same foot is drawn at the bottom of the menu a phone opens: the globe first, then who is signed in. -->
@@ -329,6 +477,12 @@ const labels = computed<ShellLabels>(() => ({
         <ActLine outcome="done" :text="firstRunLine" data-line="first-run" />
       </div>
 
+      <!-- What was said once about a workspace: an access that ended, a chosen one the person is no longer in. -->
+      <div v-if="pageLines.length || startFailedLine" class="mx-auto flex max-w-5xl flex-col gap-2 px-8 pt-6">
+        <ActLine v-for="line in pageLines" :key="line.kind" :outcome="line.outcome" :text="line.text" :data-line="`workspace-${line.kind}`" />
+        <ActLine v-if="startFailedLine" :outcome="startFailedLine.outcome" :text="startFailedLine.text" data-line="workspace-start-failed" />
+      </div>
+
       <!-- The coordinator did not answer: nothing was changed, and the one way on is to ask again. -->
       <section v-if="session.notAnswering" class="mx-auto max-w-xl px-8 py-16" data-state="unreachable">
         <p class="font-mono text-[11px] uppercase tracking-wider text-faint">{{ t(f('down.eyebrow')) }}</p>
@@ -354,5 +508,10 @@ const labels = computed<ShellLabels>(() => ({
 
       <router-view v-else />
     </AppShell>
+
+    <!-- This page was opened for another workspace than the one the person works in now: it cannot be used further. -->
+    <HoldNotice :open="!!stale" :action-label="t('configbyte.workspace.reload')" @act="reloadPage()">
+      {{ stale ? t('configbyte.workspace.tab', { old: stale.old, new: stale.now }) : '' }}
+    </HoldNotice>
   </template>
 </template>
