@@ -7,6 +7,7 @@ import { defineStore } from 'pinia'
 
 import { ApiError, get, relay } from '../lib/api'
 import { newStream, type Stream } from '../lib/history'
+import { isOtherWorkspace } from '../lib/workspace'
 import type { HistoryLine, HistorySource } from '../options'
 
 /** The area the membership register's lines sit under. */
@@ -42,7 +43,8 @@ async function readPage(stream: Stream, actor: string) {
     stream.reason = ''
     stream.status = 0
   } catch (e) {
-    if (stream.epoch !== epoch) return
+    // A read refused for another company is answered by the page's notice alone.
+    if (stream.epoch !== epoch || isOtherWorkspace(e)) return
     stream.more = false
     if (unanswered(e)) {
       stream.failed = 'unanswered'

@@ -396,8 +396,17 @@ describe('the lines about a workspace', () => {
     const { wrapper } = await render()
     const line = wrapper.get('[data-line="workspace-ended"]')
     expect(line.text()).toBe('Your access to Vecais SIA has ended. You are now working in Kalve Ltd.')
-    expect(line.attributes('data-outcome')).toBe('done')
+    expect(line.attributes('data-outcome')).toBe('notice')
     expect(countOf('DELETE', NOTICE)).toBe(1)
+  })
+
+  it('draws the line above the rows of the page to choose as a notice, and the page to choose takes a line of that kind', async () => {
+    stub({ [`GET ${API}/me`]: ok(meInNone([kalve, ozols], { workspaceEnded: 'Vecais SIA' })), [`DELETE ${NOTICE}`]: { status: 204, body: undefined } })
+    const { wrapper } = await render()
+    expect(wrapper.get('[data-page="choose-workspace"] [data-line="workspace"]').attributes('data-outcome')).toBe('notice')
+    const words = { title: 't', lead: 'l', listLabel: 'x', signOutLabel: 's', product: 'acme', rows: [{ key: 'a', label: 'A' }] }
+    const shown = mount(ChooseWorkspace, { props: { ...words, line: { outcome: 'notice', text: 'Said.' } } })
+    expect(shown.get('[data-line="workspace"]').attributes('data-outcome')).toBe('notice')
   })
 
   it('puts the line above the rows of the page to choose when there are two, and tells the coordinator once', async () => {

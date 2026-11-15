@@ -11,6 +11,18 @@ const TAB_KEY = 'configbyte.sign-in-tab'
 /** The name of the channel a sign-in tab uses to tell the tabs of this browser that it signed in. */
 export const SIGN_IN_CHANNEL = 'configbyte-sign-in'
 
+/**
+ * The address to keep for a page: the page's own address, except that a route with parameters is kept
+ * as the list its pattern belongs to (everything before the first parameter), so no id is ever kept.
+ */
+export function addressToKeep(page: { fullPath: string; params: Record<string, unknown>; matched: { path: string }[] }): string {
+  if (Object.keys(page.params).length === 0) return page.fullPath
+  const pattern = page.matched[page.matched.length - 1]?.path ?? ''
+  const cut = pattern.indexOf('/:')
+
+  return cut > 0 ? pattern.slice(0, cut) : '/'
+}
+
 /** Keep the address to open when a sign-in that left the app comes back. */
 export function keepReturn(address: string): void {
   try {

@@ -62,6 +62,7 @@ async function toggle() {
   if (mine !== epoch) return
   asking.value = false
   if (answer.ok) shown.value = answer.code
+  else if (answer.why === 'moved') return
   else if (answer.why === 'notAdministrator' || answer.why === 'unanswered' || answer.why === 'unreadable') refused.value = `configbyte.people.refused.${answer.why}`
   else refused.value = w(`refused.${answer.why}`)
 }

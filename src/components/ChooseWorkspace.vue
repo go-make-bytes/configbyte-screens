@@ -7,7 +7,7 @@
 // and every word already translated, and is told which row was pressed. It sits in the
 // sign-in page's column with the same slot for the product's mark, so a host can show it
 // in its own sign-in look.
-import { ActLine, BrandMark, Button, ChoiceRows } from 'uibyte'
+import { ActLine, BrandMark, Button, ChoiceRows, type ActOutcome } from 'uibyte'
 
 export interface WorkspaceRow {
   key: string
@@ -31,7 +31,7 @@ withDefaults(
     /** The words of the button that signs out. */
     signOutLabel: string
     /** What has to be said before the rows, if anything. */
-    line?: { outcome: 'done' | 'refused'; text: string } | null
+    line?: { outcome: ActOutcome; text: string } | null
   }>(),
   { busy: '', tag: undefined, line: null },
 )

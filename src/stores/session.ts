@@ -314,9 +314,9 @@ export const useAdminSession = defineStore('configbyte-session', {
         confirmedLanguage.set(me, answer)
         // A later pick has the last word on screen.
         if (pick === languagePicks) Object.assign(me.presentation, answer)
-      } catch {
-        // A later pick, or a sign-in that ended meanwhile, has the last word.
-        if (pick !== languagePicks || this.me !== me) return
+      } catch (e) {
+        // A later pick, or a sign-in that ended meanwhile, has the last word; a call refused for another company is answered by the page's notice alone.
+        if (pick !== languagePicks || this.me !== me || isOtherWorkspace(e)) return
         Object.assign(me.presentation, confirmedLanguage.get(me))
         this.languageFailed = true
       }
@@ -433,7 +433,7 @@ export const useAdminSession = defineStore('configbyte-session', {
      * means somebody else is signed in now, or nobody is (nothing held is replaced); `failed`
      * means the answer could not be read.
      */
-    async reread(pinned?: string): Promise<'same' | 'other' | 'failed'> {
+    async reread(pinned?: string): Promise<'same' | 'other' | 'failed' | 'moved'> {
       const held = this.me
       if (!held) return 'other'
       try {
@@ -448,6 +448,9 @@ export const useAdminSession = defineStore('configbyte-session', {
 
         return 'same'
       } catch (e) {
+        // The answer was a refusal that names another workspace: the page's notice says so, and this says nothing.
+        if (isOtherWorkspace(e)) return 'moved'
+
         return e instanceof ApiError && e.status === 401 ? 'other' : 'failed'
       }
     },
