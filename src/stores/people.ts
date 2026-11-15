@@ -17,6 +17,7 @@ import { defineStore } from 'pinia'
 import { API_ROOT, ApiError, del, get, post, put, relay, segment } from '../lib/api'
 import type { DeclaringService } from '../lib/boxes'
 import { calledAlike, readsAlike, type Labels, type Named } from '../lib/names'
+import { isOtherWorkspace } from '../lib/workspace'
 import en from '../locales/en.json'
 import type { FieldBox, RoleSetting } from '../options'
 
@@ -58,7 +59,7 @@ export interface SignIn {
 /** What showing a personal code answered: the code itself, or why it was not shown. */
 export type Revealed =
   | { ok: true; code: string; country: string }
-  | { ok: false; why: 'audit' | 'none' | 'notAdministrator' | 'unanswered' | 'unreadable' | 'other' }
+  | { ok: false; why: 'audit' | 'none' | 'notAdministrator' | 'unanswered' | 'unreadable' | 'other' | 'moved' }
 
 /** One of the workspace's own roles, with every box it holds. */
 export interface Role {
@@ -300,8 +301,12 @@ export const usePeople = defineStore('configbyte-people', {
       ])
       if (visit !== this.visit) return
       if (access.status === 'rejected' || roles.status === 'rejected' || types.status === 'rejected') {
-        const why = [access, roles, types].find((r) => r.status === 'rejected') as PromiseRejectedResult
-        const e = why.reason
+        // A read refused for another company is answered by the page's notice alone: the page stays as it was,
+        // unless another read beside it really failed, and that failure is drawn.
+        const rejected = [access, roles, types].filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        const real = rejected.find((r) => !isOtherWorkspace(r.reason))
+        if (!real) return
+        const e = real.reason
         if (unanswered(e)) this.failed = 'unanswered'
         else if (e instanceof ApiError && e.status === 403) this.failed = 'notAdministrator'
         else {
@@ -337,8 +342,8 @@ export const usePeople = defineStore('configbyte-people', {
       try {
         const chart = await get<{ positions: Position[] }>(this.tenantPath('chart/positions'))
         if (visit === this.visit) this.positions = chart.positions ?? []
-      } catch {
-        if (visit === this.visit) this.positions = []
+      } catch (e) {
+        if (visit === this.visit && !isOtherWorkspace(e)) this.positions = []
       }
     },
 
@@ -351,8 +356,8 @@ export const usePeople = defineStore('configbyte-people', {
       try {
         const boxes = read ? await read() : []
         if (visit === this.visit) this.fields = boxes
-      } catch {
-        if (visit === this.visit) this.fields = null
+      } catch (e) {
+        if (visit === this.visit && !isOtherWorkspace(e)) this.fields = null
       } finally {
         if (visit === this.visit) this.fieldsReading = false
       }
@@ -369,8 +374,8 @@ export const usePeople = defineStore('configbyte-people', {
           try {
             const roleId = await s.read()
             if (visit === this.visit) this.settings[s.key] = { state: 'read', roleId }
-          } catch {
-            if (visit === this.visit) this.settings[s.key] = { state: 'unread', roleId: '' }
+          } catch (e) {
+            if (visit === this.visit && !isOtherWorkspace(e)) this.settings[s.key] = { state: 'unread', roleId: '' }
           }
         }),
       )
@@ -414,7 +419,7 @@ export const usePeople = defineStore('configbyte-people', {
         if (visit !== this.visit) return
         this.assistants = list
       } catch (e) {
-        if (visit !== this.visit) return
+        if (visit !== this.visit || isOtherWorkspace(e)) return
         this.assistantsFailed = unanswered(e) ? 'unanswered' : e instanceof ApiError && e.status === 403 ? 'notAdministrator' : 'other'
         this.assistantsLoaded = true
 
@@ -435,8 +440,8 @@ export const usePeople = defineStore('configbyte-people', {
       try {
         const answer = await get<{ connections: Connection[] }>(`${API_ROOT}/assistants/${segment(a.subjectKey)}/connections`)
         if (visit === this.visit) this.apps[a.subjectKey] = { state: 'read', lines: answer.connections ?? [] }
-      } catch {
-        if (visit === this.visit) this.apps[a.subjectKey] = { state: 'unread', lines: [] }
+      } catch (e) {
+        if (visit === this.visit && !isOtherWorkspace(e)) this.apps[a.subjectKey] = { state: 'unread', lines: [] }
       }
     },
 
@@ -511,6 +516,7 @@ export const usePeople = defineStore('configbyte-people', {
       try {
         await del(`${API_ROOT}/assistants/${segment(a.subjectKey)}/connections`)
       } catch (e) {
+        if (isOtherWorkspace(e)) return false
         if (e instanceof ApiError && e.status === 403) {
           this.said = this.refusal('removeAssistant', e, { name: a.name })
 
@@ -546,6 +552,8 @@ export const usePeople = defineStore('configbyte-people', {
       try {
         await call()
       } catch (e) {
+        // Refused for another company: the page's notice is the only thing said, and what was typed stays.
+        if (isOtherWorkspace(e)) return false
         this.said = { ...this.refusal(act, e, { ...values, ...(extra.about ?? {}) }, extra.naming), ...place }
 
         return false
@@ -818,6 +826,7 @@ export const usePeople = defineStore('configbyte-people', {
 
         return { ok: true, code: shown.code, country: shown.country }
       } catch (e) {
+        if (isOtherWorkspace(e)) return { ok: false, why: 'moved' }
         if (!(e instanceof ApiError)) return { ok: false, why: unanswered(e) ? 'unanswered' : 'unreadable' }
         if (e.status === 403) return { ok: false, why: 'notAdministrator' }
         if (e.status === 404) return { ok: false, why: 'none' }

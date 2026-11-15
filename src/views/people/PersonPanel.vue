@@ -88,8 +88,9 @@ async function onGive(id: string) {
 async function onAdministrator(event: Event) {
   const box = event.target as HTMLInputElement
   const ok = await people.setAdministrator(props.member, box.checked)
-  // A refused tick goes back to what the register still holds.
-  if (!ok) box.checked = props.member.administrator
+  // A refused tick goes back to what the register still holds, unless it was refused for another company:
+  // the page's notice is then the only thing that changes.
+  if (!ok && people.said !== null) box.checked = props.member.administrator
 }
 
 async function takeAll() {

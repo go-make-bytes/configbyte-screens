@@ -3,6 +3,27 @@
 All notable changes to this package are recorded here. It follows [Keep a Changelog](https://keepachangelog.com/),
 and the package is consumed as a pinned git tag.
 
+## v0.17.0
+
+Built on `uibyte` `v0.21.0` (was `v0.20.0`): move a host's own `uibyte` pin to the same tag together with this one,
+then read `npm ls uibyte` back: one copy.
+
+### Changed
+
+- The lines that say a person's access to a workspace ended (over the page, and above the rows of the page to choose)
+  are drawn as a notice, in the amber of the kit's new third outcome, with their words unchanged. The line that a
+  chosen workspace is gone stays a refusal. The page to choose takes the kit's `ActOutcome` for its line.
+
+### Fixed
+
+- A call refused because the page was opened for another workspace than the one the session is in now is answered
+  by the page's notice alone. No screen draws an error state, a *try again*, a refusal line or a conflict line
+  because of it any more: the invite form no longer says the person is already in the workspace, the reads of People
+  & access, History, Export / Import and the Deployment area leave the page as it was, and what was typed is kept.
+  Every other refusal is drawn as before. Showing a personal code answers `why: 'moved'` for it (the `Revealed` type).
+- Signing in again in the Deployment area keeps the address of the list a page belongs to, never the address of one
+  company, so no company's id is held in the tab's session storage.
+
 ## v0.16.1
 
 ### Fixed

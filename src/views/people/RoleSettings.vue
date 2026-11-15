@@ -9,6 +9,7 @@ import { SelectField, type SelectOption } from 'uibyte'
 
 import SaidLine from '../../components/SaidLine.vue'
 import { ApiError } from '../../lib/api'
+import { isOtherWorkspace } from '../../lib/workspace'
 import type { RoleSetting } from '../../options'
 import { usePeople, type Said } from '../../stores/people'
 
@@ -34,6 +35,8 @@ async function choose(setting: RoleSetting, id: string) {
     people.settings[setting.key] = { state: 'read', roleId: id }
     said.value[setting.key] = { kind: 'said', key: '', hostKey: setting.saved, values: { role: role.name } }
   } catch (e) {
+    // Refused for another company: the page's notice is the only thing said.
+    if (isOtherWorkspace(e)) return
     said.value[setting.key] =
       e instanceof ApiError && e.status === 400 && setting.refused
         ? { kind: 'refused', key: '', hostKey: setting.refused, values: { role: role.name } }

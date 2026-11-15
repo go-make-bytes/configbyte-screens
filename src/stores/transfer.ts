@@ -11,6 +11,7 @@
 import { defineStore } from 'pinia'
 
 import { API_ROOT, ApiError, postText, read, refusalOf } from '../lib/api'
+import { isOtherWorkspace } from '../lib/workspace'
 import { aboutDocument, canApply, downloadName, expectFrom, withExpect, type ImportAnswer } from '../lib/transfer'
 
 const EXPORT = `${API_ROOT}/config/export`
@@ -79,6 +80,8 @@ export const useTransfer = defineStore('configbyte-transfer', {
         offerDownload(blob, name)
         this.exported = { name, bytes: blob.size, sections: aboutDocument(await blob.text()).sectionKeys }
       } catch (e) {
+        // Refused for another company: the page's notice is the only thing said.
+        if (isOtherWorkspace(e)) return
         this.exportFailed = e instanceof Error ? e.message : String(e)
       } finally {
         this.exporting = false
@@ -113,6 +116,7 @@ export const useTransfer = defineStore('configbyte-transfer', {
       try {
         this.preview = await postText<ImportAnswer>(`${IMPORT}?dryRun=true`, this.fileText)
       } catch (e) {
+        if (isOtherWorkspace(e)) return
         this.preview = null
         this.stop = stopOf(e, 'preview')
       } finally {
@@ -135,6 +139,7 @@ export const useTransfer = defineStore('configbyte-transfer', {
           applied?.()
         }
       } catch (e) {
+        if (isOtherWorkspace(e)) return
         this.stop = stopOf(e, 'apply')
       } finally {
         this.working = ''

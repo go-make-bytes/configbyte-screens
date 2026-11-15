@@ -15,6 +15,7 @@
 import { defineStore } from 'pinia'
 
 import { API_ROOT, ApiError, del, get, isAssuranceTooLow, isSignInTooOld, post, put, segment } from '../lib/api'
+import { isOtherWorkspace } from '../lib/workspace'
 import { isLater } from '../lib/again'
 import {
   administratorOf,
@@ -84,7 +85,7 @@ export interface Said {
 }
 
 /** What a refusal or failure means to the area, once the effects it has on the session are done. */
-type Met = 'closed' | 'tooOld' | 'notAdmin' | 'unanswered' | 'other'
+type Met = 'closed' | 'tooOld' | 'notAdmin' | 'unanswered' | 'other' | 'moved'
 
 function unanswered(e: unknown): boolean {
   if (e instanceof ApiError) return e.status === 502 || e.status === 503 || e.status === 504
@@ -105,7 +106,7 @@ function fileNameOf(raw: unknown): string | null {
 }
 
 /** Whether a met failure ended the call as a whole, so nothing more is said about the act. */
-const ended = (met: Met) => met === 'closed' || met === 'tooOld' || met === 'notAdmin'
+const ended = (met: Met) => met === 'closed' || met === 'tooOld' || met === 'notAdmin' || met === 'moved'
 
 /** Counts the pages opened, so an answer that arrives after the page was left or another opened changes nothing. */
 let visit = 0
@@ -168,6 +169,8 @@ export const useDeployment = defineStore('configbyte-deployment', {
   actions: {
     /** Tell what a failed call means to the area, doing what it asks of the session. */
     meet(e: unknown): Met {
+      // A call refused for naming another company than the session's is answered by the page's notice alone.
+      if (isOtherWorkspace(e)) return 'moved'
       if (isAssuranceTooLow(e)) {
         useAdminSession().closeFor(e)
 
@@ -261,7 +264,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
         this.companies = rowsOf(companies.value, 'companies', companyOf)
         this.companiesState = 'ready'
         this.accept()
-      } else {
+      } else if (!isOtherWorkspace(companies.reason)) {
         this.companiesState = 'failed'
         this.companiesFailure = this.failureOf(companies.reason)
       }
@@ -269,7 +272,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
       if (products.status === 'fulfilled') {
         this.products = rowsOf(products.value, 'products', productOf)
         this.productsState = 'ready'
-      } else {
+      } else if (!isOtherWorkspace(products.reason)) {
         this.productsState = 'failed'
         this.productsFailure = this.failureOf(products.reason)
       }
@@ -288,7 +291,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
         this.productsState = 'ready'
         this.productsFailure = ''
       } catch (e) {
-        if (mine !== visit) return
+        if (mine !== visit || isOtherWorkspace(e)) return
         this.productsState = 'failed'
         this.productsFailure = this.failureOf(e)
       }
@@ -312,7 +315,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
         if (!read) this.companyFailure = 'other'
       } else if (company.reason instanceof ApiError && company.reason.status === 404) {
         this.companyState = 'missing'
-      } else {
+      } else if (!isOtherWorkspace(company.reason)) {
         this.companyState = 'failed'
         this.companyFailure = this.failureOf(company.reason)
       }
@@ -320,7 +323,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
       if (products.status === 'fulfilled') {
         this.products = rowsOf(products.value, 'products', productOf)
         this.productsState = 'ready'
-      } else {
+      } else if (!isOtherWorkspace(products.reason)) {
         this.productsState = 'failed'
         this.productsFailure = this.failureOf(products.reason)
       }
@@ -338,7 +341,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
         this.configurations = rowsOf(body, 'configurations', fileNameOf)
         this.configurationsState = 'ready'
       } catch (e) {
-        if (mine !== visit) return
+        if (mine !== visit || isOtherWorkspace(e)) return
         this.configurationsState = 'failed'
         this.meet(e)
       }
@@ -419,6 +422,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
         this.administratorsState = 'shown'
       } catch (e) {
         if (mine !== visit) return
+        if (isOtherWorkspace(e)) return
         if (e instanceof ApiError && e.code === AUDIT_UNAVAILABLE) {
           this.administratorsState = 'unrecorded'
 
@@ -545,14 +549,15 @@ export const useDeployment = defineStore('configbyte-deployment', {
 
     /** Whether it is still the person the page was opened for; false sends nothing, and says why when it can. */
     async guardPerson(): Promise<boolean> {
+      return (await this.guardVerdict()) === 'same'
+    },
+
+    /** As `guardPerson`, but says which way it went: a refusal for another company is `moved`, and says nothing of its own. */
+    async guardVerdict(): Promise<'same' | 'other' | 'failed' | 'moved'> {
       const verdict = await this.lookAgain()
-      if (verdict === 'failed') {
-        this.said = { kind: 'refused', key: 'unanswered' }
+      if (verdict === 'failed') this.said = { kind: 'refused', key: 'unanswered' }
 
-        return false
-      }
-
-      return verdict === 'same'
+      return verdict
     },
 
     /**
@@ -561,7 +566,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
      * is later than the one the page held when it was told the sign-in was too old, takes the
      * line about the old sign-in away and says so; the browser's clock decides nothing here.
      */
-    async lookAgain(): Promise<'same' | 'other' | 'failed'> {
+    async lookAgain(): Promise<'same' | 'other' | 'failed' | 'moved'> {
       const session = useAdminSession()
       const verdict = await session.reread(this.pinned)
       if (verdict === 'other') {
@@ -608,7 +613,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
         this.products = rowsOf(products.value, 'products', productOf)
         this.productsState = 'ready'
         this.accept()
-      } else {
+      } else if (!isOtherWorkspace(products.reason)) {
         this.productsState = 'failed'
         this.productsFailure = this.failureOf(products.reason)
       }
@@ -617,8 +622,10 @@ export const useDeployment = defineStore('configbyte-deployment', {
         this.configurations = rowsOf(files.value, 'configurations', fileNameOf)
         this.configurationsState = 'ready'
       } else {
-        this.configurationsState = 'failed'
-        this.failureOf(files.reason)
+        if (!isOtherWorkspace(files.reason)) {
+          this.configurationsState = 'failed'
+          this.failureOf(files.reason)
+        }
       }
     },
 
@@ -698,7 +705,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
 
         return true
       } catch (e) {
-        if (mine !== visit) return false
+        if (mine !== visit || isOtherWorkspace(e)) return false
         if (isSignInTooOld(e)) {
           // The person making the first run manages nothing yet, so the area's rule for such a person does not
           // apply: a sign-in too old is always the line that asks to sign in again, with the form kept.
@@ -739,9 +746,9 @@ export const useDeployment = defineStore('configbyte-deployment', {
     async readDeploymentAdmins(mine: number, checked = false) {
       // A list of people is never read without the comparison with the pinned person having just been made.
       if (!checked) {
-        const ok = await this.guardPerson()
-        if (mine !== visit) return
-        if (!ok) {
+        const verdict = await this.guardVerdict()
+        if (mine !== visit || verdict === 'moved') return
+        if (verdict !== 'same') {
           this.deploymentAdmins = []
           this.deploymentAdminsState = 'failed'
 
@@ -755,7 +762,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
         this.deploymentAdminsState = 'ready'
         this.accept()
       } catch (e) {
-        if (mine !== visit) return
+        if (mine !== visit || isOtherWorkspace(e)) return
         this.deploymentAdmins = []
         if (e instanceof ApiError && e.code === AUDIT_UNAVAILABLE) {
           this.deploymentAdminsState = 'unrecorded'
@@ -817,7 +824,7 @@ export const useDeployment = defineStore('configbyte-deployment', {
 
           return
         }
-        if (verdict === 'other') return
+        if (verdict === 'other' || verdict === 'moved') return
         if (!useAdminSession().managesDeployment) {
           // Not a person who manages the deployment now: the area says so in the page's place, never a page that hangs.
           this.refuseWhole(false)

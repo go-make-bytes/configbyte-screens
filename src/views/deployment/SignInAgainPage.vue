@@ -8,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Button } from 'uibyte'
 
-import { keepReturn } from '../../lib/again'
+import { addressToKeep, keepReturn } from '../../lib/again'
 import type { SignInWay } from '../../lib/signin'
 import { useAdminSession } from '../../stores/session'
 import { useWhen } from '../people/useWhen'
@@ -39,7 +39,7 @@ const lead = computed(() => {
 })
 
 function again(way: SignInWay) {
-  keepReturn(route.fullPath)
+  keepReturn(addressToKeep(route))
   void session.start(way, true)
 }
 </script>

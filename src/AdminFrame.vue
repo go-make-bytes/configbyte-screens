@@ -20,6 +20,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'v
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
+  type ActOutcome,
   ActLine,
   AppShell,
   Button,
@@ -281,13 +282,13 @@ let autoStarted = false
 
 interface PageLine {
   kind: 'ended' | 'gone'
-  outcome: 'done' | 'refused'
+  outcome: ActOutcome
   text: string
 }
 /** The lines over the page about a workspace, kept as they were said until the page is loaded again. */
 const pageLines = ref<PageLine[]>([])
 /** The line above the rows of the page to choose. */
-const choiceLine = ref<{ outcome: 'done' | 'refused'; text: string } | null>(null)
+const choiceLine = ref<{ outcome: ActOutcome; text: string } | null>(null)
 
 /** A start for another workspace that was refused or not answered, in the sign-in page's own words for it; gone when the next start begins. */
 const startFailedLine = computed(() =>
@@ -309,10 +310,10 @@ function settleWorkspaces() {
   if (me.workspaceEnded) {
     const name = me.workspaceEnded
     if (me.tenant) {
-      if (!pageLines.value.some((l) => l.kind === 'ended')) pageLines.value.push({ kind: 'ended', outcome: 'done', text: t('configbyte.workspace.ended', { name, current }) })
+      if (!pageLines.value.some((l) => l.kind === 'ended')) pageLines.value.push({ kind: 'ended', outcome: 'notice', text: t('configbyte.workspace.ended', { name, current }) })
       said = true
     } else if (list.length > 0) {
-      choiceLine.value = { outcome: 'done', text: t('configbyte.workspace.endedChoose', { name }) }
+      choiceLine.value = { outcome: 'notice', text: t('configbyte.workspace.endedChoose', { name }) }
       said = !auto
     }
   }
